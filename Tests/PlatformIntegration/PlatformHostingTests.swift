@@ -277,7 +277,12 @@ private final class TestWindow {
     #else
         private let window: NSWindow
     #endif
-    let contentSize = CGSize(width: 390, height: 700)
+    #if os(iOS)
+        let contentSize = CGSize(width: 390, height: 700)
+    #else
+        // Accommodate the desktop navigation sidebar and detail view simultaneously.
+        let contentSize = CGSize(width: 1000, height: 700)
+    #endif
 
     init(_ controller: PlatformViewController) {
         #if os(iOS)
@@ -291,7 +296,16 @@ private final class TestWindow {
                 styleMask: [.titled, .resizable], backing: .buffered, defer: false
             )
             window.isReleasedWhenClosed = false
-            window.contentViewController = controller
+            // Host the tested controller as content rather than the window's root. Otherwise
+            // SwiftUI's toolbar bridge resizes the window during session-state layout,
+            // re-entering AppKit layout while retiring the previous hosting hierarchy.
+            let container = NSViewController()
+            container.view = NSView(frame: NSRect(origin: .zero, size: contentSize))
+            container.addChild(controller)
+            controller.view.frame = container.view.bounds
+            controller.view.autoresizingMask = [.width, .height]
+            container.view.addSubview(controller.view)
+            window.contentViewController = container
             window.setContentSize(contentSize)
             window.orderFront(nil)
         #endif
@@ -303,9 +317,9 @@ private final class TestWindow {
             window.layoutIfNeeded()
             window.rootViewController?.view.layoutIfNeeded()
         #else
-            // NSWindow.layoutIfNeeded() also drives the content view. Immediately forcing its
-            // subtree again can re-enter SwiftUI/AppKit layout while the first pass is active.
-            window.contentView?.layoutSubtreeIfNeeded()
+            // Let the window coordinate its content layout rather than forcing the
+            // NSHostingView subtree independently of the window's layout pass.
+            window.layoutIfNeeded()
         #endif
     }
 
