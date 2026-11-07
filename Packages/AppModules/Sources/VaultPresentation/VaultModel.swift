@@ -32,7 +32,10 @@ public final class VaultModel {
 
     public internal(set) var state: VaultState
 
-    isolated deinit {
+    // Task handles are Sendable and cancellation needs no actor hop. Avoid isolated deinit:
+    // older Swift runtimes can invalid-free task-local storage during XCTest teardown.
+    // https://github.com/swiftlang/swift/issues/88036
+    deinit {
         observation?.cancel()
         editorRequest?.cancel()
     }
