@@ -1,0 +1,50 @@
+# Freezes the style the codebase already uses, so it doesn't drift as it grows.
+# Run with: bash Scripts/swiftformat.sh (pinned version + verified archive)
+
+--swiftversion 5.10
+--exclude Packages/VaultwardenSDK,.build,DerivedData,sdk-internal
+
+# The existing code sorts imports, puts `else` on the closing brace's line, and uses trailing
+# commas in multi-line literals - all SwiftFormat defaults, listed here so they're explicit.
+--rules \
+    blankLinesAtEndOfScope,\
+    blankLinesAtStartOfScope,\
+    blankLinesBetweenScopes,\
+    braces,\
+    consecutiveBlankLines,\
+    consecutiveSpaces,\
+    duplicateImports,\
+    elseOnSameLine,\
+    emptyBraces,\
+    indent,\
+    leadingDelimiters,\
+    linebreakAtEndOfFile,\
+    redundantParens,\
+    redundantReturn,\
+    redundantSelf,\
+    semicolons,\
+    sortImports,\
+    spaceAroundBraces,\
+    spaceAroundBrackets,\
+    spaceAroundComments,\
+    spaceAroundGenerics,\
+    spaceAroundOperators,\
+    spaceAroundParens,\
+    spaceInsideBraces,\
+    spaceInsideBrackets,\
+    spaceInsideComments,\
+    spaceInsideGenerics,\
+    spaceInsideParens,\
+    todos,\
+    trailingCommas,\
+    trailingSpace,\
+    wrapArguments
+
+--maxwidth 120
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections preserve
+--commas always
+--self remove
+--selfrequired debug,info,notice,warning,error,fault
+--stripunusedargs closure-only

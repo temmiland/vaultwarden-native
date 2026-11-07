@@ -1,0 +1,2997 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Public source-only CI candidate snapshot inventory; not the final release, tag, or app publication.",
+  "generatedOn": "2026-11-07",
+  "baseCommit": "de5bd0aed51dc87d95ff97d1ca3680968d8f72c3",
+  "branch": "main",
+  "snapshotIncludesGitHistory": false,
+  "snapshotDefinition": "All present tracked files plus present unignored untracked files at generation time, excluding this manifest from its own hash list.",
+  "worktreeStatusAtGeneration": {
+    "modifiedOrAddedTrackedEntries": 93,
+    "deletedTrackedEntries": 2,
+    "untrackedEntriesExcludingManifest": 9
+  },
+  "excludedPaths": [
+    ".git/",
+    "CLAUDE_HANDOFF.md",
+    "Configuration/Local.xcconfig",
+    "Packages/VaultwardenSDK/Frameworks/",
+    "sdk-internal/",
+    ".build/",
+    "DerivedData/",
+    "generated Xcode projects and user state",
+    "other Git-ignored files"
+  ],
+  "deletedFromBase": [
+    "Docs/Planning/PROJECT_AUDIT.md",
+    "Docs/ReleaseChecklist.md"
+  ],
+  "selfHashOmitted": true,
+  "includedFileCountExcludingManifest": 494,
+  "files": [
+    {
+      "path": ".github/workflows/verify-source.yml",
+      "type": "file",
+      "bytes": 2888,
+      "sha256": "235d752a4b3644b1459df8b801e47d44018fdd883d933f94588c038367b58488"
+    },
+    {
+      "path": ".gitignore",
+      "type": "file",
+      "bytes": 1048,
+      "sha256": "8b40d43450c6b6be5e83df93ed2bb76a637f58d2325a312de4c4bd82f7fec896"
+    },
+    {
+      "path": ".swiftformat",
+      "type": "file",
+      "bytes": 1387,
+      "sha256": "03422acc760ca628f51148c38793c43118492312bf8bcf3e906178763e89bf4f"
+    },
+    {
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "type": "file",
+      "bytes": 1396,
+      "sha256": "ea71fea9928a17bc0a05e51dea3b537733a565baf9375969ed7f0f499149de71"
+    },
+    {
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-1024.png",
+      "type": "file",
+      "bytes": 13883,
+      "sha256": "21732f7fb04677779d5167292f05a21ca0343c320fe98ac86456f7bea9e224cc"
+    },
+    {
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-128.png",
+      "type": "file",
+      "bytes": 859,
+      "sha256": "bfde4e039ed759484aac3e6017b8d88da273482403c3d53d314233f9b1a94020"
+    },
+    {
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-128@2x.png",
+      "type": "file",
+      "bytes": 1506,
+      "sha256": "7b149311e850148916bda948cb01f88174db9d76c7c76fa89a70141e38607e3b"
+    },
+    {
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-16.png",
+      "type": "file",
+      "bytes": 643,
+      "sha256": "1c7fa2453beb8a4d52ea15016dc17a8fd9839adf3073f3b16ced1810b090d39e"
+    },
+    {
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-16@2x.png",
+      "type": "file",
+      "bytes": 661,
+      "sha256": "209ace20d4bf1d07f4afd3f577a26afe3526e0dcf07399b5ab1f2684be4bb616"
+    },
+    {
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-256.png",
+      "type": "file",
+      "bytes": 1506,
+      "sha256": "7b149311e850148916bda948cb01f88174db9d76c7c76fa89a70141e38607e3b"
+    },
+    {
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-256@2x.png",
+      "type": "file",
+      "bytes": 4079,
+      "sha256": "a746b9387c9420a39f1ff57bfbe66593bfa525a4b3cca3bfd87ae787428154fc"
+    },
+    {
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-32.png",
+      "type": "file",
+      "bytes": 661,
+      "sha256": "209ace20d4bf1d07f4afd3f577a26afe3526e0dcf07399b5ab1f2684be4bb616"
+    },
+    {
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-32@2x.png",
+      "type": "file",
+      "bytes": 701,
+      "sha256": "25ed04f063dcf7a6ae0d200b8efce738dd401a3c76b642ae0d25d4378332e4b0"
+    },
+    {
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-512.png",
+      "type": "file",
+      "bytes": 4079,
+      "sha256": "a746b9387c9420a39f1ff57bfbe66593bfa525a4b3cca3bfd87ae787428154fc"
+    },
+    {
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-512@2x.png",
+      "type": "file",
+      "bytes": 13883,
+      "sha256": "21732f7fb04677779d5167292f05a21ca0343c320fe98ac86456f7bea9e224cc"
+    },
+    {
+      "path": "App/Resources/Assets.xcassets/Contents.json",
+      "type": "file",
+      "bytes": 63,
+      "sha256": "0fd49ba3c3585c709678e0046a821c3c60685ec7063720d30d3a3448be3a208b"
+    },
+    {
+      "path": "App/Sources/Shared/AppComposition.swift",
+      "type": "file",
+      "bytes": 7439,
+      "sha256": "88ac91d2b120efef849f8db561c23a6f7d155ea77f8cf08f83866f99ef7d7a79"
+    },
+    {
+      "path": "App/Sources/Shared/AppStartup.swift",
+      "type": "file",
+      "bytes": 2456,
+      "sha256": "322c5f69aece92567b7f6c46f6a4801f20693fb00514ef1f0ff711856326a0de"
+    },
+    {
+      "path": "App/Sources/Shared/RootView.swift",
+      "type": "file",
+      "bytes": 5848,
+      "sha256": "f9492dd1bbd4c3dec28d1085d5fadca32a8698815f50a782096692e29c647b5b"
+    },
+    {
+      "path": "App/Sources/Shared/SessionVaultProjection.swift",
+      "type": "file",
+      "bytes": 6563,
+      "sha256": "5b5022502df4fa6abef681d6255d627bf9f3c3cf1d9fa3a963c18ec4e497d41d"
+    },
+    {
+      "path": "App/Sources/Shared/VaultTimeoutTicker.swift",
+      "type": "file",
+      "bytes": 1004,
+      "sha256": "abb49f1ed3db2343a627353391fba8405ae266ab6eb31e709d1f6dc48fdaa2d1"
+    },
+    {
+      "path": "App/Sources/VaultwardenIOS/VaultwardenIOSApp.swift",
+      "type": "file",
+      "bytes": 1387,
+      "sha256": "3603ef69cb82525bfef92ae8c1943f74c42ddc5f49946737bbf2dd4012b591bf"
+    },
+    {
+      "path": "App/Sources/VaultwardenMac/GlobalHotkeyMonitor.swift",
+      "type": "file",
+      "bytes": 2571,
+      "sha256": "975a6c66748be5095b973e55c431036f4ba8375386db14e48f8e686743462198"
+    },
+    {
+      "path": "App/Sources/VaultwardenMac/LaunchAtLoginService.swift",
+      "type": "file",
+      "bytes": 1080,
+      "sha256": "effcaa8853c67205bdf800cf63f6e6198c5ead433590a5fd0e300e9b86a9b51f"
+    },
+    {
+      "path": "App/Sources/VaultwardenMac/VaultwardenMacApp.swift",
+      "type": "file",
+      "bytes": 7997,
+      "sha256": "6ce1389495b7d0ede218003e663dc073b0312ccdb6103c03ad61500d3f343390"
+    },
+    {
+      "path": "App/VaultwardenIOS-Info.plist",
+      "type": "file",
+      "bytes": 1143,
+      "sha256": "9359346a8cc64523367a611e473841b97c54fcdbe3fea39ef86412a83d9e79d7"
+    },
+    {
+      "path": "App/VaultwardenIOS.entitlements",
+      "type": "file",
+      "bytes": 521,
+      "sha256": "5ad316f4faea670639864618802f1c3777d8e0f001f3c3fda15b3a2f1afef3a4"
+    },
+    {
+      "path": "App/VaultwardenMac-Info.plist",
+      "type": "file",
+      "bytes": 1143,
+      "sha256": "9359346a8cc64523367a611e473841b97c54fcdbe3fea39ef86412a83d9e79d7"
+    },
+    {
+      "path": "App/VaultwardenMac.entitlements",
+      "type": "file",
+      "bytes": 629,
+      "sha256": "1b97fc65262b933a0f4fc09777d7c0213cd3492e11d8e53a4569e7c8d067acc9"
+    },
+    {
+      "path": "AutoFillExtension/Resources-iOS/MainInterface.storyboard",
+      "type": "file",
+      "bytes": 2065,
+      "sha256": "23f890df2b2c0c383540c106c5695b640061fc3ed59527fd8b6161f9d36d57b3"
+    },
+    {
+      "path": "AutoFillExtension/Sources/Shared/AutoFillFido2Bridge.swift",
+      "type": "file",
+      "bytes": 1593,
+      "sha256": "2dbe4c6f9490747806683388f21b6bf961609d2e9ab444b702738c128a50e401"
+    },
+    {
+      "path": "AutoFillExtension/Sources/Shared/AutoFillLog.swift",
+      "type": "file",
+      "bytes": 1459,
+      "sha256": "7ebb69f7988d770b8682c5174e6fc840d183362ac90a2fbc5ee2ab978e76e6ee"
+    },
+    {
+      "path": "AutoFillExtension/Sources/Shared/AutoFillPasskeyAssertion.swift",
+      "type": "file",
+      "bytes": 1950,
+      "sha256": "1cd0bea786e8083c309de5ef53b3852a96ec0a7d2cd0527ae6d139a8c7f96f41"
+    },
+    {
+      "path": "AutoFillExtension/Sources/Shared/AutoFillPasskeyRegistration.swift",
+      "type": "file",
+      "bytes": 7573,
+      "sha256": "86164d59a3f3ff296104b69626c1a22a59776c7a91301250cf4cc8430cc5b777"
+    },
+    {
+      "path": "AutoFillExtension/Sources/Shared/AutoFillVaultStore.swift",
+      "type": "file",
+      "bytes": 2117,
+      "sha256": "a1a7f2fcd4bf27b7a2da575fbcb873bf0ee3be04856f219a160d38844588a06c"
+    },
+    {
+      "path": "AutoFillExtension/Sources/Shared/CredentialProviderViewController.swift",
+      "type": "file",
+      "bytes": 28752,
+      "sha256": "b8ac67ca9d77cbf3b536ef1f6266ed78ba79487973a79f14c39c6446775d709b"
+    },
+    {
+      "path": "AutoFillExtension/Sources/Shared/SystemAutoFillExtensionContext.swift",
+      "type": "file",
+      "bytes": 2670,
+      "sha256": "e34513b7559838a64d36c2ff31d8bd496aab786038594a108d1bb0d9a461c5eb"
+    },
+    {
+      "path": "AutoFillExtension/VaultwardenAutoFill-Info.plist",
+      "type": "file",
+      "bytes": 1682,
+      "sha256": "3a2bb68c10d6cbdffbb578b3692ec47148b45c189c29869b35984e6fb1a614c7"
+    },
+    {
+      "path": "AutoFillExtension/VaultwardenAutoFill.entitlements",
+      "type": "file",
+      "bytes": 628,
+      "sha256": "4c9bc634d97a8b12caf5e3ccf380791115344c1b1902ba782120ee2d0fdea8ea"
+    },
+    {
+      "path": "AutoFillExtension/VaultwardenIOSAutoFill-Info.plist",
+      "type": "file",
+      "bytes": 1640,
+      "sha256": "d69b4436e0fd1eb670203647492400cf75072ef197d3488cdcde6cc77d4d8a09"
+    },
+    {
+      "path": "AutoFillExtension/VaultwardenIOSAutoFill.entitlements",
+      "type": "file",
+      "bytes": 521,
+      "sha256": "5ad316f4faea670639864618802f1c3777d8e0f001f3c3fda15b3a2f1afef3a4"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "type": "file",
+      "bytes": 7275,
+      "sha256": "582d12f09fffe790bb685ce60f0d4c1fca83c5ba98aa56db8d44d3b76e8a561c"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "type": "file",
+      "bytes": 4404,
+      "sha256": "b662cdd4279dc5b3c10a4ba44bbc3815c6e7ad90de1423ef4a9fb4e0790dd473"
+    },
+    {
+      "path": "Composition/SharedAppGroup.swift",
+      "type": "file",
+      "bytes": 2744,
+      "sha256": "84bca623c19714ef89ade6584061dadc8456aae5299852e83ca7b883ad6d7713"
+    },
+    {
+      "path": "Configuration/Base.xcconfig",
+      "type": "file",
+      "bytes": 1023,
+      "sha256": "af29e7166919a68b3cc3dded89f84d3545cadb3164d8e79e80db0492c99e7365"
+    },
+    {
+      "path": "Configuration/Debug.xcconfig",
+      "type": "file",
+      "bytes": 83,
+      "sha256": "3d848db802e27b5fd39163504d996041cba8b0649304e79fc797aa9f55372d11"
+    },
+    {
+      "path": "Configuration/Local.example.xcconfig",
+      "type": "file",
+      "bytes": 655,
+      "sha256": "5ea0cb339ae110ed968766f5207bb0750b496531e5f6d959d4870b6c56840f35"
+    },
+    {
+      "path": "Configuration/Release.xcconfig",
+      "type": "file",
+      "bytes": 63,
+      "sha256": "0a2c7952ecf0c81ae035bcbef520efd7056c1d05b54b6d6048dca7ceb0991a28"
+    },
+    {
+      "path": "Docs/ADR/001-auth-token-ownership.md",
+      "type": "file",
+      "bytes": 8901,
+      "sha256": "6b4959fdc18862f545e608d62a8c5a7e75b6af022ee8b193ed26d2b4514acad9"
+    },
+    {
+      "path": "Docs/ADR/002-token-refresh-coordination.md",
+      "type": "file",
+      "bytes": 5593,
+      "sha256": "f5565e2237315dd760ed5918037ae675309d80798abb176f7410e92c8c263ed2"
+    },
+    {
+      "path": "Docs/ADR/003-token-persistence-ports.md",
+      "type": "file",
+      "bytes": 6100,
+      "sha256": "beded710e2b38fee1ce23d1517cd945573da222002e8fffee960aa7b17b12ad6"
+    },
+    {
+      "path": "Docs/ADR/004-auth-repository-lifecycle.md",
+      "type": "file",
+      "bytes": 9536,
+      "sha256": "a33629cc8aa6f4a25703b9669677c58080e9e4b295204ec090f929b0f81e74f2"
+    },
+    {
+      "path": "Docs/ADR/005-app-model-ownership.md",
+      "type": "file",
+      "bytes": 6237,
+      "sha256": "012e437d78fca3efc21598de6f6e405ad642b5b90e6942a7d98680fc07120d49"
+    },
+    {
+      "path": "Docs/ADR/006-auth-route-lifetime.md",
+      "type": "file",
+      "bytes": 11325,
+      "sha256": "715a72bb3ef9eb3730a61648a4592b69e0c1f833f181b042654a29910b1ce2ff"
+    },
+    {
+      "path": "Docs/ADR/007-live-vault-repository.md",
+      "type": "file",
+      "bytes": 9659,
+      "sha256": "aafb2e631594276a7bbf9425debbc486493b5cc97e4017cf6652b62ef0ac4f7f"
+    },
+    {
+      "path": "Docs/ADR/008-build-configuration.md",
+      "type": "file",
+      "bytes": 3198,
+      "sha256": "c33e59ec2b1eed8ed7c20c6e0cf68370ae292e4ef7c68f2c8f324cf4b7639199"
+    },
+    {
+      "path": "Docs/ADR/009-auth-transports-and-kdf.md",
+      "type": "file",
+      "bytes": 4939,
+      "sha256": "bb42e53ca94a35cf26dbfed714e9632e126b11218fb374c08581ae2b6e936195"
+    },
+    {
+      "path": "Docs/ADR/010-auth-credential-authority.md",
+      "type": "file",
+      "bytes": 4638,
+      "sha256": "73626b0c06c86b2cdf16b53fbd5e01ac2f4c9e28408acf2d7f04d52510fdc646"
+    },
+    {
+      "path": "Docs/ADR/011-auth-command-capabilities.md",
+      "type": "file",
+      "bytes": 5255,
+      "sha256": "b609e1c97a5a8009600659f33cddcbb21606f68a4f73f7f28400e38f8a6f2f65"
+    },
+    {
+      "path": "Docs/ADR/012-returning-unlock-commands.md",
+      "type": "file",
+      "bytes": 5351,
+      "sha256": "c87fed7698849df10acffe76564f309ff48556a9fd6c89e1fdea8ef8d698d440"
+    },
+    {
+      "path": "Docs/ADR/013-auth-presentation-and-handoff.md",
+      "type": "file",
+      "bytes": 5888,
+      "sha256": "c35964d4e6541b80f0cf2db291af49f4cda49d17f3697a9c97a4ac79134d0d35"
+    },
+    {
+      "path": "Docs/ADR/014-autofill-query-and-passkey-orchestration.md",
+      "type": "file",
+      "bytes": 6429,
+      "sha256": "d6a56fc1f91ebb1e4bbed4989dd5d898ad9484a85e67a81f16767dc9e2da8bbe"
+    },
+    {
+      "path": "Docs/ADR/015-passkey-registration-write-recovery.md",
+      "type": "file",
+      "bytes": 8084,
+      "sha256": "e5b82059cd4c159529f9bcd794ae5ce3194f1ff39073cfcf45947c6519ad5604"
+    },
+    {
+      "path": "Docs/ADR/016-passkey-registration-incremental-identities.md",
+      "type": "file",
+      "bytes": 6507,
+      "sha256": "c98ed7a3f532aa504889e0410939a69a31be9ff7243ab5b6fd1bd1e297574082"
+    },
+    {
+      "path": "Docs/ADR/017-passkey-registration-reviewed-abandonment.md",
+      "type": "file",
+      "bytes": 7132,
+      "sha256": "123946ddf13df00153b6cf96d348566148799a33d49e285bf289b5b699f07843"
+    },
+    {
+      "path": "Docs/ADR/018-autofill-sdk-callback-and-registration-ports.md",
+      "type": "file",
+      "bytes": 5728,
+      "sha256": "a388a35146d051788e59dcee84d0dc28263093d368fd1638bb72c4550351b41e"
+    },
+    {
+      "path": "Docs/ADR/019-shared-credential-identity-mutation-ordering.md",
+      "type": "file",
+      "bytes": 6791,
+      "sha256": "8ec000775a33d6bdcd5f2fb75eef8b9a76a3379f4809b68687aafbc3d3f6f29e"
+    },
+    {
+      "path": "Docs/ADR/020-autofill-terminal-context-and-error-policy.md",
+      "type": "file",
+      "bytes": 6216,
+      "sha256": "0031ef37845131aa6a41d7b963ada9d4d39e9c3f179cd4f59d222ed27e923e50"
+    },
+    {
+      "path": "Docs/ADR/021-autofill-totp-expiry-boundary.md",
+      "type": "file",
+      "bytes": 2496,
+      "sha256": "98d4e78aa0d6cff865340130ee1886eaa96d555e4bcd606c7187e9f0c15b6822"
+    },
+    {
+      "path": "Docs/ADR/022-durable-auth-cleanup-intent.md",
+      "type": "file",
+      "bytes": 2799,
+      "sha256": "4a8e8a2336951c9f0fc8310ee8e6d7a2fc556ee7866cf310dbda4627e25d6eca"
+    },
+    {
+      "path": "Docs/ADR/023-attachment-file-transport.md",
+      "type": "file",
+      "bytes": 3814,
+      "sha256": "2ee87f8da79bea1191bbfc0b32b82861be3d8b63b2dbad48c2877df6389adbc7"
+    },
+    {
+      "path": "Docs/ADR/024-presentation-layout-and-composition.md",
+      "type": "file",
+      "bytes": 2576,
+      "sha256": "5d0a9b1898a452e5eea3d8b497942b066ccbddb616c7bbf51f7fe2de0502039f"
+    },
+    {
+      "path": "Docs/ADR/025-send-file-transport-and-cleanup.md",
+      "type": "file",
+      "bytes": 5223,
+      "sha256": "bfd4bca48e6fcc93654dfcb84ad7edc87dee7ca3799d22bb0fa27287c97f42b8"
+    },
+    {
+      "path": "Docs/ADR/026-unsupported-cipher-write-fence.md",
+      "type": "file",
+      "bytes": 3806,
+      "sha256": "d013822e164a5a06101dc7490f52e14876fc9803d896ac6f69077e77ae130c63"
+    },
+    {
+      "path": "Docs/ADR/027-refresh-request-recovery-and-decryption-integrity.md",
+      "type": "file",
+      "bytes": 7331,
+      "sha256": "e519a8ec4c3e29f7498c2044b606db25fb0488e88ea35fbea13a0094fe51fe43"
+    },
+    {
+      "path": "Docs/ADR/028-session-handoff-and-integrated-acceptance.md",
+      "type": "file",
+      "bytes": 5621,
+      "sha256": "42f791cab8bebb4e59b4d73e19d48cc6529d3ccf235cbb34ee935fa048d0d406"
+    },
+    {
+      "path": "Docs/Architecture.md",
+      "type": "file",
+      "bytes": 9689,
+      "sha256": "553d443a0d5610b493f6855317f4584eb67cf7bd426714ac36bcdc95534c2b39"
+    },
+    {
+      "path": "Docs/AutoFillLifecycleChecks.md",
+      "type": "file",
+      "bytes": 22466,
+      "sha256": "b054e4c2ba6ab35f99e3bfb4e0476336601626f7467fab667a6f4b75c8ab4d34"
+    },
+    {
+      "path": "Docs/ContributorConfiguration.md",
+      "type": "file",
+      "bytes": 4573,
+      "sha256": "66b9b4989f7125486343835309f8576ad39f03d744ca4a2a76a68d508da380ee"
+    },
+    {
+      "path": "Docs/FeatureStatus.md",
+      "type": "file",
+      "bytes": 1884,
+      "sha256": "e6a05d20d5c247673c94b0e3ec1a101039b4d654d4b80285de002ca7d499c753"
+    },
+    {
+      "path": "Docs/IntegratedAcceptance.md",
+      "type": "file",
+      "bytes": 17244,
+      "sha256": "93faf84bc036e60ae8818f2b60005cbf3767a7197a79540e86109e0da3cc55e8"
+    },
+    {
+      "path": "Docs/Planning/RESTRUCTURE_IMPLEMENTATION_PLAN.md",
+      "type": "file",
+      "bytes": 237258,
+      "sha256": "7ed41950fb8f72e9c4f80d4e4b7d3ab3a2c7f3a6aa914609db16527affc1fdfe"
+    },
+    {
+      "path": "Docs/RemainingReleaseWork.md",
+      "type": "file",
+      "bytes": 126683,
+      "sha256": "1d4b98d27b180737abb32dd833d5003f436a4b4321dd586175aab20220760971"
+    },
+    {
+      "path": "Docs/SDKLocalArtifactInventory.json",
+      "type": "file",
+      "bytes": 14100,
+      "sha256": "b71d8b6c15ec502a0fdf5468fccdc6747abede90353d0599d26318d29493b7c5"
+    },
+    {
+      "path": "Docs/SDKRebuildVerification.md",
+      "type": "file",
+      "bytes": 4524,
+      "sha256": "1230dc8fb569d5121ac6afb4d25360dbe9f913807b2906f7183e3a220c32d3f3"
+    },
+    {
+      "path": "Docs/ThirdParty/Bitwarden-LICENSE.txt",
+      "type": "file",
+      "bytes": 995,
+      "sha256": "38e9e1a0452419fb8d2d8d023a79ff31f3106850f90d5ff381d45e65a0f992d9"
+    },
+    {
+      "path": "Docs/ThirdParty/Bitwarden-LICENSE_GPL.txt",
+      "type": "file",
+      "bytes": 35141,
+      "sha256": "589ed823e9a84c56feb95ac58e7cf384626b9cbf4fda2a907bc36e103de1bad2"
+    },
+    {
+      "path": "Docs/ThirdParty/Bitwarden-LICENSE_SDK.txt",
+      "type": "file",
+      "bytes": 15856,
+      "sha256": "db90f749155d7f8f354cff46a7395e5f4ae1012ba6a455aa2d3213ca9b00447d"
+    },
+    {
+      "path": "Docs/ThirdParty/PublicSuffixList.md",
+      "type": "file",
+      "bytes": 1101,
+      "sha256": "afad51d862db7e240d582ca7e3681de044e07c79a0e8cb7b9fe4a78f8fa00485"
+    },
+    {
+      "path": "Docs/ThirdParty/SDKAdvisoryInventory.json",
+      "type": "file",
+      "bytes": 6414,
+      "sha256": "d3795c50ede2bf82f1ca1e5916338c61eff1330a147c4647780d91e1e22df5f5"
+    },
+    {
+      "path": "Docs/ThirdParty/SDKDependencyInventory.json",
+      "type": "file",
+      "bytes": 253182,
+      "sha256": "fb23343b3fd174dd47e02b1f6a70e7070d36d5afed411addb3adb35bd203e944"
+    },
+    {
+      "path": "Docs/ThirdParty/SourceMaterialInventory.json",
+      "type": "file",
+      "bytes": 8577,
+      "sha256": "f9f245578dc1345c137135889d0b730ed87663f8a5c484447c792622a38600a0"
+    },
+    {
+      "path": "Docs/ThreatModel.md",
+      "type": "file",
+      "bytes": 6106,
+      "sha256": "a0b7674d5eb9638c4c31789c7f662a9f437b3c59d4ed04fedcd98627949c1aa6"
+    },
+    {
+      "path": "Docs/Verification.md",
+      "type": "file",
+      "bytes": 108616,
+      "sha256": "9e2a059a88c0e701afac7089a3d42269e9eca078026f47350908eaeeb6a52dbe"
+    },
+    {
+      "path": "LICENSE",
+      "type": "file",
+      "bytes": 35553,
+      "sha256": "dc59d3c327e4a80e708c221565dee898f28db716382eb68930e0cb2cfabe328b"
+    },
+    {
+      "path": "Packages/AppModules/Package.swift",
+      "type": "file",
+      "bytes": 4129,
+      "sha256": "6d7532d8b145dd2777a0d934614e4eb347059d114ee7e0a3bc469a8c4d21c8ce"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AppFeature/AppFeatureModule.swift",
+      "type": "file",
+      "bytes": 90,
+      "sha256": "0624e1b85fb60dc2b0f8be7f6d74d9ba3701b8efaf2966222037d6012d9703aa"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AppFeature/AppModel.swift",
+      "type": "file",
+      "bytes": 13561,
+      "sha256": "dc0c5471e51568757eb7b9fe93dc59cefd3236f8aa34bc617b432988740a25b6"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AppFeature/VaultTimeoutWatchdog.swift",
+      "type": "file",
+      "bytes": 1573,
+      "sha256": "75d0cf57e7ecf8f5030a45c5a7fc0524ccfef8168e87a264136d22a237bc2714"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/AuthFeatureModule.swift",
+      "type": "file",
+      "bytes": 118,
+      "sha256": "c194f0f370a8bbc8f87a41788ea5540f2ab9c86afd2bbd5b702dc9767db02371"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/AuthFlowView.swift",
+      "type": "file",
+      "bytes": 2397,
+      "sha256": "a42d9dcb508b0c423faa77d5326b394a077d47c104ddf7edc5c217c41e66abc4"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/AuthRootView.swift",
+      "type": "file",
+      "bytes": 2515,
+      "sha256": "dcf209eb5bcc8457b57df56892c478ec1f6dadc86ae7ba40e54768c803406f35"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Coordinator/AuthCoordinator.swift",
+      "type": "file",
+      "bytes": 12226,
+      "sha256": "82bba8c0cbb785263b720578774a388d8b54a967d6065b5772d57619b98a6bfd"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Coordinator/AuthRoute.swift",
+      "type": "file",
+      "bytes": 966,
+      "sha256": "413fe5cf1cda47e4501b22d7cf07dfc4e45600e0a01efbcf8cc0fb96b7e515c4"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Models/TwoFactorProviderType.swift",
+      "type": "file",
+      "bytes": 1048,
+      "sha256": "1bad3795398e6d0ea92215813ca4cc0cef539cc4b295572f6bcc1c1dc0b86efc"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Screens/BiometryPresentation.swift",
+      "type": "file",
+      "bytes": 241,
+      "sha256": "41604ea772d5ad4dbe22dfe60ee08aad813a1fe10f1168683a684ab1aa689c37"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Screens/EnableBiometrics/EnableBiometricsModel.swift",
+      "type": "file",
+      "bytes": 4267,
+      "sha256": "70e4e1cde425d26da964f0247e0b32a53d8c2f73e44fd5e7ed0bb0da41b58aa4"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Screens/EnableBiometrics/EnableBiometricsModels.swift",
+      "type": "file",
+      "bytes": 346,
+      "sha256": "f1fce7fd289d31e7ff02a8f80eb7ad6a3b9dfa979c0b13e4ce9f44fde03902c4"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Screens/EnableBiometrics/EnableBiometricsView.swift",
+      "type": "file",
+      "bytes": 2020,
+      "sha256": "91a916243720a622af5923f2aa6ae71d7721788c448785c00ee2a8d100269f39"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Screens/Login/LoginModel.swift",
+      "type": "file",
+      "bytes": 3856,
+      "sha256": "e921170b5606568553300ff00848cb005d85f99f87afb7b4283a3f2e03428605"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Screens/Login/LoginModels.swift",
+      "type": "file",
+      "bytes": 408,
+      "sha256": "70a94f022292eabf1ee787b5ce18e119f1934d650bda661caf918a1c0491991b"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Screens/Login/LoginView.swift",
+      "type": "file",
+      "bytes": 2068,
+      "sha256": "c68d7f6485e5f86f209aa538f6b999a647fade1af5364ea219e005adfbe7e894"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Screens/ServerSetup/ServerSetupModel.swift",
+      "type": "file",
+      "bytes": 1957,
+      "sha256": "bee3760891a11e1da0c9379d9bf0350add18aefb5e4c44b8f9f1dc02246e4c02"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Screens/ServerSetup/ServerSetupModels.swift",
+      "type": "file",
+      "bytes": 286,
+      "sha256": "749412d983e9d8d59d84eb7e8dd0cfe6e58cd8d5a8fd33e90e6c8b596aeee96f"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Screens/ServerSetup/ServerSetupView.swift",
+      "type": "file",
+      "bytes": 1212,
+      "sha256": "b397e7b95f1aa981327c06143ee772626284804c07502317cacc6aa3e2f601e4"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Screens/TwoFactor/TwoFactorModel.swift",
+      "type": "file",
+      "bytes": 3952,
+      "sha256": "09feb1b84dcc3ed43e68d30a083b0552cc0517d30dac9e0afde04d2994866280"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Screens/TwoFactor/TwoFactorModels.swift",
+      "type": "file",
+      "bytes": 587,
+      "sha256": "32ed583ed90d3cebc4475bb1e431e02497179eb8c797d997a4c42fa7fe0061f1"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Screens/TwoFactor/TwoFactorView.swift",
+      "type": "file",
+      "bytes": 2542,
+      "sha256": "c84fc69a08de3e42c8c445d458c9d67fe298b9c76623119b059e441fa80ab421"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Screens/Unlock/UnlockModel.swift",
+      "type": "file",
+      "bytes": 3886,
+      "sha256": "65b4f33d6f1d32211620ca155f5269e0820f6a42d8c3c55dda95c2998da122da"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Screens/Unlock/UnlockModels.swift",
+      "type": "file",
+      "bytes": 811,
+      "sha256": "ffc3cfa8ce168bd1759ef22a82cd1b885b593cd2f6f8960ff2727d51f2deb342"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Screens/Unlock/UnlockView.swift",
+      "type": "file",
+      "bytes": 3182,
+      "sha256": "69386ae1bb6c74a52d827c0906f72322c7e52486f351a93514c598de6c917be9"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Support/AuthOperationLifetime.swift",
+      "type": "file",
+      "bytes": 1044,
+      "sha256": "25b629eace6d543f0e95b5356bb84501bb967271e625ad173b771752b1f90dae"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AuthPresentation/Support/Email+Normalization.swift",
+      "type": "file",
+      "bytes": 433,
+      "sha256": "389ada83f0e87bba178a711ebd41009e807b3edbf5c7b6036430cc19642198e4"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillContract/AutoFillCacheEnvelope.swift",
+      "type": "file",
+      "bytes": 2154,
+      "sha256": "dad8bb70789349f438bbac6952cece2b4dd771b180632d91d6bd9e90b02d2da7"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillContract/AutoFillCacheMutationAuthorizing.swift",
+      "type": "file",
+      "bytes": 604,
+      "sha256": "e70540793bbdaf644594a7a8d1977a20c8ae400a2a642364f80d3df29efbc48a"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillContract/AutoFillLoginSummary.swift",
+      "type": "file",
+      "bytes": 1589,
+      "sha256": "91845b835f75103f0d26922a774560b2f077e4b8a53f41327b21f50bee1d7614"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillContract/AutoFillProjectionEncoding.swift",
+      "type": "file",
+      "bytes": 419,
+      "sha256": "77c56086621db70d3e78a4eb208a8ba24c7dfb54ecaf32ecd2c1eb5e314b3bf5"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillContract/AutoFillStorageKeys.swift",
+      "type": "file",
+      "bytes": 678,
+      "sha256": "5816aaab886b423f47e19d292297abc5e44c684fbedf6de729e31859ec16c3f9"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillContract/AutoFillURIMatchMode.swift",
+      "type": "file",
+      "bytes": 233,
+      "sha256": "71dbf0e7671600f53cb7908f9f71ae16ee077ea78550352ad7092ac00b0611fe"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillContract/ExtensionUnlockProof.swift",
+      "type": "file",
+      "bytes": 1218,
+      "sha256": "cf7d80a5985045b813358a06e6b3da53f339c7f9b3cd099c969f8609ac3edb2d"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillContract/PasskeyRegistrationRecovery.swift",
+      "type": "file",
+      "bytes": 3235,
+      "sha256": "ec2b6d36e3f0cdedb41abc7870b736474529e8c931c3e6024af68c2cead3b3be"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillContract/SharedAccountInfo.swift",
+      "type": "file",
+      "bytes": 1565,
+      "sha256": "f605a0666ef8a2c22dbfc36ebe9527b88473653162ac120f689db6723443dcbc"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/AutoFillCredentialModels.swift",
+      "type": "file",
+      "bytes": 2795,
+      "sha256": "bf9fa493522d4f2e64bf448645d173d6d787f0e473bb641679b882cee5cbb0c9"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/AutoFillDataModule.swift",
+      "type": "file",
+      "bytes": 104,
+      "sha256": "85bd6d361b67e472626932e7b205900c85e7b98ab803c5660a14e395213f9e7a"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/AutoFillExtensionContext.swift",
+      "type": "file",
+      "bytes": 2775,
+      "sha256": "310db6f2a7ac57cda62beffa9173d7a8c3f42c07b355ad5d7d44488349df1704"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/AutoFillIdentityMutationPolicy.swift",
+      "type": "file",
+      "bytes": 777,
+      "sha256": "5364b132680b635b6aee5c3250e95403ba6c2136ddf23f6754aae9e7a444c8b0"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/AutoFillRequestCompletion.swift",
+      "type": "file",
+      "bytes": 1796,
+      "sha256": "e387ed5c9289ac957ee6996447a4b1541b6f6867164ef000e32370deede017cf"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/AutoFillRequestErrorPolicy.swift",
+      "type": "file",
+      "bytes": 5152,
+      "sha256": "6830462f7fda6b12f004a80ffcf46a699f3e10dc9d3d58722b74aae14cf0e615"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/CredentialQuery.swift",
+      "type": "file",
+      "bytes": 11504,
+      "sha256": "58fd118323da3983e3c589bc9f89d253852d04705bb88b003dd98ae43cc03582"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/ExtensionRequestLifecycle.swift",
+      "type": "file",
+      "bytes": 1186,
+      "sha256": "d3f2470143fb3966f95779715b72ab1768d7ad3d87200f51da388ae3452455a4"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/ExtensionSession.swift",
+      "type": "file",
+      "bytes": 1236,
+      "sha256": "931e0178b035dce4590bee619a5206b57815f9fb214af3f886bd25101d04cd47"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/ExtensionVaultSession.swift",
+      "type": "file",
+      "bytes": 6330,
+      "sha256": "32e17d7ab7e2e26f313fc68f069b198d1690ca36254f3d4a93cb7acfbf74159f"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/LegacyAutoFillCache.swift",
+      "type": "file",
+      "bytes": 3643,
+      "sha256": "455a1d37e4730535f6c3612f34d5f10126c8d5cf45d6e72935f79ceb88248dc6"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/LegacyAutoFillCacheStore.swift",
+      "type": "file",
+      "bytes": 7150,
+      "sha256": "35823209f78e5946914fbbc9e5b2eb44f156feb93d9393cafe9201711bee9a2f"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/PasskeyRegistrationCoordinator.swift",
+      "type": "file",
+      "bytes": 1903,
+      "sha256": "b98956d2b32cbc5b785318a961a9d12444f7eb8f7e96beeaf5bf1a7bfd57cafd"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/PasskeyRegistrationPersistence.swift",
+      "type": "file",
+      "bytes": 4608,
+      "sha256": "828cdd7434a47b712bfb0f4e0d2375eaadd0c518fc0bcc7920282f4ea4894c88"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/PasskeyRegistrationProjection.swift",
+      "type": "file",
+      "bytes": 3646,
+      "sha256": "c84a1ba4069bea7ad66c962d82e24210da132cc84bc7998d944fcf3aa2656d49"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/PasskeyRegistrationRecoveryStore.swift",
+      "type": "file",
+      "bytes": 5891,
+      "sha256": "3f22ccd9745008bd6c674c97a146c684c09982546f09977456a41961a95c2840"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/PasskeyRegistrationWriter.swift",
+      "type": "file",
+      "bytes": 6269,
+      "sha256": "65303e61206e6d0b3afb9bde4fb2a02cdde500e5fc521a4b7961cf2d4c57e39f"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/PasskeyService.swift",
+      "type": "file",
+      "bytes": 6836,
+      "sha256": "925f503162ae35c4b78579222639c0e56b1401fe764c16bfb54aa28d9471ae61"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/PublicSuffixList.swift",
+      "type": "file",
+      "bytes": 5097,
+      "sha256": "f92a14a1df1cd89e294721b85b93ad7e6ea7cbc3a5056303adca8fcd62e2067f"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/Resources/public_suffix_list.dat",
+      "type": "file",
+      "bytes": 334697,
+      "sha256": "7333192f818588d9d0044d27d67210c782acd6d87cf71f54a00dfa20a561cfc9"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillData/URIMatching.swift",
+      "type": "file",
+      "bytes": 11337,
+      "sha256": "117af03a4e5b7c599d7c78c8795352ce713e9da6ee297dbbb4177ca4115096a6"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillFeature/AutoFillFeatureModule.swift",
+      "type": "file",
+      "bytes": 140,
+      "sha256": "2c9a4f736f4a8ca64da34aae727a70ebfcc3910736547b4f45b57e065d5b783a"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillFeature/CredentialListView.swift",
+      "type": "file",
+      "bytes": 5113,
+      "sha256": "4f75ad8a5f3e5b09c7ce65f11bb1eb8290e308d8492f99a13bbd174747dd4c93"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillFeature/PasskeyRegistrationView.swift",
+      "type": "file",
+      "bytes": 5328,
+      "sha256": "3f7a0718c0e90b688c726977faf17dbdcafb9d270708632be50989ead1cb5d8e"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/AttachmentDTO.swift",
+      "type": "file",
+      "bytes": 2931,
+      "sha256": "aec0eb2a270b57e0141590c24a8747c7dc78051d6d9802d0d5ca3b7bf3388126"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/AutoFillURIMatchMode+SDK.swift",
+      "type": "file",
+      "bytes": 406,
+      "sha256": "c6bfe381096fe08f5731ad682d4687cefaf561552a96c474da42a87fcfceaf86"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/BitwardenSDKAdapterModule.swift",
+      "type": "file",
+      "bytes": 274,
+      "sha256": "a48206b41555066e3c9105d8136d11f785187cd0a6a11c8bbba537b0d52ee8a1"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/CipherDTO.swift",
+      "type": "file",
+      "bytes": 31867,
+      "sha256": "150e7c59759637d03e56dd60535a5ead6f4674f76f3c62397a444e71263043b5"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/CipherPayloadSupport.swift",
+      "type": "file",
+      "bytes": 5351,
+      "sha256": "1d6f8292216c93618467a1990a99cfa43f5c8d5cde015b0602ac5727fe806780"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/PasskeyItemFactory.swift",
+      "type": "file",
+      "bytes": 775,
+      "sha256": "f0d70b48f7b9b98bb3ae06067d336350b7fb25ee6ed87f4feefaaed8b372e313"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKAuthCredentialCryptography.swift",
+      "type": "file",
+      "bytes": 3691,
+      "sha256": "862c3d7f756907ecaa6d07f5bf1c2825d72f0f4158de5a9e015b41f8a9e495a9"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKAuthenticationService.swift",
+      "type": "file",
+      "bytes": 1212,
+      "sha256": "3c9e814d8d82beaeeef0184536b6d5de4ddd7378c6bb7105e14db1577d3132c2"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKAutoFillAccountMapper.swift",
+      "type": "file",
+      "bytes": 1319,
+      "sha256": "88730d279e1cecd33491d3f8e2c24f2d9a5bca222587adbb4bf488a25dd2c1a2"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKAutoFillCredentialView.swift",
+      "type": "file",
+      "bytes": 3128,
+      "sha256": "ce0af3c11c4a162a549ca5673449f9941ef7fcbaa947851a1867a2df129be002"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKAutoFillFidoCallbacks.swift",
+      "type": "file",
+      "bytes": 8386,
+      "sha256": "da87c90cd99ffa75a6e41b7ae18d24cc6a7ff58782dc3431036622c1e4b288c7"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKAutoFillPasskeyModels.swift",
+      "type": "file",
+      "bytes": 3253,
+      "sha256": "28f4b994eeea57c78325f1a7adb0dd3d4f6c46de07d04aaaa107f1b33fee8aa1"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKAutoFillRegistrationIdentityMapper.swift",
+      "type": "file",
+      "bytes": 1887,
+      "sha256": "33b26c084fb61e74c0833cced00464ac87ddf99e62de48542b3d2bf344bf0d75"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKAutoFillService.swift",
+      "type": "file",
+      "bytes": 7141,
+      "sha256": "8aaf154534aa454ae2a9fcd8d5669ae5df42832730ccc4500ca9f403ca55153c"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKCipherService.swift",
+      "type": "file",
+      "bytes": 4867,
+      "sha256": "71034a40b4d4e9c437dd5da3127fba4155ceb11db2cc75d9a849dd58c6236f09"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKClientFactory.swift",
+      "type": "file",
+      "bytes": 1375,
+      "sha256": "2dd9c26220d6c57eb23d2aa6f0079066674c83f86537b4d2d19391d72e5cca2b"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKDecryptionIntegrity.swift",
+      "type": "file",
+      "bytes": 5104,
+      "sha256": "69274a525c75a9120fc07c61a084cc442bb775aa39e27706cf6c717b6b3b14c9"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKKeyDerivationMapper.swift",
+      "type": "file",
+      "bytes": 2774,
+      "sha256": "68b185dee8e96b50c31e6534fe852c35cecdd6e9ccdab1a581ab4ce44b236e2c"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKManagedTokenAdapter.swift",
+      "type": "file",
+      "bytes": 676,
+      "sha256": "4f36fbdc53d6f4370c4451fe779a985279e362dda13663b3c39f3f3a85522c1a"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKPasskeyWrite.swift",
+      "type": "file",
+      "bytes": 2990,
+      "sha256": "ff4f96de854096757525273d3836914118eb5cbc7ea4aa0c3bccb9193b68bc66"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKPasswordGeneratorService.swift",
+      "type": "file",
+      "bytes": 3872,
+      "sha256": "5664e02c85481e9abc65ce2bc8f581fdae2b70039cc15bb259dd7ce83c5fc740"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKSendCryptoService.swift",
+      "type": "file",
+      "bytes": 1738,
+      "sha256": "4fa3d0345f3ad8c7a4909d34ff1f434c54b85f961d4f4ae5a1a9caba8ad0ec88"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKSendCryptography.swift",
+      "type": "file",
+      "bytes": 18152,
+      "sha256": "4412cd27633f8fd22563c9847b8912bea0576272cdbda4c8d10f183026f4aa2b"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKSessionClient.swift",
+      "type": "file",
+      "bytes": 2258,
+      "sha256": "1963e0703d532c8e8e976af8a35ba4c890f1dc87146c09a037698b01a9997b61"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKVaultAccessPolicy.swift",
+      "type": "file",
+      "bytes": 2835,
+      "sha256": "bdc1443aef1415c4f1daf9a2194bafdd85dc83f8f844e7ce46fdb2b88106b146"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKVaultCryptoService.swift",
+      "type": "file",
+      "bytes": 7144,
+      "sha256": "6250aa302c54df06b4cd157f226f64580518ac6d3c39437e4aa6747135e3cfe6"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKVaultItemDraftMapper.swift",
+      "type": "file",
+      "bytes": 9470,
+      "sha256": "4100df0115b5f6fef6d0e9849e60f81dd11b16c250b4615ff219abf6fa62de06"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKVaultPresentationMapper.swift",
+      "type": "file",
+      "bytes": 11169,
+      "sha256": "122e8bbde27c82a55452502bec5b62c7c5d5188846a318b53d8ad71144b70b25"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKVaultSessionSource.swift",
+      "type": "file",
+      "bytes": 24703,
+      "sha256": "f6c8daf491e95642f93c5513b8a76a813aae1bd712a0d9b1cc64214f8d426534"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKVaultUnlockService.swift",
+      "type": "file",
+      "bytes": 4997,
+      "sha256": "1897dd9e0c57055f631f47886654376d6ca9e73d2ce58ca5b23ae2a55f3e0f70"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKWebAuthnAssertionRequest.swift",
+      "type": "file",
+      "bytes": 1466,
+      "sha256": "a1e79542927eae266a79e0bb7e34a339377df8be418087155f57f9b2ec33a2df"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKWebAuthnCreationRequest.swift",
+      "type": "file",
+      "bytes": 2192,
+      "sha256": "03785d77be83fcd11ebb12a6b2b1e2dac0986c71cec1e1dda56bc6229f548289"
+    },
+    {
+      "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/ServerDateParsing.swift",
+      "type": "file",
+      "bytes": 2694,
+      "sha256": "d27ea33e72211382ce06471a623efa6d000b882eef0847af413b494ab131b32b"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/AccountSession+StoredAccount.swift",
+      "type": "file",
+      "bytes": 326,
+      "sha256": "e4f0a66401fb8edb5ec60d45194b367094548e58836a372e15d5f30436c2db5f"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/AppAuthTokenProvider.swift",
+      "type": "file",
+      "bytes": 5484,
+      "sha256": "f5343752c72409bff5a7bd458e461adcca0c2fadbe76edf81af8a0eac3eda131"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/AppTokenPersistence.swift",
+      "type": "file",
+      "bytes": 6479,
+      "sha256": "93453a34afe14485522c058106c94b2346d9693d4408476797cfb35d07818230"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/AuthCleanupIntent.swift",
+      "type": "file",
+      "bytes": 1154,
+      "sha256": "9cda07f6b9cfa177cf919c12e39a34a4ca011b7bbea5fcd1b4449750ee1e095d"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/AuthCredentialStore+TokenProvider.swift",
+      "type": "file",
+      "bytes": 1659,
+      "sha256": "ca47bc9b4ca9f153f0a5757d9326a17bdd6d68db251443558e1dc62593e59fbb"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/AuthCredentialStore.swift",
+      "type": "file",
+      "bytes": 30212,
+      "sha256": "65a6c5e8141cd293f82039243c77ca69276d2d5a9312a777b4ec95d9d22e9f71"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/AuthDeviceInfo.swift",
+      "type": "file",
+      "bytes": 1157,
+      "sha256": "b64ff4eba9c7ecfdb00fff4d0e649b11378423b41f23bd4c5025ac193e408e66"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/AuthKeyDerivationMapping.swift",
+      "type": "file",
+      "bytes": 3207,
+      "sha256": "747b9677ce996a3a45c7c2092928ab89e95cfdc4215bfde3deca4a6f073b8f35"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/AuthPersistenceModels.swift",
+      "type": "file",
+      "bytes": 5551,
+      "sha256": "a9b21c589b6e3a5389eea33f8c3b66693f8837608915735197ddb572f920d940"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/AuthenticatedSession.swift",
+      "type": "file",
+      "bytes": 3867,
+      "sha256": "cfd7c93629e1d7e29048b255ea7f268c94c1ca71b34ea34d1eec0097159cb8a9"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/AutoFillProjectionWriter.swift",
+      "type": "file",
+      "bytes": 8508,
+      "sha256": "34ad145b71b116ba14f904ee8e44a56f21ee9ee8ae16f2f99fc5557281561127"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/CredentialIdentityPublisher.swift",
+      "type": "file",
+      "bytes": 7284,
+      "sha256": "5a5a13afce08a0c4fdbea0d2dcfec01257096b8bd80caea4741db461f6788b0e"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/DataModule.swift",
+      "type": "file",
+      "bytes": 367,
+      "sha256": "10f9d6f82eed73c0a0405960911210cbb647a2d090bbe451ad5327ec0e85f154"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/DefaultAuthFlowService.swift",
+      "type": "file",
+      "bytes": 5298,
+      "sha256": "6260ede94db322ebe0ebf710e95c07082003099a46977215c541b1fe007b5c42"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/DefaultAuthRepository.swift",
+      "type": "file",
+      "bytes": 5287,
+      "sha256": "3599300de441c1a0133940e04ebecd9084044e63601f57072fd8512b43c38aa3"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/DefaultSendRepository.swift",
+      "type": "file",
+      "bytes": 16962,
+      "sha256": "0f8ed75316996dc178384b3c6cbe1587bad27ab831de7a4b62b987dec0fee500"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/DefaultSettingsRepository.swift",
+      "type": "file",
+      "bytes": 3438,
+      "sha256": "f7ac38ae5d2f3095f11ba2d95c63a9e165c4313a42f03047195af00fc445d136"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/DefaultVaultRepository.swift",
+      "type": "file",
+      "bytes": 17145,
+      "sha256": "a3dbc9b6fee418c16f8abadae517f00c4ec5c4081bf390279a24f5f9654aff8b"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/DefaultVaultTimeoutSettingsRepository.swift",
+      "type": "file",
+      "bytes": 1006,
+      "sha256": "264be649bb65d060907781f417772ce987b4a0f9250cace04ba112d3df33eb9c"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/ExtensionTokenPersistence.swift",
+      "type": "file",
+      "bytes": 3326,
+      "sha256": "178af9950e742a8fc08d5aa87c90900dd1391b7ab1b563c21ccd64787b41bed4"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/IdentityTokenModels.swift",
+      "type": "file",
+      "bytes": 4937,
+      "sha256": "4dfd5349f2b41ee1f91f78893851e212bec26f71da5a8ef840c58545a4e7e2d5"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/IdentityTokenService.swift",
+      "type": "file",
+      "bytes": 3780,
+      "sha256": "341559f028f6dcb4b512b33a7b5d52a162fc4555c9321684cce8c51a69c93fc5"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/JWTPayload.swift",
+      "type": "file",
+      "bytes": 1390,
+      "sha256": "b499d2f16dc77cd6662fd57777f8f3b26e6ca7718f913dd5777dc93d8db4301d"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/KeychainOptionalRead.swift",
+      "type": "file",
+      "bytes": 482,
+      "sha256": "31a92a3ce7575769baeb9838b9ab42eb876c6720c0d5396282ec5ac4b752711e"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/OAuthClientConfiguration.swift",
+      "type": "file",
+      "bytes": 1165,
+      "sha256": "17d10f08f4a1d64152d9966f4abbc428317fc4d0d702f8f7e0d29f2412086b34"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/PasskeyRegistrationRecoveryReconciler.swift",
+      "type": "file",
+      "bytes": 4625,
+      "sha256": "deeb7de9092b08e00a16344762b8487b028e0d69fa2dd16b89dfe511db001fff"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/PasswordSecondFactorChallenge.swift",
+      "type": "file",
+      "bytes": 3710,
+      "sha256": "01731b78810492478701184ea6c54d9bda40ab61ab2c76a5685043f0373b6df0"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/PasswordSignInService.swift",
+      "type": "file",
+      "bytes": 7208,
+      "sha256": "b911f9c5c2a4ee90abf1c6a0a035aae59156f341a40af0610a7c9cdcdbc51153"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/PendingAuthSession.swift",
+      "type": "file",
+      "bytes": 5053,
+      "sha256": "7b4b116f6cddc5afc1dc012d50d53d7d871faeed7da05320a0c598920e20ca06"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/PreloginModels.swift",
+      "type": "file",
+      "bytes": 1098,
+      "sha256": "8f99f221e041ed93980498fbfe39f422b8681133f19a1b46570ac8b08470a1a8"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/PreloginService.swift",
+      "type": "file",
+      "bytes": 1494,
+      "sha256": "f0a1b6edaf0b5935a1b6945b2c40cc0710f424b92369a32ba506cde01936f835"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/PrivateAuthSessionStore.swift",
+      "type": "file",
+      "bytes": 2793,
+      "sha256": "3628ac64bf109a45d80297c0926a9ed95855074b8c8fafae587f51b30061c8ff"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/ReturningUnlockService.swift",
+      "type": "file",
+      "bytes": 15156,
+      "sha256": "4e132211e35af0b6e85fda6081974e979bb923c35e95a1b56add84e6e9a95586"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/SDKVaultSourceAdapter.swift",
+      "type": "file",
+      "bytes": 2392,
+      "sha256": "3fcc879ea28db9f9ec75daba9773c6e0c8cf01b154ba1e0998869291462ef9a8"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/SessionHTTPClient.swift",
+      "type": "file",
+      "bytes": 1065,
+      "sha256": "60c5620e767f5c0a2c8c01b2341665c42bfa68090b0832513eb49d868db636d1"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/SessionPasteboardClient.swift",
+      "type": "file",
+      "bytes": 651,
+      "sha256": "fbacc816ba645ecd2368c2267e9c23927a76a41f8bf7c93a9623e69a2aee9040"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/SessionPinUnlockSettings.swift",
+      "type": "file",
+      "bytes": 2250,
+      "sha256": "5f3a2191f272761b0fb0f1150151ae4becd2c259202bb60009753f6a284c0ba0"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/SessionRuntime.swift",
+      "type": "file",
+      "bytes": 6299,
+      "sha256": "a7df8db0cf306b0464806f0c02b085843a97903bb4bd7b8fd5c578221e1e5a79"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/SharedAutoFillUnlock.swift",
+      "type": "file",
+      "bytes": 13592,
+      "sha256": "54d4662eddd3dadbd9f9dd3b4e46af16da93f0a0895ec6f5c593424336ad0136"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/SharedTokenPersistencePort.swift",
+      "type": "file",
+      "bytes": 1850,
+      "sha256": "8ca85eac489b42b2314b3d5af97530717ed75d5ea95cd0f61283598a770df1c8"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/SharedTokenStore.swift",
+      "type": "file",
+      "bytes": 19984,
+      "sha256": "662a353924fca15fd7516d40352038c2b8877bb8721aa59611e749e5ef51a42b"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/TokenCoordinator.swift",
+      "type": "file",
+      "bytes": 11661,
+      "sha256": "5f75938a5a1b438036f99ef02c91cc709460f9d44d4090a22e8f23e6e352dff3"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/TokenRefreshIntent.swift",
+      "type": "file",
+      "bytes": 1725,
+      "sha256": "3a345a5a54e8ae7c0b8eb5332fd6464ea257ab42e16751432f5e6f862784c429"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/TokenRefreshService.swift",
+      "type": "file",
+      "bytes": 5214,
+      "sha256": "b88368e89c9f2774881578933b57ae648538c79142be2130f8670567665a8ba8"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Data/VaultSessionSource.swift",
+      "type": "file",
+      "bytes": 2028,
+      "sha256": "904a8f9400eb197fc5c2befd858607e80f8d43fd64e1676f662f6ab8bd86bf43"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Domain/AuthCredentialPorts.swift",
+      "type": "file",
+      "bytes": 1264,
+      "sha256": "29e22a940ef7e464ea352e59c3d2698a7939a0be8f39419e4627a4e033b082cc"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Domain/AuthFlowCommands.swift",
+      "type": "file",
+      "bytes": 1120,
+      "sha256": "c7e05f56ce2db93f92b0769fefd37b6a4550f917fcc633f8b560b4e88fd2a5b7"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Domain/CredentialIdentityMutationCoordinating.swift",
+      "type": "file",
+      "bytes": 456,
+      "sha256": "138e549eab08eeb6e9d08a75ff3f8c5aab43033db6fac1b02c0152d9c34a212c"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Domain/Domain.swift",
+      "type": "file",
+      "bytes": 17955,
+      "sha256": "4807ff71d32e536680fd9f7510994943ac041d0612f162d0e02bce5ecc6aedc6"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Domain/PasskeyRegistrationRecoveryReview.swift",
+      "type": "file",
+      "bytes": 1382,
+      "sha256": "c79a0bd20ce64e58ffc954d672730198629faf3282f9a74f251390e538fdef1b"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Domain/PasskeyUserVerifying.swift",
+      "type": "file",
+      "bytes": 450,
+      "sha256": "4c64f78b9b511a187fe5472af7284f0b9f980af280ee0d246a2ee8f2efa2f0d9"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Domain/PasswordGeneration.swift",
+      "type": "file",
+      "bytes": 2203,
+      "sha256": "08532d34b87bf32973c3249e32df9e2a93a0ae9b03a36f301ddd9e9d9c39d3d8"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Domain/PasswordSignInCommands.swift",
+      "type": "file",
+      "bytes": 1858,
+      "sha256": "8007f836c19709cea01ee71ebde7b3c7d88148cbc58b8088f347a9099f4bfdc8"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Domain/ReturningUnlockCommands.swift",
+      "type": "file",
+      "bytes": 6445,
+      "sha256": "5665324971a69749b1204638971a7af83d8f986ab3cade4535d508add3ef730a"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Domain/SendDomain.swift",
+      "type": "file",
+      "bytes": 8644,
+      "sha256": "0b282e98e0ad3f308cea1ec583655ae4468636964f3c0fd16388b19e99ca43ec"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Domain/ServerURLPolicy.swift",
+      "type": "file",
+      "bytes": 836,
+      "sha256": "03343b495238385843348cb60e59e31caa1b7f8ef99724dc9d18c7ecbf572ee4"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Domain/SessionAuthorizationError.swift",
+      "type": "file",
+      "bytes": 750,
+      "sha256": "c4d28a345a4ed9ef903aa98f43e32312f624f486add60a0712795f357ad3af84"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Domain/SessionResource.swift",
+      "type": "file",
+      "bytes": 353,
+      "sha256": "bb3121751001400ddb62768537ac8c50890b9ed317bb60535f77ecd96bce077d"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Domain/TimeBasedOneTimeCode.swift",
+      "type": "file",
+      "bytes": 1320,
+      "sha256": "6fbfd33f45ea775effedc28a04f6796dac3b5cc30baa17b8532e57af3008b863"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Domain/VaultItemDetail.swift",
+      "type": "file",
+      "bytes": 8044,
+      "sha256": "2c78fbc9feb325ec0408db0df13bda842f2973042bb76acf75a0e6c5acf475f4"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Domain/VaultItemDraft.swift",
+      "type": "file",
+      "bytes": 2434,
+      "sha256": "97aa6511a53e2591a88fbf2a03648f09adb27b9a0fa9ca5b0c652f4472731b77"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Domain/VaultLoadWarning.swift",
+      "type": "file",
+      "bytes": 293,
+      "sha256": "8d27486c98f38d6f61457fdd2b4869239f0973bdb24fa78cac66f5d2e73dc1dc"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Domain/VaultRepositoryOperations.swift",
+      "type": "file",
+      "bytes": 2086,
+      "sha256": "0b5cede5f697fa7757e96fdfec832ca79bac1bf67c69711bcd5da734b027b9d1"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Domain/VaultTimeoutSettings.swift",
+      "type": "file",
+      "bytes": 2085,
+      "sha256": "bba57b247f7d474b7bee9d9fabd63dac118f6833f63b4af61d63fbb2aacbd330"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Networking/FlexibleKeyDecoding.swift",
+      "type": "file",
+      "bytes": 1685,
+      "sha256": "1e0c9c1d96296c3d1c25b47401992b048c2b1219b00bc73cea43936f2270225a"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Networking/HTTPRetryAfter.swift",
+      "type": "file",
+      "bytes": 1013,
+      "sha256": "0d5a0289580d197dab93e8bde5e8c38c63a572ed456e845844103d9ca2b78e03"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Networking/HTTPTypes.swift",
+      "type": "file",
+      "bytes": 3455,
+      "sha256": "cd3679e8067a619ca4c43cbf666e91dd2d8d10b29218b1a60adb8a29e2cdcb77"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Networking/MultipartFileBody.swift",
+      "type": "file",
+      "bytes": 5755,
+      "sha256": "1acd48c835aa5a0ff08a2fdc9f0fced7523bb30648262e0e1617e0578ae4ed05"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Networking/NetworkingModule.swift",
+      "type": "file",
+      "bytes": 94,
+      "sha256": "5184956d6d34b9ef1690face6363ca60ab0dbc16982118426a590fa733900c71"
+    },
+    {
+      "path": "Packages/AppModules/Sources/Networking/URLSessionHTTPClient.swift",
+      "type": "file",
+      "bytes": 17925,
+      "sha256": "97a486e9d626f573a5908ee783b0c6b53fc3df412ffd36964736a9f085dc4438"
+    },
+    {
+      "path": "Packages/AppModules/Sources/PlatformServices/PlatformServicesModule.swift",
+      "type": "file",
+      "bytes": 102,
+      "sha256": "593e102a984f0687336e4883b9841b07d161c9f3eda7a2d00c17ab23f09e20e5"
+    },
+    {
+      "path": "Packages/AppModules/Sources/PlatformServices/SecurePasteboardClient.swift",
+      "type": "file",
+      "bytes": 4880,
+      "sha256": "3bc4b7cfc5c6bbf7067ad938a0edd44f5204a6c8ed76bd191a07b7e0f83b3c0b"
+    },
+    {
+      "path": "Packages/AppModules/Sources/PlatformServices/SystemBiometricClient.swift",
+      "type": "file",
+      "bytes": 4928,
+      "sha256": "7d305faef9ed9d595e841c89f1592947bdc5ea5b87af1740fea8ebf7f53df8f4"
+    },
+    {
+      "path": "Packages/AppModules/Sources/PlatformServices/SystemCredentialIdentityStore.swift",
+      "type": "file",
+      "bytes": 5676,
+      "sha256": "917ca1c122a399e2aa4146f14467efa73cf4cf8634e5cf150fd2d5a699e365b8"
+    },
+    {
+      "path": "Packages/AppModules/Sources/PlatformServices/SystemDeviceNameClient.swift",
+      "type": "file",
+      "bytes": 455,
+      "sha256": "ca4272005809de6ddd83b38691f5787783c306ac301807ca09529e3e0d439b55"
+    },
+    {
+      "path": "Packages/AppModules/Sources/PlatformServices/SystemFileImportClient.swift",
+      "type": "file",
+      "bytes": 4552,
+      "sha256": "b9420c4b78a071b6045482829317b1c27cdec822d91cb970192f8d1ae3a461aa"
+    },
+    {
+      "path": "Packages/AppModules/Sources/PlatformServices/SystemOpenURLClient.swift",
+      "type": "file",
+      "bytes": 761,
+      "sha256": "f66d0427babd25e2b4118ca24bef55b55beee792e3dc8482428d91dc96f3d317"
+    },
+    {
+      "path": "Packages/AppModules/Sources/PlatformServices/SystemPasskeyUserVerifier.swift",
+      "type": "file",
+      "bytes": 1817,
+      "sha256": "b98bc5d834f4365e3c5991982dbf79556cb1f144bed43cfd69f5542e8e60bc13"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SecurityStorage/AppStorageConfiguration.swift",
+      "type": "file",
+      "bytes": 3938,
+      "sha256": "7eefadc4d30bba49e533a446ebdbd2184a760e223ab69dc152f864df26f63bf4"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SecurityStorage/AsyncCrossProcessFileLock.swift",
+      "type": "file",
+      "bytes": 3347,
+      "sha256": "ed1d3697db78adc34ce976171907a97d04100d0ba402aa7db88fe7a0c729a4d2"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SecurityStorage/CrossProcessFileLock.swift",
+      "type": "file",
+      "bytes": 2299,
+      "sha256": "03c328590adb220c4aaa0fcca2f60dc5b16e091bbde9feb621da05e9ab592f17"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SecurityStorage/KeychainStore.swift",
+      "type": "file",
+      "bytes": 8493,
+      "sha256": "748a32e50107eacd884aa56508ee45b61313bacfe174d0c484fed6f53a50347b"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SecurityStorage/SecurityStorageModule.swift",
+      "type": "file",
+      "bytes": 104,
+      "sha256": "632f3cd4b7441ad9e5f3bacb0781cc56652b150fc2b6335e78d7197886809976"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SecurityStorage/SensitiveTemporaryFileStore.swift",
+      "type": "file",
+      "bytes": 8820,
+      "sha256": "ce438a4be1efae340249b9a164ea517e59d2397b78d3e6ed004778e3e39cb508"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SecurityStorage/SystemBootSession.swift",
+      "type": "file",
+      "bytes": 761,
+      "sha256": "03c36748fa9c3afe27d282883ade1b1d3769307cf736f08b5336786805427645"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SendPresentation/Models/SendModel.swift",
+      "type": "file",
+      "bytes": 16546,
+      "sha256": "c19038ed542441ae4ff796e2b1df970bdfb8a86df124316f93133696096d21af"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SendPresentation/Models/SendState.swift",
+      "type": "file",
+      "bytes": 609,
+      "sha256": "99bf30f70122db97572f7e072fde125984523abe9e52e5609a1bfb5b97896437"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SendPresentation/Views/SendDetailPane.swift",
+      "type": "file",
+      "bytes": 3233,
+      "sha256": "b5888d8f450a771045ecfb7dd0022a69794948bc1d795f105d08e61e9b9ae909"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SendPresentation/Views/SendEditSheet.swift",
+      "type": "file",
+      "bytes": 4694,
+      "sha256": "7948372678580fce5520115733cb4fa54a6b616cfc9398cd0cd94ab6739ad3c4"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SendPresentation/Views/SendListPane.swift",
+      "type": "file",
+      "bytes": 2917,
+      "sha256": "3fc20b5958b1e33262f1ed247c8557fb9bf7b4d5087641abe9765c4288097200"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SendPresentation/Views/SendRootView.swift",
+      "type": "file",
+      "bytes": 976,
+      "sha256": "e0188b626f43a43a501af9efe0235cd6775eb4dece7dfef307854d3284417588"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SendPresentation/Views/SendSplitView.swift",
+      "type": "file",
+      "bytes": 2819,
+      "sha256": "b6fa850d554223b14d414e0b567687dc26dab9020f79cbfb6ce0524899ea084b"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SettingsPresentation/SettingsModel.swift",
+      "type": "file",
+      "bytes": 11142,
+      "sha256": "8b0bb22bc8b61c318f99e2fd8edfcf1990ee974143e44a2902ff4eb6fef8379f"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SettingsPresentation/SettingsRootView.swift",
+      "type": "file",
+      "bytes": 8434,
+      "sha256": "e1d676f1f01033ef5284437c84f04abe7e34716bca13fa217b0d8dde31b42283"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SettingsPresentation/SettingsState.swift",
+      "type": "file",
+      "bytes": 1271,
+      "sha256": "8ceda3f40c0216f45d836b86e2115f5656c065a704afd96d13fa7acb0c898a0c"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SharedUI/PlatformSizing.swift",
+      "type": "file",
+      "bytes": 353,
+      "sha256": "5bb8b4b7821ca792cbf23d90bb532965eb363654be581c8d0534d96616d0cbf1"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SharedUI/SharedUIModule.swift",
+      "type": "file",
+      "bytes": 87,
+      "sha256": "5e1d299e7f040ccec2850d66b37f40a805acf0e6c35e0bdbd407f7eb121137ad"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SharedUI/VaultEditRestrictionDisplay.swift",
+      "type": "file",
+      "bytes": 1066,
+      "sha256": "7ebeb304ca804264b3d854c4a2cb614d01541241b0657ddbfad97c4928adb183"
+    },
+    {
+      "path": "Packages/AppModules/Sources/SharedUI/VaultItemKindDisplay.swift",
+      "type": "file",
+      "bytes": 796,
+      "sha256": "dbc42c181a2c4a7c172c95507679265504dda8258d2a1a57e56515cc18772c51"
+    },
+    {
+      "path": "Packages/AppModules/Sources/VaultPresentation/GeneratorSheetView.swift",
+      "type": "file",
+      "bytes": 2883,
+      "sha256": "3a995464302501b6b19ff27e460f5dfdc9b355cdba765148885cf67f771fe6d1"
+    },
+    {
+      "path": "Packages/AppModules/Sources/VaultPresentation/ItemDetailView.swift",
+      "type": "file",
+      "bytes": 14101,
+      "sha256": "34eabc336d2fbcf451fd96b28070ded062e96f53bd09e4820184acf8f72e07ff"
+    },
+    {
+      "path": "Packages/AppModules/Sources/VaultPresentation/ItemEditSheet.swift",
+      "type": "file",
+      "bytes": 4576,
+      "sha256": "d7d0d74fe1832f0a4d8b6e72075cf5792cd097e2caad8bbf2f1fb732517389d5"
+    },
+    {
+      "path": "Packages/AppModules/Sources/VaultPresentation/ItemListView.swift",
+      "type": "file",
+      "bytes": 7421,
+      "sha256": "739b90c3e2784e0dc92d175aecf8e43b8b376ce0f10f675778fc21884d777f69"
+    },
+    {
+      "path": "Packages/AppModules/Sources/VaultPresentation/PasskeyRecoveryReviewView.swift",
+      "type": "file",
+      "bytes": 2439,
+      "sha256": "b79affafe3f4b6be85257aa4e31eaae1bb9bae7c069fbfbe7aa6f37fba7a097b"
+    },
+    {
+      "path": "Packages/AppModules/Sources/VaultPresentation/SidebarView.swift",
+      "type": "file",
+      "bytes": 2860,
+      "sha256": "85205dd9e70ed5249e386a7df7f3663fbf4e23b5383196dd86e51d8571c8e33b"
+    },
+    {
+      "path": "Packages/AppModules/Sources/VaultPresentation/Support/ClipboardEnvironment.swift",
+      "type": "file",
+      "bytes": 340,
+      "sha256": "10220cc06241e9aa092c2dd49fd62b44a70016366d1abfa0aecee93319121c61"
+    },
+    {
+      "path": "Packages/AppModules/Sources/VaultPresentation/VaultAction.swift",
+      "type": "file",
+      "bytes": 654,
+      "sha256": "4a9b4836f82d6afaa000d0e5d9d955b3ed69b986f0f46cef68051af2f0fac43c"
+    },
+    {
+      "path": "Packages/AppModules/Sources/VaultPresentation/VaultEffect.swift",
+      "type": "file",
+      "bytes": 465,
+      "sha256": "d1af709fa9007e5254572813ccc6410376d8b7247aa9a2ac2e2a08844ae53544"
+    },
+    {
+      "path": "Packages/AppModules/Sources/VaultPresentation/VaultFilter.swift",
+      "type": "file",
+      "bytes": 1097,
+      "sha256": "1d858c5d244ff718674365a7bd9b95b930c81e53ab2cbc932fb7d558ba59fb30"
+    },
+    {
+      "path": "Packages/AppModules/Sources/VaultPresentation/VaultModel.swift",
+      "type": "file",
+      "bytes": 19555,
+      "sha256": "a7717dc27f1d64db71f001b4e153c50b6d70c15ae925e06044f7ea38c83b021a"
+    },
+    {
+      "path": "Packages/AppModules/Sources/VaultPresentation/VaultRootView.swift",
+      "type": "file",
+      "bytes": 1419,
+      "sha256": "18739c2dd9e3611acceb393c3362a46da36d7bc99e50c0bb823ffb9720efe9c9"
+    },
+    {
+      "path": "Packages/AppModules/Sources/VaultPresentation/VaultSplitView.swift",
+      "type": "file",
+      "bytes": 8969,
+      "sha256": "eb2a15ddfe9e4c96573de013dcf2080f9a0f75b40304cfe933e40469ba62f181"
+    },
+    {
+      "path": "Packages/AppModules/Sources/VaultPresentation/VaultState.swift",
+      "type": "file",
+      "bytes": 5348,
+      "sha256": "51eb657a9e85cf3b1f7b03e518772c1b30e3a523e64ec872786421ba5c33a8b9"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AppAuthTokenProviderTests.swift",
+      "type": "file",
+      "bytes": 16121,
+      "sha256": "b05f0d6b5a562ab72067d96a78cf1eab141190512c6e082b771a0bf382078f03"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AppModelTests.swift",
+      "type": "file",
+      "bytes": 14619,
+      "sha256": "a2140f1c5f6c101f73fe721d177cfb0344c18496410cd24cfcfa66d2f8d6aa0e"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AppModulesArchitectureTests.swift",
+      "type": "file",
+      "bytes": 2057,
+      "sha256": "f1da6b7e802850993d7cf6e3971f58de1d8af4b3d28b8ac99a293b029724fdae"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AppStorageConfigurationTests.swift",
+      "type": "file",
+      "bytes": 7090,
+      "sha256": "15f3385e3d0a02cde419f19f37518562b299175b94fdafbf6a03986aaf86bb39"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AsyncCrossProcessFileLockTests.swift",
+      "type": "file",
+      "bytes": 7284,
+      "sha256": "c54f70ea0ec5c347fb2bd4d58c2caf6731ad9535e94d4920347910bfad736094"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AuthCleanupRecoveryTests.swift",
+      "type": "file",
+      "bytes": 9171,
+      "sha256": "ee0a9b22ae019551451a2bef3c676264dba87b15e5b68ce9a6cfec44d13b3a61"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AuthCredentialBootstrapTests.swift",
+      "type": "file",
+      "bytes": 3561,
+      "sha256": "93bff03d6bbd0f9acf6f317d60c9dc89e994089b867facbc1cdbb22c489881b7"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AuthCredentialStoreTests.swift",
+      "type": "file",
+      "bytes": 12655,
+      "sha256": "cdfceb7d0697f63e6046044a36984998b502b1f381dd59e2ab198dad8cefb62b"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AuthFlowServiceTests.swift",
+      "type": "file",
+      "bytes": 12732,
+      "sha256": "a9e9ce536c0fdd0c49ababe493144b8d320e61a8e37d7613e4341921bf0c7ae1"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AuthKeyDerivationMappingTests.swift",
+      "type": "file",
+      "bytes": 5848,
+      "sha256": "d78956157389e1afd4ddb06602fe59a22d331d2db5043ef842d644c1725bbed2"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AuthPersistence+Fixture.swift",
+      "type": "file",
+      "bytes": 3120,
+      "sha256": "97e81f65add9c7b2ff22cd2e8d27b63f474bcbd0d99637d49000f7d89b5ca97d"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AuthPersistenceBoundaryTests.swift",
+      "type": "file",
+      "bytes": 20837,
+      "sha256": "b507ff73ea7604e4bdb639b4ea94ac18d094ea1be518dcdd6c6294edc7a772b7"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AuthPersistenceTestSupport.swift",
+      "type": "file",
+      "bytes": 4774,
+      "sha256": "a24f9afad1bab39c03568f3524918d67d2b4f492a3cefa0e2c589bf79ac6e23e"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AuthTransportBoundaryTests.swift",
+      "type": "file",
+      "bytes": 5294,
+      "sha256": "a5c279fce8a5058555d1263b3398207935b9f809b81b3db62b9d587727b07536"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AuthTransportHTTPStub.swift",
+      "type": "file",
+      "bytes": 1879,
+      "sha256": "f329b616e384573627709a2f9a13af2bd0d9ef66e16d4ae89ab990ea4b9176fd"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AuthenticatedSessionTests.swift",
+      "type": "file",
+      "bytes": 5435,
+      "sha256": "2792dcc44392c579d4fa3a110fc69dfced30e36a944f2f3fadbfdfa3b25c0b75"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AutoFillCacheCommitReceiptTests.swift",
+      "type": "file",
+      "bytes": 3158,
+      "sha256": "c89f093ac483d3e89e9e277d85ae0bab030007e402797b86974e06db886b87c8"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AutoFillContextQueryIntegrationTests.swift",
+      "type": "file",
+      "bytes": 4751,
+      "sha256": "2af9e94734131ff41442aa513d595e3cd6f615c35eb6214892934a1e79dfd050"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AutoFillIdentityMutationPolicyTests.swift",
+      "type": "file",
+      "bytes": 2550,
+      "sha256": "562a24d865c96e044a851ce138a9e298b4d28327081050077c323f82ace56abd"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AutoFillProjectionWriterTests.swift",
+      "type": "file",
+      "bytes": 9026,
+      "sha256": "ef041abc8ad0b45e7587c886120e007442834f354d672c59cccb3552d6e11207"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AutoFillQueryTestSupport.swift",
+      "type": "file",
+      "bytes": 6513,
+      "sha256": "9d5d225cabb0e78f222f4a57dfa3d1a99435376cdeb505f5388c54cbdb6513dc"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AutoFillRequestCompletionTests.swift",
+      "type": "file",
+      "bytes": 12991,
+      "sha256": "44af5a059281d15915392fdc79274f4b4f2cb6629a1c3aae1b16589ec7c5751e"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AutoFillRequestErrorPolicyTests.swift",
+      "type": "file",
+      "bytes": 5428,
+      "sha256": "aa8ad2809207cd1b8e502f063d28bfef2391846965de8af2c4591d73576c74fc"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AutoFillTOTPExpiryTests.swift",
+      "type": "file",
+      "bytes": 5647,
+      "sha256": "69920c14c053c2ac29d935dc1c0e34239f9e1d1e91dc3cd640c842ba6b1d74cf"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/CacheGoldenCompatibilityTests.swift",
+      "type": "file",
+      "bytes": 3289,
+      "sha256": "66a45a4f8dcc2fb82f4adbc13bc5b2bb2c6b25c9f956b6f8e1a7207eb421e69c"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/CipherFido2Tests.swift",
+      "type": "file",
+      "bytes": 9291,
+      "sha256": "eeb1498cf589a211b2c1e84b395189220d450dbf94d30c594fc5d04a9823ebf0"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/CipherPayloadSafetyTests.swift",
+      "type": "file",
+      "bytes": 8648,
+      "sha256": "1ecfbe8affae2699cf2a039dc828b7a24b3c2b1e068813ae40ade7ef17ae6f6b"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/CipherWireContractTests.swift",
+      "type": "file",
+      "bytes": 11557,
+      "sha256": "83f19b9bd832d7ecde56866249c9379fbdfb0e87e924ddd57f7d6244a964053c"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/ClipboardAutoClearServiceTests.swift",
+      "type": "file",
+      "bytes": 3951,
+      "sha256": "a1bb8025455edc28f6ff82c1111d9d3d0d852f77413a9ed64f3d8cd060ab3923"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/CoordinatedCredentialIdentityTests.swift",
+      "type": "file",
+      "bytes": 8228,
+      "sha256": "b778d0c1093d4f995c98e879c7c9ce9c2453bf717f63725f9d0bece5d79f5772"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/CredentialIdentityPublicationGuardTests.swift",
+      "type": "file",
+      "bytes": 5039,
+      "sha256": "45ba9cedef3974b56cd1fc145d63c59eb3fcc7df8f5545280e08547d66c5130e"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/CredentialIdentityPublisherTests.swift",
+      "type": "file",
+      "bytes": 8681,
+      "sha256": "72d4a90d59c6d8a08034f52c8c06e2fc1f5919e26eabac61e358cd34347dc261"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/CredentialQueryTests.swift",
+      "type": "file",
+      "bytes": 8232,
+      "sha256": "4dea4eff827059de22b5eae1b516f4fc3ea61337f43aed4a925f377c18d81b83"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/CrossProcessFileLockTests.swift",
+      "type": "file",
+      "bytes": 1571,
+      "sha256": "287e945f5175442887ed42726a962544eb8574b38a298e836f868ac59806cdd1"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/DefaultAuthRepositoryTests.swift",
+      "type": "file",
+      "bytes": 6094,
+      "sha256": "0b565cb627d9c25025964148ca0e99e85389c6d938e8467add366a010fc40083"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/DefaultSendRepositoryTests.swift",
+      "type": "file",
+      "bytes": 41848,
+      "sha256": "e498545825f382704fc08d4d96d068bc1636c80e087b69be1262416192f6897a"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/DefaultSettingsRepositoryTests.swift",
+      "type": "file",
+      "bytes": 4807,
+      "sha256": "00bc77c23ed3fd117200dc683f9407b081912341e5b6be9e67a12874e6e2db24"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/DefaultVaultRepositoryTests.swift",
+      "type": "file",
+      "bytes": 6947,
+      "sha256": "d94c90ac058cf2e90ae98bf3481b2e8ce41068cecb172e2fb7f6c071b1f32a39"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/DefaultVaultTimeoutSettingsRepositoryTests.swift",
+      "type": "file",
+      "bytes": 1748,
+      "sha256": "6e5460fd87ad74e698500f05ef7811ddc753e2b9af913e00de1d1ebe1d9fd005"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/ExtensionSessionTests.swift",
+      "type": "file",
+      "bytes": 3932,
+      "sha256": "17949ecae80896deb315696336541146bebb1956941a934d3495ca53849cd8e8"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/ExtensionVaultSessionTests.swift",
+      "type": "file",
+      "bytes": 4999,
+      "sha256": "e0b8ca9b6a5129631c0a978b5a8e15cea1eb0b9a4625763e70468741c45d4fbf"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/Fixtures/cache-originless.json",
+      "type": "file",
+      "bytes": 273,
+      "sha256": "9f81f80835199771551bf7ca4276ee85b885b8233232b9b97f711d041e7c8bd0"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/Fixtures/cache-owned-current.json",
+      "type": "file",
+      "bytes": 496,
+      "sha256": "b06b44b3fbd4d6a38a63dec3cf1d7c092f71628d7ea6760894e53cca2a81f3b6"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/Fixtures/cache-owned-previous.json",
+      "type": "file",
+      "bytes": 415,
+      "sha256": "f43e4e4f0ad88686b8c32fca3a0600c19eca324fda250369e18cc19eb3de80ad"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/HTTPDownloadedFileInstallerTests.swift",
+      "type": "file",
+      "bytes": 3822,
+      "sha256": "61107214a5febc85fb05b56b8e07b5c5041c0ef4013e628cbdde3017e718594a"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/HTTPStatusErrorPrivacyTests.swift",
+      "type": "file",
+      "bytes": 889,
+      "sha256": "d5b35b3504691af6fc29c7930bdb89de4bc636e23722f44acbcee6068c12a8c7"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/HTTPUploadCancellationTests.swift",
+      "type": "file",
+      "bytes": 6905,
+      "sha256": "ebea6c249b3197504d47bb33c0a0dba42c3ba98dc1854b7cd3dbab7caa8c8251"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/IdentityMutationTestSupport.swift",
+      "type": "file",
+      "bytes": 1722,
+      "sha256": "a75d2deebd6167cdc58d7b4ef43dfa1f764d1e7ea1ddfa4123f53d65634f7e54"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/IdentityTokenServiceTests.swift",
+      "type": "file",
+      "bytes": 10377,
+      "sha256": "0be6a003217be1f45fbc461a752817b3ba50e33116bda52701b81355ccefa163"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/JWTPayloadTests.swift",
+      "type": "file",
+      "bytes": 1428,
+      "sha256": "31b319141f5361e709d20a99b65e22c7b7077e37139604061e84452577bd6e76"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/KeychainPlatformSmokeTests.swift",
+      "type": "file",
+      "bytes": 1032,
+      "sha256": "e364cb3dfe34156f6c5279a9599a129def8da0acb0493a668fccb6d1dca06376"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/KeychainStoreTests.swift",
+      "type": "file",
+      "bytes": 4824,
+      "sha256": "21c4734eb5a42113fac224d3fab9e484d1ececd86318ec5e86574b5aac6e84bb"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/LegacyAutoFillCacheCodecTests.swift",
+      "type": "file",
+      "bytes": 4505,
+      "sha256": "e278ded6aac52ff1924e1f8a1fe0e4993417a4e0cb1f8432fd84b4f0c7c823fc"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/LegacyAutoFillCacheStoreTests.swift",
+      "type": "file",
+      "bytes": 6096,
+      "sha256": "90ee79c0602b01a288c40a698ed2008b2b795690afe02480d630854ad79b15f9"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/LegacyAutoFillCacheTests.swift",
+      "type": "file",
+      "bytes": 7517,
+      "sha256": "9e6b51ee2774cbd9b984862c4b543e169dbc7b1d86379467d836c2360eb18015"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/LiveServerContractTests.swift",
+      "type": "file",
+      "bytes": 40182,
+      "sha256": "47d271743607bdd3b54992e104dcc07930e51a482885743cc23dd953944880e5"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/MockDeviceManagementService.swift",
+      "type": "file",
+      "bytes": 3041,
+      "sha256": "55402853e2a9b0a21acee64cdda14364dc99a3c6c51460fa7839e66b44116b6c"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/MockOpenURLClient.swift",
+      "type": "file",
+      "bytes": 316,
+      "sha256": "5bc221174f215a62188c3c375cb89f66d5cb140764a12df26bdb9e866d10dfd1"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/MultipartFileBodyTests.swift",
+      "type": "file",
+      "bytes": 9006,
+      "sha256": "b04082ce99563524713f5ba2e08d65ff5a973aa61e296c3858aa5186bfbb4e7d"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasskeyItemFactoryTests.swift",
+      "type": "file",
+      "bytes": 1876,
+      "sha256": "024a9f533b1c9f8271890e06fd1edad8a5a4936f7420ec05cb84ef60c184c7bb"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasskeyProjectionTestSupport.swift",
+      "type": "file",
+      "bytes": 4477,
+      "sha256": "4a40ec3a44eb90d9f9360a397dd222eebdd0ee56d00c22e0735bce47b9ea1d85"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasskeyRecoveryReviewTestSupport.swift",
+      "type": "file",
+      "bytes": 1996,
+      "sha256": "f7abc03ed6828aed3833af705fc37798b3f0a39187fd3c5f46e720fe21a78e64"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasskeyRecoveryTestSupport.swift",
+      "type": "file",
+      "bytes": 3274,
+      "sha256": "c955f788ce9074d6cf12a91732fd9e6f308e6aece659f5aaadb37750e9a8602a"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasskeyRegistrationCoordinatorTests.swift",
+      "type": "file",
+      "bytes": 7045,
+      "sha256": "0a165bc7eebe217c64b17c23e4ffa6f81646cfaf3e719ea675fc96ab1c6a4f8c"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasskeyRegistrationPersistenceTests.swift",
+      "type": "file",
+      "bytes": 7393,
+      "sha256": "1454210a8b0c017f06d5d1236f5f8c1958f4c9ed6ae4b39b79e38c8ddaadcfba"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasskeyRegistrationProjectionTests.swift",
+      "type": "file",
+      "bytes": 8165,
+      "sha256": "c5cc5161ad7969816d8661a614a86484847e3285fcea97fad891ae890221668d"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasskeyRegistrationRecoveryReconcilerTests.swift",
+      "type": "file",
+      "bytes": 4073,
+      "sha256": "d8f4c4d1136b6774ce957d3f14856e9a7bb0cc8e561226bcee9e7d96c6b82485"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasskeyRegistrationRecoveryReviewTests.swift",
+      "type": "file",
+      "bytes": 6491,
+      "sha256": "3784e5eaf2a60908c98998aba1cb62094b09562132460169b2e16a19537896ca"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasskeyRegistrationRecoveryStoreTests.swift",
+      "type": "file",
+      "bytes": 11680,
+      "sha256": "ec98484f6c7d9a2f67178d54673bb5ccdfb902d7263ed50ac2c1bdec91c862a1"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasskeyRegistrationWriterTests.swift",
+      "type": "file",
+      "bytes": 15187,
+      "sha256": "a664401b9334b855ca395c1108b9d5eb4e3627ad57980d328c8c52e5aa92dc55"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasskeyServiceTests.swift",
+      "type": "file",
+      "bytes": 16250,
+      "sha256": "bda4bacff92710fac8917b4427791c9ae74f342a247f33136968e91035d6416e"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasswordGenerationTests.swift",
+      "type": "file",
+      "bytes": 3417,
+      "sha256": "9b0ff5879213ccb5e36df60779031622a03af2f506df15932ae2ea2574162f32"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasswordSignInServiceTests.swift",
+      "type": "file",
+      "bytes": 15836,
+      "sha256": "8d1c867d6b0ddc9c0ffb035fe5dcae76d99e180b074ad7ca5c0a2f2be425914d"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasswordSignInTestSupport.swift",
+      "type": "file",
+      "bytes": 6510,
+      "sha256": "f7f7cdca2b33c7395f72867dfa65cc1d619d9eb97875167ae7dc601b8eee0d55"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PreloginServiceTests.swift",
+      "type": "file",
+      "bytes": 3166,
+      "sha256": "fba6884c19d1371993285db0b1d9a6d4c2af03b66e170e185b89d409c5b0a6b7"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/ReturningUnlockServiceTests.swift",
+      "type": "file",
+      "bytes": 12191,
+      "sha256": "ebef0076d313e574b2cd3e89fc9733f6fd22e41cbc7322fd1e0390454a5076bc"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/ReturningUnlockTestSupport.swift",
+      "type": "file",
+      "bytes": 4670,
+      "sha256": "8830c6ca42e775f6e582bc17ad58f31ea594ba7d9c813afb5f9ba70f38a45b71"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKAutoFillAccountMapperTests.swift",
+      "type": "file",
+      "bytes": 4584,
+      "sha256": "1c06502837efeb913c80fe2b70856effb1c425925a907ed116f03ac21cb2ac84"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKAutoFillFidoCallbackTests.swift",
+      "type": "file",
+      "bytes": 12428,
+      "sha256": "a49ec69b8eab92657fa1efb0ad66130a817eb0edebb5e7599e517c04cc2fe64a"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKAutoFillRegistrationIdentityMapperTests.swift",
+      "type": "file",
+      "bytes": 2831,
+      "sha256": "3e48f8520ef3255c77ed6f951f34f8a5665ec0887809e7aa430ed3d9b1daf993"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKCipherServiceTests.swift",
+      "type": "file",
+      "bytes": 8899,
+      "sha256": "812e671897a2465559f99674abd9bf205f6690ed14f50cd9968970ed99c8f21c"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKDecryptionIntegrityTests.swift",
+      "type": "file",
+      "bytes": 4058,
+      "sha256": "94bd4d6d9fabcb475c571499e011f098b87bd442d3c86c5f89bdd6750f9deeed"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKKeyDerivationMapperTests.swift",
+      "type": "file",
+      "bytes": 3414,
+      "sha256": "074f57ee3d5ab309f0926e08423de4eae9b5f0aa605b45d2555d0a515c3ecb0b"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKManagedTokenAdapterTests.swift",
+      "type": "file",
+      "bytes": 1359,
+      "sha256": "ed48290f8753260419184ca7de081744610bfefd5006f3268ba5fd163a1f1f33"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKPasskeyRegistrationContractTests.swift",
+      "type": "file",
+      "bytes": 5371,
+      "sha256": "72c7d2f17f89e30944f042d2f3b3a53c260ea75f123854df98bcf7fcc6763e5d"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKSendCryptographyTests.swift",
+      "type": "file",
+      "bytes": 21160,
+      "sha256": "d38ad17ad7f45282cfd1a8cab42db193910fd1a306c535d0dc7f57b270653eac"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKVaultAttachmentSafetyTests.swift",
+      "type": "file",
+      "bytes": 9649,
+      "sha256": "e1ac3a32ce2848e70aa345972b7bdff20167a21bf4f9c1514a889db9af646602"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKVaultIdentityExportTests.swift",
+      "type": "file",
+      "bytes": 2513,
+      "sha256": "7733fb570e3799db9f914bce757f62e5200b2288a5e50afabc0683a2bbd25706"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKVaultSourceTests.swift",
+      "type": "file",
+      "bytes": 26619,
+      "sha256": "82a6cf8d67365c06faafe5eb63190995599e52f744f198c577c8077a51fea3e5"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKVaultSyncTests.swift",
+      "type": "file",
+      "bytes": 12148,
+      "sha256": "b5be519538ba4dff3215f9efe6ea3e15d1395b483bf95043629fce4f21574350"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SendModelTests.swift",
+      "type": "file",
+      "bytes": 15204,
+      "sha256": "49f54d8a8bf9655601425309138b713ff90d10cff2dcf6570eef7a062c1fb117"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SendTestSupport.swift",
+      "type": "file",
+      "bytes": 425,
+      "sha256": "d566ddca006de3321b8407a55aa026a2df7309a317f0b48a86b775703964031e"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SensitiveTemporaryFileStoreTests.swift",
+      "type": "file",
+      "bytes": 4204,
+      "sha256": "ea4d2450218cea8bd9a84a155c76ec7d635ccf4e147a7e12fe9e68444e3bd98d"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/ServerDateConcurrencyTests.swift",
+      "type": "file",
+      "bytes": 935,
+      "sha256": "8672cf08a76c943c23bf7fab25dada6ede79294f7a0173633f7d50c41eaf9e73"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/ServerEnvironmentTests.swift",
+      "type": "file",
+      "bytes": 3732,
+      "sha256": "fc83e6e4481a57bf7b12976ebddbc47e3805d0f24796ff710820db17a22ea3fc"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SessionPinUnlockSettingsTests.swift",
+      "type": "file",
+      "bytes": 8014,
+      "sha256": "2e1271f338de3fb1a0d13751ff0541bcf0bfd1daf83af14082aa68c6d031d9e6"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SessionRuntimeTests.swift",
+      "type": "file",
+      "bytes": 8149,
+      "sha256": "58482cc31da63ce316c2c6e351c5656458527f34ef5dc0ad2b681e9aa93b5a69"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SettingsModelTests.swift",
+      "type": "file",
+      "bytes": 19469,
+      "sha256": "168c2b5964fe02caf424ce025af57afc3bbb292748355ab470045c1fe2518b77"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SharedAutoFillUnlockTests.swift",
+      "type": "file",
+      "bytes": 19400,
+      "sha256": "e27b5a5e007204df9b320acd9e9f9a49eba6fcae424c6652ebefa3bfa58d7a29"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SharedKDFPublicationTests.swift",
+      "type": "file",
+      "bytes": 6938,
+      "sha256": "3780cafc1105a68ea2d4810bfb305073e17bf48f36215b9ce4ba43b3627f0a97"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SharedTokenMirroringTests.swift",
+      "type": "file",
+      "bytes": 3267,
+      "sha256": "501a50a0cb9a4eefc23fc33c17579f8866c6419d20887ca10c2d0fa7bc012427"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SharedTokenStoreTests.swift",
+      "type": "file",
+      "bytes": 21631,
+      "sha256": "16229ad4665aa3056a5543dbc209331619892ec7765cf497b4627cb0cf86277e"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SystemBiometricClientTests.swift",
+      "type": "file",
+      "bytes": 4058,
+      "sha256": "24b26e49da29f18de299ce252ddb9cd145447fc3021687715d7d22ae6686177c"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SystemCredentialIdentityStoreTests.swift",
+      "type": "file",
+      "bytes": 4422,
+      "sha256": "f016cb77eceb161e3243c581d73ac3ffd0dbbf72c29997e6350b247e208d807d"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SystemPasskeyUserVerifierTests.swift",
+      "type": "file",
+      "bytes": 4461,
+      "sha256": "92ff19a09a3517d0ad3d71b95d02735a9a3b1db61bcd27908489af3a41948f19"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/TokenCoordinatorTests.swift",
+      "type": "file",
+      "bytes": 16257,
+      "sha256": "c0c479592fe190f4c11c2b2120ec52fd3597a025a8dc630a246015f315705a0c"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/TokenPersistenceTests.swift",
+      "type": "file",
+      "bytes": 17594,
+      "sha256": "9cbc9be24c76ac18621b7c94db79524e0524f4e4711c3b4320326c98f2d1c475"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/TokenRefreshRecoveryTests.swift",
+      "type": "file",
+      "bytes": 12932,
+      "sha256": "d576f00e25d95e2cb31ddfd7a00bf24af52594fdfbcae6729a1f372887d3fbb8"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/TokenRefreshServiceTests.swift",
+      "type": "file",
+      "bytes": 6897,
+      "sha256": "30e4fddd45accd419f66893f423b872479d18d555eff2f0b99f82715cb66dbaa"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/URIMatchingTests.swift",
+      "type": "file",
+      "bytes": 12932,
+      "sha256": "9aa40bb3064486b83b39de4b9f66b293c9e0abf5736908d1a998a4fdac7ba974"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/URLSessionHTTPClientTests.swift",
+      "type": "file",
+      "bytes": 10683,
+      "sha256": "f4632379382d7b745cdc95e748d449e3fde9c54f4004b7323745f116558c152d"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/VaultFilterTests.swift",
+      "type": "file",
+      "bytes": 1531,
+      "sha256": "245f0ce14fce3ae555131b42d029d1396934cc9add95aaab8f1038447ed4c44e"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/VaultItemDraftMapperTests.swift",
+      "type": "file",
+      "bytes": 23478,
+      "sha256": "37095ab56ac1f35d064cb7743ccd2092fd6647e2278c1bfc3d4e354e9edb0367"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/VaultModelTests.swift",
+      "type": "file",
+      "bytes": 29875,
+      "sha256": "021d5875f01f9dda53e1bd640c240f4f086dc35d7c7ccf4ecb191a45a2cceb84"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/VaultMutationPipelineTests.swift",
+      "type": "file",
+      "bytes": 26073,
+      "sha256": "1879ddef3f840566d16da4a8c34d5bef08eb9737a5c7177a45e7e66228770e41"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/VaultStateTests.swift",
+      "type": "file",
+      "bytes": 5942,
+      "sha256": "1e701a3f29cf156fb650a0e686c48eabe2a85b9d53232657e5931343aafb2fe1"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/VaultTestSupport.swift",
+      "type": "file",
+      "bytes": 13269,
+      "sha256": "d0d4611cdebdedab531181433a7c979de7bacb14b70ca6a465d70fcc0a2f349a"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/VaultTimeoutWatchdogTests.swift",
+      "type": "file",
+      "bytes": 2919,
+      "sha256": "b88957efb34941c471314af000c04dbdd20717e5bc4df1f7cadea4821c5cf37f"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AuthPresentationTests/AuthCommandModelTests.swift",
+      "type": "file",
+      "bytes": 10820,
+      "sha256": "d1ab6021389d4fe77d8dd1df5e0a06a1f081d6067d1b55be8dc236aa615fca07"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AuthPresentationTests/AuthCompositionIntegrationTests.swift",
+      "type": "file",
+      "bytes": 3291,
+      "sha256": "d63d0feaaf90c66f2316509027902e0cba70494918b6cfccaf8a60de09327d75"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AuthPresentationTests/AuthControllerPortTests.swift",
+      "type": "file",
+      "bytes": 8124,
+      "sha256": "2e34629612df84acef21bfb2908cfd5db6641ee86d80c73aa199288fd99303e8"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AuthPresentationTests/AuthCoordinatorTests.swift",
+      "type": "file",
+      "bytes": 12827,
+      "sha256": "b0750914298b540b451e9fbcd23d634df768f02153a637bbddf27175754ffee3"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AuthPresentationTests/AuthCredentialFailureTests.swift",
+      "type": "file",
+      "bytes": 2415,
+      "sha256": "41fc0310d537c40b006e22ad6a78f76c27add87bb87e73f4450de2a3fa110170"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AuthPresentationTests/AuthModelLifetimeTests.swift",
+      "type": "file",
+      "bytes": 14362,
+      "sha256": "7ca9fd79ee9351fd0ee6bd4edc8715466d95b79972e473b770f56976f28f99dc"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AuthPresentationTests/EnableBiometricsModelTests.swift",
+      "type": "file",
+      "bytes": 4393,
+      "sha256": "8298746d77c32159d6ca26a3815aaa4649c6b69832df59ae623835e27a328114"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AuthPresentationTests/Mocks/AuthDependencies+Fixture.swift",
+      "type": "file",
+      "bytes": 2278,
+      "sha256": "0d586c372e66c32d8f55d75d82b2f502fec2352bb08b7e9e299a30e0d62607f4"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AuthPresentationTests/Mocks/AuthPending+Fixture.swift",
+      "type": "file",
+      "bytes": 672,
+      "sha256": "b4c43dfdda68eabb22f2628829c2bd67f0eaa5cb0fcf8af8aaf2e3657aec873c"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AuthPresentationTests/Mocks/AuthPersistence+Fixture.swift",
+      "type": "file",
+      "bytes": 2790,
+      "sha256": "74ece18b3a8fe842670931f6b11b233e14bd35aa7ab13949298d965e5e527888"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AuthPresentationTests/Mocks/MockBiometricClient.swift",
+      "type": "file",
+      "bytes": 504,
+      "sha256": "558a6258cbb663ae95ab6a8df675c7edb1f926d9df13c366c60811c7685ff82a"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AuthPresentationTests/Mocks/MockDeviceNameClient.swift",
+      "type": "file",
+      "bytes": 193,
+      "sha256": "b442f58a857bde6c929f957a59d4d30f33f9439e4dd6dfcae7284d151605c9d0"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AuthPresentationTests/Mocks/MockHTTPClient.swift",
+      "type": "file",
+      "bytes": 2148,
+      "sha256": "6ce1f02798beb90b0e235fcf93ec73dd368645f7808c545e11f0a9323e38523d"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AuthPresentationTests/Mocks/MockIdentityTokenService.swift",
+      "type": "file",
+      "bytes": 881,
+      "sha256": "a8c5c281ff1a2fd8c329428391a515068ec5557bde462011287ddfa6e0296389"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AuthPresentationTests/Mocks/MockKeychainService.swift",
+      "type": "file",
+      "bytes": 1708,
+      "sha256": "747b350e72ea5049c86346745da0e3f5dbae5bd6d025511a51b4e76f1a328eb4"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AuthPresentationTests/Mocks/MockVaultUnlockService.swift",
+      "type": "file",
+      "bytes": 2260,
+      "sha256": "135e05ee617e1390a30fccb92d62d2d7a9a881e02d883d783ca425a5245805ee"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AuthPresentationTests/Mocks/SharedAccountInfo+Fixture.swift",
+      "type": "file",
+      "bytes": 489,
+      "sha256": "43de42cecb44347d196e52be7b4f45b7b61bb711f948ae5950e950a567cce100"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AuthPresentationTests/ServerSetupModelTests.swift",
+      "type": "file",
+      "bytes": 3428,
+      "sha256": "12e292e70e87d877e196eaf3941ada95a72dfd53b473dcedbe299ac4e08e361c"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AuthPresentationTests/UnlockModelTests.swift",
+      "type": "file",
+      "bytes": 33911,
+      "sha256": "e4a7609c88d7555da83359617937c4a5fcacd6f95298c6105804368e93069238"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Package.swift",
+      "type": "file",
+      "bytes": 1012,
+      "sha256": "5bc493baafe1b6958d2d55a2e3ffbfa61fe05e52f647b76bb89fcb3833b5775f"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenApiBase.swift",
+      "type": "file",
+      "bytes": 23319,
+      "sha256": "1b64b96505d95c5805f4f976462af86db35d04e0a597b3b842ae4c9b8ffcbcf3"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenAuth.swift",
+      "type": "file",
+      "bytes": 117652,
+      "sha256": "c361a9b84a0728f0f083f0d80e9bd7bbedb8133dc460477d523cc2197ba5f068"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenCollections.swift",
+      "type": "file",
+      "bytes": 30156,
+      "sha256": "b3b693aec616b3c6cc81c34272b56c106e65b1ff1e646b8c1669acd4e22077ef"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenCore.swift",
+      "type": "file",
+      "bytes": 277227,
+      "sha256": "60d801f5e20b93352e935940e081110cefb7bcb7df61026e63ae8f5aced7a11a"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenCrypto.swift",
+      "type": "file",
+      "bytes": 52887,
+      "sha256": "c74b1bae9cd4566fce146a3aaa4ec41e23c96efd735e605c02996384b11a75cb"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenCryptoSyncHandler.swift",
+      "type": "file",
+      "bytes": 33960,
+      "sha256": "001dddcc06e9a75809a233731fc3dec7d5f51c920e9c12443ccd363c81c1ad07"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenEncoding.swift",
+      "type": "file",
+      "bytes": 19485,
+      "sha256": "453bbac4ea0683d6301c8733ef8777f203dd2c5533c1e166a7d1de0a2a13c64b"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenExporters.swift",
+      "type": "file",
+      "bytes": 24584,
+      "sha256": "4a483baa21531cc886be619c3e53ad74d7efa04dbc477d87f0a754e2bde10d7d"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenFido.swift",
+      "type": "file",
+      "bytes": 145406,
+      "sha256": "1a1847236580dfc28d57a5c61eecf0a9d7fb491d3eae3fb6938b39ebc7a5c450"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenGenerators.swift",
+      "type": "file",
+      "bytes": 50546,
+      "sha256": "76e6c286602f19f05654c5ca64eefbf486afdbff08bc49ec705bffcb3f4f57cb"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenOrganizations.swift",
+      "type": "file",
+      "bytes": 72191,
+      "sha256": "64d109067086f034457cc72a82e8c0a0dbfc535fc3d4e73bd4a5655f4b2826c6"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenPM.swift",
+      "type": "file",
+      "bytes": 17005,
+      "sha256": "6ae624b7a2893e0ab994887b9b0885e0eaeb4f0f29ec9ce210bf4b6a3874526e"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenPolicies.swift",
+      "type": "file",
+      "bytes": 42344,
+      "sha256": "284b6b748135fcc011d9205152b8d8be9c08f08e45f31605194718f37a5188c8"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenRandom.swift",
+      "type": "file",
+      "bytes": 27654,
+      "sha256": "b1ca97ea6b79f64990bba03c6665ae6f672b198d263ddab64bd546fdae2cf777"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenSDK.swift",
+      "type": "file",
+      "bytes": 567824,
+      "sha256": "ff3cede1ee4b95eaddc8b77ffa8e4a12686cae924ac36b4388c18ada3bb970d2"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenSend.swift",
+      "type": "file",
+      "bytes": 97931,
+      "sha256": "1cb4f38a63275ed22367162de13e94ee015c03e9e43dfb5493794242b457f90c"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenServerCommunicationConfig.swift",
+      "type": "file",
+      "bytes": 59098,
+      "sha256": "25fd1c528e8f7b82ee500cf5003153c65743fbefd016e86e034019da061deb07"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenSsh.swift",
+      "type": "file",
+      "bytes": 24912,
+      "sha256": "e584954565350bc95b6ed7b904e16b0d06b4994797c2ae80ce6d9b181c71cfc5"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenState.swift",
+      "type": "file",
+      "bytes": 22361,
+      "sha256": "bf53532c1a219eeb5951d3b8fbad52e006ceb09883d0b03f55cee0d620ff60aa"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenUnlock.swift",
+      "type": "file",
+      "bytes": 17033,
+      "sha256": "4394cc609548bc032dbb5ef3232bba6195f8a2e1c2b33833fbe50c52f9c4ffed"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenUserCryptoManagement.swift",
+      "type": "file",
+      "bytes": 60601,
+      "sha256": "313e28baaa4aaba7c652b4dd4aa148eac3136ec70ce8644b3a7e3425f59f8f3b"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenVault.swift",
+      "type": "file",
+      "bytes": 322955,
+      "sha256": "d317220686160f3f6f2fae702050271fbd0b6661b4c0d4de9b41fa3d8bc838a8"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/bitwarden_importers.swift",
+      "type": "file",
+      "bytes": 34673,
+      "sha256": "44f888398cc0b05fc33256c38011fbfd50b0a3834b7ec1670c8acb5d5c52a10a"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdkSupport/NaiveDateFormatter.swift",
+      "type": "file",
+      "bytes": 911,
+      "sha256": "157610fe70ca53028be7cebd4f74292e4c64d28caf67b12ebf17d11013bed9ae"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Tests/BitwardenSdkTests/ClientSmokeTests.swift",
+      "type": "file",
+      "bytes": 1644,
+      "sha256": "5c5563469d0f6189a2f6c075caa4926b483abfc30bb1dc8b8c06ca6a923472c4"
+    },
+    {
+      "path": "README.md",
+      "type": "file",
+      "bytes": 11354,
+      "sha256": "53d23c2bd303d21b9863a8f62021b77e6274bbe7670b093bd56a0496bfde7e51"
+    },
+    {
+      "path": "SECURITY.md",
+      "type": "file",
+      "bytes": 1828,
+      "sha256": "c06cb82c4567d3e48eefc7427e24ec935ab1cf5e0be8054df6d0a684f0459369"
+    },
+    {
+      "path": "Scripts/build-sdk.sh",
+      "type": "file",
+      "bytes": 5609,
+      "sha256": "f0efd1d9cf3cb20792b0df7193338b64592b884062073cdb68574ee4354e4652"
+    },
+    {
+      "path": "Scripts/build-unsigned.sh",
+      "type": "file",
+      "bytes": 1152,
+      "sha256": "626d31250690e7a8c28b0f2c0d418980fbcc9ac7d2ef65a5ad01258eac9a66eb"
+    },
+    {
+      "path": "Scripts/check-architecture.swift",
+      "type": "file",
+      "bytes": 5038,
+      "sha256": "4b186d9971331709caceec5c68868da685cf5f594d34108e280df2e0ec8c30d4"
+    },
+    {
+      "path": "Scripts/check-source-materials.swift",
+      "type": "file",
+      "bytes": 3564,
+      "sha256": "5a02815f4efc2ea20e5df576898cbbf49e4624bbd4cad9993462452a2187496c"
+    },
+    {
+      "path": "Scripts/check-source-secrets.swift",
+      "type": "file",
+      "bytes": 6416,
+      "sha256": "90f7ab4bfb1a60577f97a2154aaf91a8e1764db4c13556f8861ba130410f2e54"
+    },
+    {
+      "path": "Scripts/generate-xcodeproj.sh",
+      "type": "file",
+      "bytes": 357,
+      "sha256": "68338c6c6a71c55e2aa2c48639d8460ed72ad3cd9b2e31f3847faf5c7550390d"
+    },
+    {
+      "path": "Scripts/patches/0001-add-macos-target-to-xcframework-build.patch",
+      "type": "file",
+      "bytes": 4021,
+      "sha256": "95f74e5f6d544be11f8b3542bbf90dd7ad4fc9ae00ad2ca5f3389041622748df"
+    },
+    {
+      "path": "Scripts/patches/0002-sdk-dependency-mitigation-experimental.patch",
+      "type": "file",
+      "bytes": 3829,
+      "sha256": "2025ab24ccf654e48a69654ad37e31b09de8a7dcb8104d052e109ae48d23f230"
+    },
+    {
+      "path": "Scripts/sdk-artifact-inventory.swift",
+      "type": "file",
+      "bytes": 3181,
+      "sha256": "b5005ecbd5c911ddbd0ef48292083e5f8bd22b85390deae8c20e8dc66cd5f2c5"
+    },
+    {
+      "path": "Scripts/select-test-simulator.swift",
+      "type": "file",
+      "bytes": 1943,
+      "sha256": "a63c45029d59a916880a70127e01b0a0e2ab14d4b995187b6bd37b5a60365c14"
+    },
+    {
+      "path": "Scripts/swiftformat.sh",
+      "type": "file",
+      "bytes": 1146,
+      "sha256": "223e994fb89347678c867d7e016da05d74b3bf18e2a72920a856f8bf08620c37"
+    },
+    {
+      "path": "Scripts/test-architecture-rules.sh",
+      "type": "file",
+      "bytes": 1587,
+      "sha256": "b6ea1821d6912320a9c15216c38860ac2f7b1366695aa3ed124fb22faba4bd3f"
+    },
+    {
+      "path": "Scripts/test-configuration.sh",
+      "type": "file",
+      "bytes": 1221,
+      "sha256": "4beabbace285b328adaac168b4269bda7db858d77717eac141b24b5e9da04b95"
+    },
+    {
+      "path": "Scripts/test-disposable-server.sh",
+      "type": "file",
+      "bytes": 2827,
+      "sha256": "7adf195e7437837f473fe3064c007966dbdcdcbedc70df6f012f29d62bba25a3"
+    },
+    {
+      "path": "Scripts/test-integration-preflight.sh",
+      "type": "file",
+      "bytes": 8977,
+      "sha256": "e15c242abc83e5ef8bc10961c82c1a9f43fed541c4be0a0360164aa23f79a8d3"
+    },
+    {
+      "path": "Scripts/test-integration.sh",
+      "type": "file",
+      "bytes": 6517,
+      "sha256": "43f911755330f72eecd1de374ff53dd4ddfd7cfc8fddc6baf9dea5bcad673eb2"
+    },
+    {
+      "path": "Scripts/test-packages.sh",
+      "type": "file",
+      "bytes": 500,
+      "sha256": "605475d061a3fc50c3c2d59d51e514268331bcd4b7af0c6926c93300e6bbfbc3"
+    },
+    {
+      "path": "Scripts/test-rebuilt-sdk.sh",
+      "type": "file",
+      "bytes": 1220,
+      "sha256": "3ac62a02aa2807a10ac8d205cec65d5f80fdca9512f351a548050b45aed16024"
+    },
+    {
+      "path": "Scripts/test-source-secrets.sh",
+      "type": "file",
+      "bytes": 3962,
+      "sha256": "09a6248d591b916f10f4116f3a71a72570ed0e5254e80c3af5e360b196dd3701"
+    },
+    {
+      "path": "Scripts/update-public-suffix-list.sh",
+      "type": "file",
+      "bytes": 871,
+      "sha256": "2b6c887d409b9c619ed081fb1d76a1990c9df3c37932ff8543f31211eb6fbd5e"
+    },
+    {
+      "path": "Scripts/verify-configuration.swift",
+      "type": "file",
+      "bytes": 9066,
+      "sha256": "d9cc9c29d67456e11c8e66942dabc3986dee569d415078334e98a903832e06e3"
+    },
+    {
+      "path": "Scripts/xcodegen.sh",
+      "type": "file",
+      "bytes": 1018,
+      "sha256": "db2f59367014f00cf97157ee68f6753ef6e84b99154c2fb14723cbf0f12c3b99"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "type": "file",
+      "bytes": 5906,
+      "sha256": "e4d87b81d31234b08cf1f7a3d8ef072458f04fb8fb8c9d6b8e23997d07191806"
+    },
+    {
+      "path": "Tests/PlatformIntegration/CompositionIntegrationTests.swift",
+      "type": "file",
+      "bytes": 15143,
+      "sha256": "1978d0d04d60804269b72ffde3338296ed4ca49964fdca3122456c97ba37db9f"
+    },
+    {
+      "path": "Tests/PlatformIntegration/IntegrationFixtures.swift",
+      "type": "file",
+      "bytes": 9947,
+      "sha256": "e7ec66f3933aea784368dc9b3d54f77730750aea3c65e1706a30965abb94610a"
+    },
+    {
+      "path": "Tests/PlatformIntegration/PlatformHostingTests.swift",
+      "type": "file",
+      "bytes": 14057,
+      "sha256": "c5a993e58c1198601ff30a8200d9640fe88fb624ce9415cde9ea6bdd22cc814f"
+    },
+    {
+      "path": "project.yml",
+      "type": "file",
+      "bytes": 14252,
+      "sha256": "920fd8f0f044e45ccabe2eddf420b4de686785b4094f9d947dc09d3dbb11eed6"
+    }
+  ]
+}

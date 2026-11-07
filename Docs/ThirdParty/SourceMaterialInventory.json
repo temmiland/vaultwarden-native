@@ -1,0 +1,194 @@
+{
+  "excludedFromPublication": [
+    "CLAUDE_HANDOFF.md",
+    "Configuration/Local.xcconfig",
+    ".git",
+    ".build",
+    "Packages/VaultwardenSDK/Frameworks"
+  ],
+  "files": [
+    {
+      "bytes": 995,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Docs/ThirdParty/Bitwarden-LICENSE.txt",
+      "sha256": "38e9e1a0452419fb8d2d8d023a79ff31f3106850f90d5ff381d45e65a0f992d9"
+    },
+    {
+      "bytes": 35141,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Docs/ThirdParty/Bitwarden-LICENSE_GPL.txt",
+      "sha256": "589ed823e9a84c56feb95ac58e7cf384626b9cbf4fda2a907bc36e103de1bad2"
+    },
+    {
+      "bytes": 15856,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Docs/ThirdParty/Bitwarden-LICENSE_SDK.txt",
+      "sha256": "db90f749155d7f8f354cff46a7395e5f4ae1012ba6a455aa2d3213ca9b00447d"
+    },
+    {
+      "bytes": 334697,
+      "material": "Mozilla Public Suffix List",
+      "path": "Packages/AppModules/Sources/AutoFillData/Resources/public_suffix_list.dat",
+      "sha256": "7333192f818588d9d0044d27d67210c782acd6d87cf71f54a00dfa20a561cfc9"
+    },
+    {
+      "bytes": 23319,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenApiBase.swift",
+      "sha256": "1b64b96505d95c5805f4f976462af86db35d04e0a597b3b842ae4c9b8ffcbcf3"
+    },
+    {
+      "bytes": 117652,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenAuth.swift",
+      "sha256": "c361a9b84a0728f0f083f0d80e9bd7bbedb8133dc460477d523cc2197ba5f068"
+    },
+    {
+      "bytes": 30156,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenCollections.swift",
+      "sha256": "b3b693aec616b3c6cc81c34272b56c106e65b1ff1e646b8c1669acd4e22077ef"
+    },
+    {
+      "bytes": 277227,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenCore.swift",
+      "sha256": "60d801f5e20b93352e935940e081110cefb7bcb7df61026e63ae8f5aced7a11a"
+    },
+    {
+      "bytes": 52887,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenCrypto.swift",
+      "sha256": "c74b1bae9cd4566fce146a3aaa4ec41e23c96efd735e605c02996384b11a75cb"
+    },
+    {
+      "bytes": 33960,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenCryptoSyncHandler.swift",
+      "sha256": "001dddcc06e9a75809a233731fc3dec7d5f51c920e9c12443ccd363c81c1ad07"
+    },
+    {
+      "bytes": 19485,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenEncoding.swift",
+      "sha256": "453bbac4ea0683d6301c8733ef8777f203dd2c5533c1e166a7d1de0a2a13c64b"
+    },
+    {
+      "bytes": 24584,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenExporters.swift",
+      "sha256": "4a483baa21531cc886be619c3e53ad74d7efa04dbc477d87f0a754e2bde10d7d"
+    },
+    {
+      "bytes": 145406,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenFido.swift",
+      "sha256": "1a1847236580dfc28d57a5c61eecf0a9d7fb491d3eae3fb6938b39ebc7a5c450"
+    },
+    {
+      "bytes": 50546,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenGenerators.swift",
+      "sha256": "76e6c286602f19f05654c5ca64eefbf486afdbff08bc49ec705bffcb3f4f57cb"
+    },
+    {
+      "bytes": 72191,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenOrganizations.swift",
+      "sha256": "64d109067086f034457cc72a82e8c0a0dbfc535fc3d4e73bd4a5655f4b2826c6"
+    },
+    {
+      "bytes": 17005,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenPM.swift",
+      "sha256": "6ae624b7a2893e0ab994887b9b0885e0eaeb4f0f29ec9ce210bf4b6a3874526e"
+    },
+    {
+      "bytes": 42344,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenPolicies.swift",
+      "sha256": "284b6b748135fcc011d9205152b8d8be9c08f08e45f31605194718f37a5188c8"
+    },
+    {
+      "bytes": 27654,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenRandom.swift",
+      "sha256": "b1ca97ea6b79f64990bba03c6665ae6f672b198d263ddab64bd546fdae2cf777"
+    },
+    {
+      "bytes": 567824,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenSDK.swift",
+      "sha256": "ff3cede1ee4b95eaddc8b77ffa8e4a12686cae924ac36b4388c18ada3bb970d2"
+    },
+    {
+      "bytes": 97931,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenSend.swift",
+      "sha256": "1cb4f38a63275ed22367162de13e94ee015c03e9e43dfb5493794242b457f90c"
+    },
+    {
+      "bytes": 59098,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenServerCommunicationConfig.swift",
+      "sha256": "25fd1c528e8f7b82ee500cf5003153c65743fbefd016e86e034019da061deb07"
+    },
+    {
+      "bytes": 24912,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenSsh.swift",
+      "sha256": "e584954565350bc95b6ed7b904e16b0d06b4994797c2ae80ce6d9b181c71cfc5"
+    },
+    {
+      "bytes": 22361,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenState.swift",
+      "sha256": "bf53532c1a219eeb5951d3b8fbad52e006ceb09883d0b03f55cee0d620ff60aa"
+    },
+    {
+      "bytes": 17033,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenUnlock.swift",
+      "sha256": "4394cc609548bc032dbb5ef3232bba6195f8a2e1c2b33833fbe50c52f9c4ffed"
+    },
+    {
+      "bytes": 60601,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenUserCryptoManagement.swift",
+      "sha256": "313e28baaa4aaba7c652b4dd4aa148eac3136ec70ce8644b3a7e3425f59f8f3b"
+    },
+    {
+      "bytes": 322955,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenVault.swift",
+      "sha256": "d317220686160f3f6f2fae702050271fbd0b6661b4c0d4de9b41fa3d8bc838a8"
+    },
+    {
+      "bytes": 34673,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/bitwarden_importers.swift",
+      "sha256": "44f888398cc0b05fc33256c38011fbfd50b0a3834b7ec1670c8acb5d5c52a10a"
+    },
+    {
+      "bytes": 911,
+      "material": "Bitwarden SDK / support / preserved license texts",
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdkSupport/NaiveDateFormatter.swift",
+      "sha256": "157610fe70ca53028be7cebd4f74292e4c64d28caf67b12ebf17d11013bed9ae"
+    },
+    {
+      "bytes": 4021,
+      "material": "SDK build patch",
+      "path": "Scripts/patches/0001-add-macos-target-to-xcframework-build.patch",
+      "sha256": "95f74e5f6d544be11f8b3542bbf90dd7ad4fc9ae00ad2ca5f3389041622748df"
+    },
+    {
+      "bytes": 3829,
+      "material": "Experimental SDK dependency lockfile patch (not applied by default)",
+      "path": "Scripts/patches/0002-sdk-dependency-mitigation-experimental.patch",
+      "sha256": "2025ab24ccf654e48a69654ad37e31b09de8a7dcb8104d052e109ae48d23f230"
+    }
+  ],
+  "schemaVersion": 1,
+  "scope": "Actual third-party source, support, dataset, notices and SDK build patch in source publication. Inventory is not a license election or distribution approval.",
+  "sdkRevision": "fbd21679c1c3690cba424ad3dbb0ba662eb9863e"
+}

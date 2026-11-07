@@ -1,0 +1,12 @@
+// Copy to Local.xcconfig (gitignored) and fill in your Apple developer Team ID.
+DEVELOPMENT_TEAM = YOURTEAMID
+
+// Optional: use identifiers registered for your own app, App Group and provisioning profiles.
+// Changing these identifiers selects different local storage; it does not migrate old credentials.
+// VW_BUNDLE_ID_PREFIX = org.example.vaultwarden
+// VW_APP_GROUP_IDENTIFIER = group.org.example.vaultwarden
+// VW_SHARED_KEYCHAIN_SERVICE = org.example.vaultwarden.shared
+// VW_PRIVATE_KEYCHAIN_SERVICE = org.example.vaultwarden.AuthFeature
+
+// Only for an older App ID prefix that differs from DEVELOPMENT_TEAM:
+// VW_KEYCHAIN_PREFIX = YOURPREFIX.

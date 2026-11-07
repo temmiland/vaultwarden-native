@@ -1,0 +1,36 @@
+# Build tooling clones (not app source, rebuilt locally via Scripts/build-sdk.sh)
+/sdk-internal/
+
+# The vendored crypto core: ~860 MB of unstripped static libraries across three slices, far past
+# what belongs in git (and past what Git LFS free tiers carry). `Scripts/build-sdk.sh` builds in
+# its own scratch clone from a pinned upstream revision and verified committed patch. Pins alone
+# are not byte-identical provenance proof - see Docs/RemainingReleaseWork.md.
+Packages/VaultwardenSDK/Frameworks/
+
+# Xcode - project itself is XcodeGen-generated from project.yml, regenerate with
+# the pinned Scripts/generate-xcodeproj.sh rather than committing it.
+*.xcodeproj/
+xcuserdata/
+*.xcuserstate
+DerivedData/
+.build/
+*.xcworkspace/xcuserdata/
+
+# Swift Package Manager
+.swiftpm/
+Package.resolved
+
+# Contributor signing/identifier overrides
+/Configuration/Local.xcconfig
+
+# Existing private working notes; keep local and outside source publication.
+/CLAUDE_HANDOFF.md
+
+# macOS
+.DS_Store
+*.swp
+
+# Build logs
+build-xcframework.log
+vendor-sdk.log
+run.log

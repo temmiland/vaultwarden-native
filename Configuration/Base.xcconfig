@@ -1,0 +1,22 @@
+// Public defaults preserve the existing app/storage identifiers. Override in Local.xcconfig.
+VW_BUNDLE_ID_PREFIX = land.temmi.vaultwarden-macos
+VW_APP_GROUP_IDENTIFIER = group.$(VW_BUNDLE_ID_PREFIX)
+VW_SHARED_KEYCHAIN_SERVICE = $(VW_BUNDLE_ID_PREFIX).shared
+VW_PRIVATE_KEYCHAIN_SERVICE = $(VW_BUNDLE_ID_PREFIX).AuthFeature
+
+// No personal team is committed. Local.xcconfig supplies signing for all four targets.
+DEVELOPMENT_TEAM =
+// Explicitly override this for an older account whose App ID prefix differs from its Team ID.
+// Keep the trailing dot. Entitlements and runtime Info.plist use this same value.
+VW_KEYCHAIN_PREFIX = $(DEVELOPMENT_TEAM).
+CODE_SIGN_STYLE = Automatic
+SWIFT_VERSION = 5.10
+SWIFT_STRICT_CONCURRENCY = complete
+SWIFT_TREAT_WARNINGS_AS_ERRORS = YES
+OTHER_SWIFT_FLAGS = $(inherited) -warnings-as-errors
+GCC_TREAT_WARNINGS_AS_ERRORS = YES
+MARKETING_VERSION = 0.1.0
+CURRENT_PROJECT_VERSION = 1
+
+// Optional and gitignored; command-line build settings still take precedence.
+#include? "Local.xcconfig"

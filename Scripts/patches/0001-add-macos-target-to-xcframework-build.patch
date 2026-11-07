@@ -1,0 +1,101 @@
+From c80211a431988ae1dd83c01141bf0359220cdfe9 Mon Sep 17 00:00:00 2001
+From: vaultwarden-macos build fork <local@vaultwarden-macos>
+Date: Sat, 8 Aug 2026 12:11:01 +0200
+Subject: [PATCH] Add macOS target support to xcframework build script
+
+---
+ crates/bitwarden-uniffi/swift/build.sh | 52 ++++++++++++++++++++------
+ 1 file changed, 40 insertions(+), 12 deletions(-)
+
+diff --git a/crates/bitwarden-uniffi/swift/build.sh b/crates/bitwarden-uniffi/swift/build.sh
+index 6cae80e..f539304 100755
+--- a/crates/bitwarden-uniffi/swift/build.sh
++++ b/crates/bitwarden-uniffi/swift/build.sh
+@@ -4,14 +4,15 @@ set -eo pipefail
+ cd "$(dirname "$0")"
+ 
+ # Generate an xcframework for the Swift bindings.
++#
++# BUILD_MACOS=true additionally builds a macOS slice (aarch64/x86_64-apple-darwin, universal) and
++# includes it in the xcframework alongside the stock iOS device/simulator slices. This is a local
++# fork addition (not upstream) to support a native macOS client — see vaultwarden-macos project.
+ 
+ # Cleanup dirs
+ rm -rf BitwardenFFI.xcframework
+ rm -rf tmp
+ 
+-# Build native library
+-export IPHONEOS_DEPLOYMENT_TARGET="13.0"
+-export RUSTFLAGS="-C link-arg=-Wl,-application_extension"
+ if [[ $DEBUG_MODE = "true" ]]; then
+   PROFILE="debug"
+   PROFILE_FLAG=""
+@@ -20,18 +21,48 @@ else
+   PROFILE_FLAG="--release"
+ fi
+ echo "$PROFILE_FLAG"
+-cargo build --package bitwarden-uniffi --target aarch64-apple-ios-sim $PROFILE_FLAG
+-cargo build --package bitwarden-uniffi --target aarch64-apple-ios $PROFILE_FLAG
+-cargo build --package bitwarden-uniffi --target x86_64-apple-ios $PROFILE_FLAG
++
++# Build iOS native libraries
++(
++  export IPHONEOS_DEPLOYMENT_TARGET="13.0"
++  export RUSTFLAGS="-C link-arg=-Wl,-application_extension"
++  cargo build --package bitwarden-uniffi --target aarch64-apple-ios-sim $PROFILE_FLAG
++  cargo build --package bitwarden-uniffi --target aarch64-apple-ios $PROFILE_FLAG
++  cargo build --package bitwarden-uniffi --target x86_64-apple-ios $PROFILE_FLAG
++)
+ 
+ mkdir -p tmp/target/universal-ios-sim/$PROFILE
+ 
+-# Create universal libraries
++# Create universal iOS simulator library
+ lipo -create ../../../target/aarch64-apple-ios-sim/$PROFILE/libbitwarden_uniffi.a \
+   ../../../target/x86_64-apple-ios/$PROFILE/libbitwarden_uniffi.a \
+   -output ./tmp/target/universal-ios-sim/$PROFILE/libbitwarden_uniffi.a
+ 
+-# Generate swift bindings
++XCFRAMEWORK_LIBRARIES=(
++  -library "../../../target/aarch64-apple-ios/$PROFILE/libbitwarden_uniffi.a" -headers ./tmp/Headers
++  -library "./tmp/target/universal-ios-sim/$PROFILE/libbitwarden_uniffi.a" -headers ./tmp/Headers
++)
++
++if [[ $BUILD_MACOS = "true" ]]; then
++  (
++    export MACOSX_DEPLOYMENT_TARGET="14.0"
++    unset RUSTFLAGS
++    cargo build --package bitwarden-uniffi --target aarch64-apple-darwin $PROFILE_FLAG
++    cargo build --package bitwarden-uniffi --target x86_64-apple-darwin $PROFILE_FLAG
++  )
++
++  mkdir -p tmp/target/universal-macos/$PROFILE
++
++  lipo -create ../../../target/aarch64-apple-darwin/$PROFILE/libbitwarden_uniffi.a \
++    ../../../target/x86_64-apple-darwin/$PROFILE/libbitwarden_uniffi.a \
++    -output ./tmp/target/universal-macos/$PROFILE/libbitwarden_uniffi.a
++
++  XCFRAMEWORK_LIBRARIES+=(
++    -library "./tmp/target/universal-macos/$PROFILE/libbitwarden_uniffi.a" -headers ./tmp/Headers
++  )
++fi
++
++# Generate swift bindings (from the iOS sim dylib; bindings are platform-agnostic Swift/C source)
+ cargo run -p uniffi-bindgen generate \
+   ../../../target/aarch64-apple-ios-sim/$PROFILE/libbitwarden_uniffi.dylib \
+   --language swift \
+@@ -48,10 +79,7 @@ cat ./tmp/bindings/*.modulemap > ./tmp/Headers/module.modulemap
+ 
+ # Build xcframework
+ xcodebuild -create-xcframework \
+-  -library ../../../target/aarch64-apple-ios/$PROFILE/libbitwarden_uniffi.a \
+-  -headers ./tmp/Headers \
+-  -library ./tmp/target/universal-ios-sim/$PROFILE/libbitwarden_uniffi.a \
+-  -headers ./tmp/Headers \
++  "${XCFRAMEWORK_LIBRARIES[@]}" \
+   -output ./BitwardenFFI.xcframework
+ 
+ # Cleanup temporary files
+-- 
+2.50.1 (Apple Git-155)
+

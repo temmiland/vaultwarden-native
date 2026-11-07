@@ -1,0 +1,389 @@
+name: Vaultwarden
+options:
+  deploymentTarget:
+    macOS: "14.0"
+    iOS: "17.0"
+  createIntermediateGroups: true
+
+configFiles:
+  Debug: Configuration/Debug.xcconfig
+  Release: Configuration/Release.xcconfig
+fileGroups:
+  - Configuration
+
+packages:
+  AppModules:
+    path: Packages/AppModules
+
+# Hostless bundles compile the actual shared composition/UI/controller sources, not copies or
+# package-only facsimiles. No @main app startup, owner Keychain, signing or server is required.
+targetTemplates:
+  PlatformIntegration:
+    type: bundle.unit-test
+    sources:
+      - path: Composition
+      - path: App/Sources/Shared
+      - path: AutoFillExtension/Sources/Shared
+      - path: Tests/PlatformIntegration
+    dependencies:
+      - package: AppModules
+        product: Domain
+      - package: AppModules
+        product: AuthPresentation
+      - package: AppModules
+        product: Networking
+      - package: AppModules
+        product: BitwardenSDKAdapter
+      - package: AppModules
+        product: AppFeature
+      - package: AppModules
+        product: Data
+      - package: AppModules
+        product: AutoFillContract
+      - package: AppModules
+        product: PlatformServices
+      - package: AppModules
+        product: VaultPresentation
+      - package: AppModules
+        product: SecurityStorage
+      - package: AppModules
+        product: AutoFillData
+      - package: AppModules
+        product: AutoFillFeature
+      - package: AppModules
+        product: SendPresentation
+      - package: AppModules
+        product: SettingsPresentation
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: ""
+        BUNDLE_LOADER: ""
+
+targets:
+  VaultwardenMacIntegrationTests:
+    templates: [PlatformIntegration]
+    platform: macOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(VW_BUNDLE_ID_PREFIX).integration-tests
+  VaultwardenIOSIntegrationTests:
+    templates: [PlatformIntegration]
+    platform: iOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(VW_BUNDLE_ID_PREFIX).ios.integration-tests
+        TARGETED_DEVICE_FAMILY: "1,2"
+  VaultwardenMac:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Composition
+      - path: App/Sources/Shared
+      - path: App/Sources/VaultwardenMac
+      - path: App/Resources/Assets.xcassets
+    dependencies:
+      - package: AppModules
+        product: AuthPresentation
+      - package: AppModules
+        product: Networking
+      - package: AppModules
+        product: BitwardenSDKAdapter
+      - package: AppModules
+        product: AppFeature
+      - package: AppModules
+        product: Data
+      - package: AppModules
+        product: AutoFillContract
+      - package: AppModules
+        product: PlatformServices
+      - package: AppModules
+        product: VaultPresentation
+      - package: AppModules
+        product: SecurityStorage
+      - package: AppModules
+        product: AutoFillData
+      - package: AppModules
+        product: SendPresentation
+      - package: AppModules
+        product: SettingsPresentation
+      - target: VaultwardenAutoFill
+        embed: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(VW_BUNDLE_ID_PREFIX)
+        PRODUCT_NAME: Vaultwarden
+        ENABLE_HARDENED_RUNTIME: YES
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_KEY_CFBundleDisplayName: Vaultwarden
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+    info:
+      path: App/VaultwardenMac-Info.plist
+      properties:
+        # Runtime storage configuration uses the same xcconfig values as entitlements.
+        # Keep custom keys in a real Info.plist; GENERATE_INFOPLIST_FILE drops unknown keys.
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        VWBundleIdentifierPrefix: $(VW_BUNDLE_ID_PREFIX)
+        VWAppGroupIdentifier: $(VW_APP_GROUP_IDENTIFIER)
+        VWSharedKeychainService: $(VW_SHARED_KEYCHAIN_SERVICE)
+        VWPrivateKeychainService: $(VW_PRIVATE_KEYCHAIN_SERVICE)
+        VWAppIdentifierPrefix: $(VW_KEYCHAIN_PREFIX)
+    entitlements:
+      path: App/VaultwardenMac.entitlements
+      properties:
+        # The *containing app* needs this too, not just the extension - see the iOS target for why.
+        com.apple.developer.authentication-services.autofill-credential-provider: true
+        com.apple.security.app-sandbox: false
+        com.apple.security.network.client: true
+        com.apple.security.application-groups:
+          - $(VW_APP_GROUP_IDENTIFIER)
+        keychain-access-groups:
+          - $(VW_KEYCHAIN_PREFIX)$(VW_SHARED_KEYCHAIN_SERVICE)
+
+  VaultwardenIOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Composition
+      - path: App/Sources/Shared
+      - path: App/Sources/VaultwardenIOS
+      - path: App/Resources
+    dependencies:
+      - package: AppModules
+        product: AuthPresentation
+      - package: AppModules
+        product: Networking
+      - package: AppModules
+        product: BitwardenSDKAdapter
+      - package: AppModules
+        product: AppFeature
+      - package: AppModules
+        product: Data
+      - package: AppModules
+        product: AutoFillContract
+      - package: AppModules
+        product: PlatformServices
+      - package: AppModules
+        product: VaultPresentation
+      - package: AppModules
+        product: SecurityStorage
+      - package: AppModules
+        product: AutoFillData
+      - package: AppModules
+        product: SendPresentation
+      - package: AppModules
+        product: SettingsPresentation
+      - target: VaultwardenIOSAutoFill
+        embed: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(VW_BUNDLE_ID_PREFIX).ios
+        PRODUCT_NAME: Vaultwarden
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Vaultwarden
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations~ipad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_NSFaceIDUsageDescription: "Face ID is used to unlock your vault instead of typing your master password every time."
+    info:
+      path: App/VaultwardenIOS-Info.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        VWBundleIdentifierPrefix: $(VW_BUNDLE_ID_PREFIX)
+        VWAppGroupIdentifier: $(VW_APP_GROUP_IDENTIFIER)
+        VWSharedKeychainService: $(VW_SHARED_KEYCHAIN_SERVICE)
+        VWPrivateKeychainService: $(VW_PRIVATE_KEYCHAIN_SERVICE)
+        VWAppIdentifierPrefix: $(VW_KEYCHAIN_PREFIX)
+    entitlements:
+      path: App/VaultwardenIOS.entitlements
+      properties:
+        # The *containing app* needs this too, not just the extension - without it iOS refuses to
+        # register the embedded credential provider and it never appears under Settings > AutoFill.
+        com.apple.developer.authentication-services.autofill-credential-provider: true
+        com.apple.security.application-groups:
+          - $(VW_APP_GROUP_IDENTIFIER)
+        keychain-access-groups:
+          - $(VW_KEYCHAIN_PREFIX)$(VW_SHARED_KEYCHAIN_SERVICE)
+
+  VaultwardenAutoFill:
+    type: app-extension
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Composition
+      - path: AutoFillExtension/Sources/Shared
+    dependencies:
+      - package: AppModules
+        product: PlatformServices
+      - package: AppModules
+        product: SecurityStorage
+      - package: AppModules
+        product: Networking
+      - package: AppModules
+        product: Data
+      - package: AppModules
+        product: AutoFillData
+      - package: AppModules
+        product: AutoFillFeature
+      - package: AppModules
+        product: AutoFillContract
+      - package: AppModules
+        product: BitwardenSDKAdapter
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(VW_BUNDLE_ID_PREFIX).autofill
+        PRODUCT_NAME: VaultwardenAutoFill
+        ENABLE_HARDENED_RUNTIME: YES
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+    info:
+      path: AutoFillExtension/VaultwardenAutoFill-Info.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        VWBundleIdentifierPrefix: $(VW_BUNDLE_ID_PREFIX)
+        VWAppGroupIdentifier: $(VW_APP_GROUP_IDENTIFIER)
+        VWSharedKeychainService: $(VW_SHARED_KEYCHAIN_SERVICE)
+        VWPrivateKeychainService: $(VW_PRIVATE_KEYCHAIN_SERVICE)
+        VWAppIdentifierPrefix: $(VW_KEYCHAIN_PREFIX)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.authentication-services-credential-provider-ui
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).CredentialProviderViewController
+          NSExtensionAttributes:
+            ASCredentialProviderExtensionCapabilities:
+              ProvidesPasswords: true
+              ProvidesPasskeys: true
+              ProvidesOneTimeCodes: true
+    entitlements:
+      path: AutoFillExtension/VaultwardenAutoFill.entitlements
+      properties:
+        com.apple.developer.authentication-services.autofill-credential-provider: true
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+        com.apple.security.application-groups:
+          - $(VW_APP_GROUP_IDENTIFIER)
+        keychain-access-groups:
+          - $(VW_KEYCHAIN_PREFIX)$(VW_SHARED_KEYCHAIN_SERVICE)
+
+  VaultwardenIOSAutoFill:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Composition
+      - path: AutoFillExtension/Sources/Shared
+      - path: AutoFillExtension/Resources-iOS
+    dependencies:
+      - package: AppModules
+        product: PlatformServices
+      - package: AppModules
+        product: SecurityStorage
+      - package: AppModules
+        product: Networking
+      - package: AppModules
+        product: Data
+      - package: AppModules
+        product: AutoFillData
+      - package: AppModules
+        product: AutoFillFeature
+      - package: AppModules
+        product: AutoFillContract
+      - package: AppModules
+        product: BitwardenSDKAdapter
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(VW_BUNDLE_ID_PREFIX).ios.autofill
+        PRODUCT_NAME: VaultwardenIOSAutoFill
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Vaultwarden
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+    info:
+      path: AutoFillExtension/VaultwardenIOSAutoFill-Info.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        VWBundleIdentifierPrefix: $(VW_BUNDLE_ID_PREFIX)
+        VWAppGroupIdentifier: $(VW_APP_GROUP_IDENTIFIER)
+        VWSharedKeychainService: $(VW_SHARED_KEYCHAIN_SERVICE)
+        VWPrivateKeychainService: $(VW_PRIVATE_KEYCHAIN_SERVICE)
+        VWAppIdentifierPrefix: $(VW_KEYCHAIN_PREFIX)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.authentication-services-credential-provider-ui
+          # Storyboard rather than NSExtensionPrincipalClass: that's what Apple's own credential
+          # provider template and Bitwarden's shipping extension both use, and PluginKit appears to
+          # want it for this (UI-based) extension point on iOS.
+          NSExtensionMainStoryboard: MainInterface
+          # Must live under NSExtensionAttributes, NOT at the plist root - iOS reads it from here
+          # to decide whether to list the provider at all.
+          NSExtensionAttributes:
+            ASCredentialProviderExtensionCapabilities:
+              ProvidesPasswords: true
+              ProvidesPasskeys: true
+              ProvidesOneTimeCodes: true
+    entitlements:
+      path: AutoFillExtension/VaultwardenIOSAutoFill.entitlements
+      properties:
+        # Without this, iOS never lists the extension under Settings > AutoFill at all - the
+        # extension point identifier alone isn't enough on iOS (macOS is more lenient here).
+        com.apple.developer.authentication-services.autofill-credential-provider: true
+        com.apple.security.application-groups:
+          - $(VW_APP_GROUP_IDENTIFIER)
+        keychain-access-groups:
+          - $(VW_KEYCHAIN_PREFIX)$(VW_SHARED_KEYCHAIN_SERVICE)
+
+schemes:
+  VaultwardenMacIntegration:
+    build:
+      targets:
+        VaultwardenMacIntegrationTests: [test]
+    test:
+      config: Debug
+      targets: [VaultwardenMacIntegrationTests]
+  VaultwardenIOSIntegration:
+    build:
+      targets:
+        VaultwardenIOSIntegrationTests: [test]
+    test:
+      config: Debug
+      targets: [VaultwardenIOSIntegrationTests]
+  VaultwardenMac:
+    build:
+      targets:
+        # The extension only needs to be built (so it gets embedded into the app bundle) - it
+        # must NOT be independently runnable/testable, or Xcode's Run action targets the .appex
+        # directly (which can't launch standalone, hence "choose an app to run it" every time).
+        VaultwardenMac: all
+        VaultwardenAutoFill: [build]
+    run:
+      config: Debug
+    test:
+      config: Debug
+    archive:
+      config: Release
+
+  VaultwardenIOS:
+    build:
+      targets:
+        VaultwardenIOS: all
+        VaultwardenIOSAutoFill: [build]
+    run:
+      config: Debug
+    test:
+      config: Debug
+    archive:
+      config: Release

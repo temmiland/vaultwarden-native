@@ -1,0 +1,5 @@
+{
+  "ciphers": [{"id":"cipher-1","type":1,"name":"fixture-encrypted-name","favorite":false,"reprompt":0,"login":{"username":"fixture-encrypted-user","password":"fixture-encrypted-password"}}],
+  "organizationKeys": {"org-1":"fixture-encrypted-org-key"},
+  "updatedAt": 0
+}
