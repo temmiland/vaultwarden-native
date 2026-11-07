@@ -141,7 +141,8 @@ editors/data remain read-only or fail-closed. Full supported/unsupported matrix:
 [FeatureStatus](Docs/FeatureStatus.md).
 
 - The limited Vaultwarden 1.37.5 synthetic-server run does not establish a general Bitwarden/Vaultwarden version guarantee.
-- Password and TOTP QuickType suggestions are temporarily disabled because identified OS requests do not prove the requesting URL. The scoped interactive picker and passkey suggestions remain available.
+- Password and TOTP QuickType suggestions use Base Domain rules only and revalidate the current URI policy, user and unlock proof. Stricter URI rules remain in the scoped interactive picker.
+- iOS/iPadOS 26.2+ supports explicitly confirmed password saves and existing-login updates. Unknown server outcomes require sync/recovery before another save. On macOS, save passwords through the app editor; Apple does not expose this save request to macOS credential-provider extensions. Signed-device acceptance remains pending.
 - No signed device/entitlement, real Apple-controller/UI, parallel-process/crash or security audit.
 - The pinned SDK lockfile has open RustSec findings; target membership is not proof that every
   advisory is exploitable here. See the [advisory inventory](Docs/ThirdParty/SDKAdvisoryInventory.json)

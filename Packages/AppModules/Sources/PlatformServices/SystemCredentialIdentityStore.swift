@@ -3,7 +3,7 @@ import Domain
 import Foundation
 
 public enum SystemCredentialIdentityStoreError: Error, Sendable, Equatable {
-    case disabled, incrementalUpdatesUnavailable, invalidPasskeyIdentity
+    case disabled, incrementalUpdatesUnavailable, invalidPasskeyIdentity, invalidPasswordIdentity
 }
 
 /// The sole AuthenticationServices adapter for the target architecture. Domain/Data hand it
@@ -11,6 +11,32 @@ public enum SystemCredentialIdentityStoreError: Error, Sendable, Equatable {
 /// never receives a password, TOTP seed, vault key or passkey private key.
 public struct SystemCredentialIdentityStore: CredentialIdentityPublishing, PasskeyIdentityUpdating {
     public init() {}
+
+    public func addPasswordIdentity(_ identity: CredentialIdentityDescriptor) async throws {
+        let values = try Self.passwordIdentities(identity)
+        let store = ASCredentialIdentityStore.shared
+        let state = await store.state()
+        try Self.requireIncrementalStore(
+            isEnabled: state.isEnabled,
+            supportsIncrementalUpdates: state.supportsIncrementalUpdates
+        )
+        try await store.saveCredentialIdentities(values)
+    }
+
+    public func removePasswordIdentity(_ identity: CredentialIdentityDescriptor) async throws {
+        let values = try Self.passwordIdentities(identity)
+        try await ASCredentialIdentityStore.shared.removeCredentialIdentities(values)
+    }
+
+    private static func passwordIdentities(_ identity: CredentialIdentityDescriptor) throws -> [ASCredentialIdentity] {
+        guard identity.kind == .password, !identity.recordIdentifier.rawValue.isEmpty,
+              !identity.serviceIdentifier.isEmpty, identity.user?.isEmpty == false else {
+            throw SystemCredentialIdentityStoreError.invalidPasswordIdentity
+        }
+        let values = makeSystemIdentities(from: [identity])
+        guard values.count == 1 else { throw SystemCredentialIdentityStoreError.invalidPasswordIdentity }
+        return values
+    }
 
     public func addPasskeyIdentity(_ identity: CredentialIdentityDescriptor) async throws {
         let identities = try Self.makeIncrementalPasskeyIdentities(from: identity)
@@ -115,6 +141,9 @@ public struct SystemCredentialIdentityStore: CredentialIdentityPublishing, Passk
     }
 
     private static func serviceIdentifier(for descriptor: CredentialIdentityDescriptor) -> ASCredentialServiceIdentifier {
-        ASCredentialServiceIdentifier(identifier: descriptor.serviceIdentifier, type: .URL)
+        ASCredentialServiceIdentifier(
+            identifier: descriptor.serviceIdentifier,
+            type: descriptor.serviceIdentifier.contains("://") ? .URL : .domain
+        )
     }
 }

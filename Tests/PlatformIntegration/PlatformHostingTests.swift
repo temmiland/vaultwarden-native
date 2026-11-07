@@ -1,4 +1,5 @@
 import AppFeature
+import AuthenticationServices
 import AutoFillContract
 import AutoFillData
 import AutoFillFeature
@@ -124,6 +125,26 @@ final class PlatformHostingTests: XCTestCase {
     }
 
     // MARK: - Apple credential provider controller
+
+    #if os(iOS)
+        func testApplePasswordSaveHostsFailureWithoutSharedOwnerStorage() async throws {
+            guard #available(iOS 26.2, *) else { throw XCTSkip("Password saving requires iOS 26.2") }
+            let controller = CredentialProviderViewController()
+            controller.sessionLoader = { throw AutoFillOperationError.noSharedKey }
+            let window = TestWindow(controller)
+            defer { window.close() }
+            let request = ASSavePasswordRequest(
+                serviceIdentifier: ASCredentialServiceIdentifier(identifier: "https://example.com", type: .URL),
+                credential: ASPasswordCredential(user: "synthetic-user", password: "synthetic-password"),
+                sessionID: UUID().uuidString, event: .userInitiated
+            )
+            controller.prepareInterface(for: request)
+            try await waitForContent(controller)
+            XCTAssertTrue(controller.children.first is TestHost<PasswordSaveView>)
+            window.layout()
+            assertLaidOut(controller.view)
+        }
+    #endif
 
     func testAppleCredentialProviderHostsFailureAndReplacesInvocationContent() async throws {
         let controller = CredentialProviderViewController()

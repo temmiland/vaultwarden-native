@@ -1,3 +1,4 @@
+import AutoFillData
 import Domain
 import Foundation
 
@@ -9,11 +10,26 @@ public enum CredentialIdentityMapper {
         sources.flatMap { source -> [CredentialIdentityDescriptor] in
             guard source.isEligibleForAutoFill else { return [] }
 
-            // Apple identified requests do not carry the requesting site's URL. Until its
-            // matching semantics can be proved to preserve every URI policy, publishing a
-            // password/TOTP identity could turn a broad OS suggestion into credential release.
-            // Keep those credentials available through the scoped interactive picker instead.
             var identities: [CredentialIdentityDescriptor] = []
+            let domains = Set(source.domainMatchingURIs.compactMap {
+                QuickTypeIdentityPolicy.domain(for: $0, matchType: .domain)
+            })
+            for domain in domains.sorted() {
+                let kinds: [CredentialIdentityKind] = source.hasOneTimeCode ? [.password, .oneTimeCode] : [.password]
+                for kind in kinds {
+                    guard kind != .password || source.username?.isEmpty == false else { continue }
+                    identities.append(CredentialIdentityDescriptor(
+                        id: descriptorID(
+                            cipherID: source.cipherID,
+                            kind: kind,
+                            serviceIdentifier: domain,
+                            credentialID: nil
+                        ),
+                        kind: kind, serviceIdentifier: domain, user: source.username, label: source.displayName,
+                        credentialID: nil, userHandle: nil, recordIdentifier: source.cipherID
+                    ))
+                }
+            }
             for passkey in source.passkeys where !passkey.relyingPartyIdentifier.isEmpty {
                 identities.append(CredentialIdentityDescriptor(
                     id: descriptorID(

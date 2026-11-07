@@ -40,7 +40,14 @@ let package = Package(
         ),
         .target(
             name: "Data",
-            dependencies: ["Domain", "Networking", "SecurityStorage", "AutoFillContract", "BitwardenSDKAdapter"]
+            dependencies: [
+                "Domain",
+                "Networking",
+                "SecurityStorage",
+                "AutoFillContract",
+                "BitwardenSDKAdapter",
+                "AutoFillData",
+            ]
         ),
         .target(name: "PlatformServices", dependencies: ["Domain"]),
         .target(name: "SharedUI", dependencies: ["Domain"]),

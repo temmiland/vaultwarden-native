@@ -30,6 +30,8 @@
 				<true/>
 				<key>ProvidesPasswords</key>
 				<true/>
+				<key>SupportsSavePasswordCredentials</key>
+				<true/>
 			</dict>
 		</dict>
 		<key>NSExtensionMainStoryboard</key>

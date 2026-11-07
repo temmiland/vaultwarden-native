@@ -6,6 +6,22 @@ import Testing
 @Suite
 struct PasskeyRegistrationRecoveryStoreTests {
     @Test
+    func passwordReservationRoundTripsWithoutPersistingCredentialSecrets() throws {
+        let fixture = try Fixture(); defer { fixture.cleanup() }
+        let record = PasskeyRegistrationRecoveryRecord(
+            account: fixture.proof.account, credentialID: Foundation.Data(), relyingPartyIdentifier: "example.com",
+            targetCipherID: nil, originatingUnlockID: fixture.proof.unlockID, kind: .password,
+            passwordCiphertextHash: PasswordSaveFingerprint.make(ciphertext: "encrypted-password")
+        )
+        try fixture.store.reserve(record, requiring: fixture.proof)
+        #expect(try fixture.store.records(requiring: fixture.proof) == [record])
+        try fixture.store.confirm(record.mutationID, serverCipherID: "saved-password", requiring: fixture.proof)
+        let saved = try #require(fixture.store.records(requiring: fixture.proof).first)
+        #expect(saved.kind == .password && saved.credentialID.isEmpty && saved.phase == .confirmed)
+        #expect(saved.serverCipherID == "saved-password")
+    }
+
+    @Test
     func reservationBindsTheCurrentUnlockAndDoesNotAcceptAForgedOrigin() throws {
         let fixture = try Fixture(); defer { fixture.cleanup() }
         var record = PasskeyRecoveryJournalFixture.record()
@@ -96,6 +112,8 @@ struct PasskeyRegistrationRecoveryStoreTests {
         let fields = Set(Mirror(reflecting: record).children.compactMap(\.label))
         #expect(
             fields == [
+                "kind",
+                "passwordCiphertextHash",
                 "mutationID",
                 "account",
                 "credentialID",

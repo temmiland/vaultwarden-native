@@ -159,6 +159,31 @@ public actor CredentialQuery {
         return AutoFillPassword(username: username, password: password)
     }
 
+    public func quickTypePassword(cipherId: String, domain: String, username: String) async throws -> AutoFillPassword {
+        let view = try await quickTypeView(cipherId: cipherId, domain: domain)
+        guard let login = view.login, login.username == username, let password = login.password else {
+            throw AutoFillOperationError.accessDenied
+        }
+        try Self.requireCurrentAccess(to: view, source: source)
+        return AutoFillPassword(username: username, password: password)
+    }
+
+    public func quickTypeOneTimeCode(cipherId: String, domain: String, label: String) async throws -> TimeBasedOneTimeCode {
+        let view = try await quickTypeView(cipherId: cipherId, domain: domain)
+        guard view.name == label else { throw AutoFillOperationError.accessDenied }
+        let code = try await oneTimeCode(cipherId: cipherId)
+        try Self.requireCurrentAccess(to: view, source: source)
+        return code
+    }
+
+    private func quickTypeView(cipherId: String, domain: String) async throws -> SDKAutoFillCredentialView {
+        guard let view = try await cipherView(cipherId: cipherId),
+              view.login?.uris.contains(where: {
+                  QuickTypeIdentityPolicy.domain(for: $0.value, matchType: $0.matchType) == domain
+              }) == true else { throw AutoFillOperationError.accessDenied }
+        return view
+    }
+
     public func oneTimeCode(cipherId: String) async throws -> TimeBasedOneTimeCode {
         guard let view = try await cipherView(cipherId: cipherId), let seed = view.login?.totp, !seed.isEmpty else {
             throw AutoFillOperationError.decryptFailed

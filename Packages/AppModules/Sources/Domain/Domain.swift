@@ -199,6 +199,10 @@ public struct VaultLoginIdentitySource: Sendable, Equatable {
     public let displayName: String
     public let username: String?
     public let serviceIdentifiers: [String]
+    /// Only URIs whose effective policy is Base Domain; stricter modes cannot use OS suggestions.
+    public let domainMatchingURIs: [String]
+    /// Digest of opaque password ciphertext for confirmed-write reconciliation.
+    public let passwordCiphertextHash: Data?
     public let hasOneTimeCode: Bool
     public let passkeys: [PasskeyIdentitySource]
     public let isEligibleForAutoFill: Bool
@@ -210,12 +214,16 @@ public struct VaultLoginIdentitySource: Sendable, Equatable {
         serviceIdentifiers: [String],
         hasOneTimeCode: Bool,
         passkeys: [PasskeyIdentitySource],
-        isEligibleForAutoFill: Bool
+        isEligibleForAutoFill: Bool,
+        domainMatchingURIs: [String] = [],
+        passwordCiphertextHash: Data? = nil
     ) {
         self.cipherID = cipherID
         self.displayName = displayName
         self.username = username
         self.serviceIdentifiers = serviceIdentifiers
+        self.domainMatchingURIs = domainMatchingURIs
+        self.passwordCiphertextHash = passwordCiphertextHash
         self.hasOneTimeCode = hasOneTimeCode
         self.passkeys = passkeys
         self.isEligibleForAutoFill = isEligibleForAutoFill

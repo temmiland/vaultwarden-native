@@ -98,6 +98,14 @@ Fremdzugriffs.
 
 ### F-27 — P1 — AutoFill-Identitäten ignorieren URI-Match-Einstellungen
 
+**Erweiterung auf Owner-Auftrag 2026-11-07:** Passwort-/TOTP-QuickType wird für explizite und
+standardmäßige Base-Domain-Regeln wiederhergestellt. Die SDK-Projektion erhält diese Regeln
+getrennt von den übrigen URIs; PSL und private Suffixe bestimmen die publizierte Domain.
+Identifizierte Anfragen müssen eine neue Domain-Identität tragen und werden vor Ausgabe gegen
+aktuelle URI-Regeln, Benutzername, Cache und Unlock-Proof geprüft. Host/Port, Prefix, Exact,
+Regex und Never werden nicht als breitere Domain-Identitäten publiziert. Alte URL-Identitäten
+bleiben abgelehnt. Geräte-/OS-Abnahme steht weiterhin aus.
+
 **Umsetzung 2026-11-06:** Sicherheitsseitig konservative Übergangslösung: Passwort- und TOTP-Systemidentitäten werden nicht mehr publiziert; bereits im OS vorhandene identifizierte Passwort-/TOTP-Anfragen werden abgelehnt, da die Anfrage keine verlässliche Ziel-URL enthält. Die interaktive, anhand der Anfrage gefilterte Auswahl und Passkey-Identitäten bleiben bestehen. Dadurch entfallen zunächst Passwort-/TOTP-QuickType-Vorschläge. Gerätetests und eine später nachgewiesene sichere Wiederherstellung der Vorschläge bleiben offen.
 
 - [x] Password-/TOTP-QuickType und alte direkte Identitäten bis zum Nachweis einer sicheren
@@ -237,6 +245,33 @@ Damit bleibt ein enger Race innerhalb dieser Toleranz; die Implementierung ist k
 Compare-and-swap-Garantie und verhindert nicht jeden möglichen Last-write-wins-Verlust. Die erste
 Reproduktion und die erfolgreiche Wiederholung sind in [IntegratedAcceptance.md](IntegratedAcceptance.md)
 festgehalten. Produktionsserver und sichtbare Konflikterholung wurden nicht getestet.
+
+### F-36 — Produktauftrag 2026-11-07 — Natives Passwortspeichern vor Veröffentlichung
+
+Auf ausdrücklichen Owner-Auftrag kommt Passwortspeicherung auf iOS/iPadOS ab 26.2 zum Umfang
+hinzu. Apple stellt `ASSavePasswordRequest` nicht für macOS bereit; dort bleibt der vorhandene
+App-Editor zuständig. Eine zusätzliche Browser-Erweiterung ist nicht beauftragt.
+
+Implementiert sind die Apple-Speicheranfrage samt Capability, Bestätigungsoberfläche, neue
+Login-Einträge und ausdrücklich ausgewählte Updates vorhandener Einträge. Der SDK-Draft-Mapper
+erhält beim Update bestehende Felder, URI-Regeln und Passkeys; der HTTP-Aufruf verwendet die
+ursprüngliche Serverrevision. Ohne sichtbare Bestätigung erfolgt kein Schreiben. Re-Prompt,
+Read-only, unerkannte Payloads und veraltete Unlock-/Cache-Zustände bleiben gesperrt.
+
+Das gemeinsame Mutationsjournal enthält ausschließlich Metadaten und unterscheidet jetzt
+Passwort- von Passkey-Writes. Unklare Ergebnisse werden nicht automatisch wiederholt. Bestätigte
+Passwörter werden in den verschlüsselten Cache übernommen; abbildbare Domain-Identitäten werden
+inkrementell publiziert. Eine vollständige autoritative Synchronisierung kann den exakten
+bestätigten Cipher anhand von ID und SHA-256-Hash des gesendeten Passwort-Ciphertexts auflösen,
+auch wenn strikte URI-Regeln keine QuickType-Identität erlauben. Die bloße Existenz der ID reicht
+bei einem Update nicht; Klartext oder ein Klartext-Passwortprüfwert wird nicht gespeichert.
+Ein unbestätigter Create bleibt bis zur bewussten Wiederherstellungsprüfung gesperrt.
+
+Pakettests prüfen QuickType-Regeln, Widerruf, Journal-Roundtrip, unklare/erfolgreiche Writes,
+exakte Wiederherstellung und den Server-Revisionsschutz. Native iOS-Tests prüfen das Hosting des
+neuen Apple-Anfragewegs mit isoliertem Fehlerzustand. Echte signierte Systemanfragen und der
+Servereffekt dieser neuen Extension-Strecke bleiben eine Geräte-/Serverabnahme; synthetische
+Tests ersetzen diesen Nachweis nicht.
 
 ## Historischer Publikationsreview — 2026-11-03
 
@@ -1153,7 +1188,7 @@ Runbook sind Prüfrezepte und keine zweite abhakbare Liste.
 | Menüleiste/Quick Access/Launch at Login | F-05/06/14 |
 | Universal Layout, Multi-Scene, Accessibility, Privacy Shield | F-14 |
 
-Ausgeschlossen bleiben zusätzliche 2FA-Verfahren, neue Cipher-Editoren, Multi-Account, Haupt-App-Offline-Vault, Background Sync, Passwortspeichern/Extension-Unlock, neue Verwaltungsendpunkte. Re-Prompt-Items bleiben ohne bewiesenen Master-Passwort-Grant gesperrt; Read-only ist eine vorhandene Sicherheitsentscheidung.
+Ausgeschlossen bleiben zusätzliche 2FA-Verfahren, neue Cipher-Editoren, Multi-Account, Haupt-App-Offline-Vault, Background Sync, Extension-Unlock und neue Verwaltungsendpunkte. Auf Owner-Auftrag vom 2026-11-07 kommt natives Passwortspeichern auf iOS/iPadOS 26.2+ hinzu; auf macOS bleibt der App-Editor zuständig. Re-Prompt-Items bleiben ohne bewiesenen Master-Passwort-Grant gesperrt; Read-only ist eine vorhandene Sicherheitsentscheidung.
 
 
 ### Vollständiges Produktinventar aus FeatureStatus
@@ -1179,7 +1214,8 @@ Ausgeschlossen bleiben zusätzliche 2FA-Verfahren, neue Cipher-Editoren, Multi-A
 | Account registration/recovery and multi-account | not supported | — | documented scope |
 | Custom fields, folders, collections, trash, restore and archive management | not supported | — | documented scope |
 | Main-app offline vault, background sync and conflict resolution | not supported | — | documented scope |
-| AutoFill password saving or extension-side unlock | not supported | — | documented scope |
+| AutoFill password saving | iOS/iPadOS 26.2+: explicit create/update confirmation, encrypted server writes, durable uncertainty recovery | native and package tests; signed-device acceptance pending | macOS uses app editor; no native save-request API |
+| Extension-side unlock | not supported | — | documented scope |
 | Vaultwarden administration, reporting and enterprise UI | not supported | — | documented scope |
 
 ## Abgleich mit sämtlichen ursprünglichen Planaufgaben

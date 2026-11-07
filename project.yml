@@ -332,6 +332,7 @@ targets:
           # to decide whether to list the provider at all.
           NSExtensionAttributes:
             ASCredentialProviderExtensionCapabilities:
+              SupportsSavePasswordCredentials: true
               ProvidesPasswords: true
               ProvidesPasskeys: true
               ProvidesOneTimeCodes: true

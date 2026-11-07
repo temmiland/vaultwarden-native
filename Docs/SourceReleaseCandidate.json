@@ -2,14 +2,14 @@
   "schemaVersion": 1,
   "purpose": "Public source-only CI candidate snapshot inventory; not the final release, tag, or app publication.",
   "generatedOn": "2026-11-07",
-  "baseCommit": "de5bd0aed51dc87d95ff97d1ca3680968d8f72c3",
-  "branch": "main",
+  "baseCommit": "e36f50a341f92eb361702adfb093348dc8cd7d56",
+  "branch": "source-only-ci-2026-11-07",
   "snapshotIncludesGitHistory": false,
   "snapshotDefinition": "All present tracked files plus present unignored untracked files at generation time, excluding this manifest from its own hash list.",
   "worktreeStatusAtGeneration": {
-    "modifiedOrAddedTrackedEntries": 93,
-    "deletedTrackedEntries": 2,
-    "untrackedEntriesExcludingManifest": 9
+    "modifiedOrAddedTrackedEntries": 37,
+    "deletedTrackedEntries": 0,
+    "untrackedEntriesExcludingManifest": 4
   },
   "excludedPaths": [
     ".git/",
@@ -22,12 +22,9 @@
     "generated Xcode projects and user state",
     "other Git-ignored files"
   ],
-  "deletedFromBase": [
-    "Docs/Planning/PROJECT_AUDIT.md",
-    "Docs/ReleaseChecklist.md"
-  ],
+  "deletedFromBase": [],
   "selfHashOmitted": true,
-  "includedFileCountExcludingManifest": 494,
+  "includedFileCountExcludingManifest": 498,
   "files": [
     {
       "path": ".github/workflows/verify-source.yml",
@@ -230,8 +227,14 @@
     {
       "path": "AutoFillExtension/Sources/Shared/AutoFillPasskeyRegistration.swift",
       "type": "file",
-      "bytes": 7573,
-      "sha256": "86164d59a3f3ff296104b69626c1a22a59776c7a91301250cf4cc8430cc5b777"
+      "bytes": 7565,
+      "sha256": "f4aee88478561caa2cd2a6f7d544b6f60dbec0c39d77ee811e906de5a5f046a6"
+    },
+    {
+      "path": "AutoFillExtension/Sources/Shared/AutoFillPasswordSave.swift",
+      "type": "file",
+      "bytes": 5731,
+      "sha256": "c9c7c69312d92a8909c8b5b4c56a096af368ae002d25864cd5a49eb612202365"
     },
     {
       "path": "AutoFillExtension/Sources/Shared/AutoFillVaultStore.swift",
@@ -242,14 +245,14 @@
     {
       "path": "AutoFillExtension/Sources/Shared/CredentialProviderViewController.swift",
       "type": "file",
-      "bytes": 28752,
-      "sha256": "b8ac67ca9d77cbf3b536ef1f6266ed78ba79487973a79f14c39c6446775d709b"
+      "bytes": 35331,
+      "sha256": "b70a44c3de50af6bcc65ca32f61b9e13173ae8021707fbf4a1c76d0999e82a1b"
     },
     {
       "path": "AutoFillExtension/Sources/Shared/SystemAutoFillExtensionContext.swift",
       "type": "file",
-      "bytes": 2670,
-      "sha256": "e34513b7559838a64d36c2ff31d8bd496aab786038594a108d1bb0d9a461c5eb"
+      "bytes": 3120,
+      "sha256": "73a677b3cc1852660d9629d4b5658eb9748079ff2edd9990e0a31025bc78e85f"
     },
     {
       "path": "AutoFillExtension/VaultwardenAutoFill-Info.plist",
@@ -266,8 +269,8 @@
     {
       "path": "AutoFillExtension/VaultwardenIOSAutoFill-Info.plist",
       "type": "file",
-      "bytes": 1640,
-      "sha256": "d69b4436e0fd1eb670203647492400cf75072ef197d3488cdcde6cc77d4d8a09"
+      "bytes": 1699,
+      "sha256": "d4fa0fa2ccc7b49269142faf7d04f0104d36211bbb198c462f7e8a5cc30973f3"
     },
     {
       "path": "AutoFillExtension/VaultwardenIOSAutoFill.entitlements",
@@ -506,8 +509,8 @@
     {
       "path": "Docs/FeatureStatus.md",
       "type": "file",
-      "bytes": 1884,
-      "sha256": "e6a05d20d5c247673c94b0e3ec1a101039b4d654d4b80285de002ca7d499c753"
+      "bytes": 2300,
+      "sha256": "29f69ce13ff0d04fca331b2f4c6b9eadb84a97ac162dea4ce9d7e877ad07bd48"
     },
     {
       "path": "Docs/IntegratedAcceptance.md",
@@ -524,8 +527,8 @@
     {
       "path": "Docs/RemainingReleaseWork.md",
       "type": "file",
-      "bytes": 126683,
-      "sha256": "1d4b98d27b180737abb32dd833d5003f436a4b4321dd586175aab20220760971"
+      "bytes": 129670,
+      "sha256": "31554f307165b1e491a5d1c627760f7fb2e29ac5ad5f8e5590ca2ca4b4fad9ab"
     },
     {
       "path": "Docs/SDKLocalArtifactInventory.json",
@@ -602,8 +605,8 @@
     {
       "path": "Packages/AppModules/Package.swift",
       "type": "file",
-      "bytes": 4129,
-      "sha256": "6d7532d8b145dd2777a0d934614e4eb347059d114ee7e0a3bc469a8c4d21c8ce"
+      "bytes": 4256,
+      "sha256": "70e2c718153e6b7e4a679cca9c0aa088f6de0d8fc224cc9db431bdf76938d845"
     },
     {
       "path": "Packages/AppModules/Sources/AppFeature/AppFeatureModule.swift",
@@ -812,8 +815,8 @@
     {
       "path": "Packages/AppModules/Sources/AutoFillContract/PasskeyRegistrationRecovery.swift",
       "type": "file",
-      "bytes": 3235,
-      "sha256": "ec2b6d36e3f0cdedb41abc7870b736474529e8c931c3e6024af68c2cead3b3be"
+      "bytes": 3975,
+      "sha256": "0f2749575ae850ebb2318c0155da2f65f07d03676351c23b814f196046b8bdac"
     },
     {
       "path": "Packages/AppModules/Sources/AutoFillContract/SharedAccountInfo.swift",
@@ -836,8 +839,8 @@
     {
       "path": "Packages/AppModules/Sources/AutoFillData/AutoFillExtensionContext.swift",
       "type": "file",
-      "bytes": 2775,
-      "sha256": "310db6f2a7ac57cda62beffa9173d7a8c3f42c07b355ad5d7d44488349df1704"
+      "bytes": 2899,
+      "sha256": "4f0d899741c88b23fa86d7b47253bb87c448be1c4d5c9979a99f41adcf17bdec"
     },
     {
       "path": "Packages/AppModules/Sources/AutoFillData/AutoFillIdentityMutationPolicy.swift",
@@ -860,8 +863,8 @@
     {
       "path": "Packages/AppModules/Sources/AutoFillData/CredentialQuery.swift",
       "type": "file",
-      "bytes": 11504,
-      "sha256": "58fd118323da3983e3c589bc9f89d253852d04705bb88b003dd98ae43cc03582"
+      "bytes": 12881,
+      "sha256": "7fab766e1a955a9dea93b087850f59512b5bf28628f941f3421821769a776963"
     },
     {
       "path": "Packages/AppModules/Sources/AutoFillData/ExtensionRequestLifecycle.swift",
@@ -936,6 +939,12 @@
       "sha256": "f92a14a1df1cd89e294721b85b93ad7e6ea7cbc3a5056303adca8fcd62e2067f"
     },
     {
+      "path": "Packages/AppModules/Sources/AutoFillData/QuickTypeIdentityPolicy.swift",
+      "type": "file",
+      "bytes": 934,
+      "sha256": "57296619ea420a0fe0022ba8f339262730e131591d7f83ccdb4d1a2fa1d8bb39"
+    },
+    {
       "path": "Packages/AppModules/Sources/AutoFillData/Resources/public_suffix_list.dat",
       "type": "file",
       "bytes": 334697,
@@ -964,6 +973,12 @@
       "type": "file",
       "bytes": 5328,
       "sha256": "3f7a0718c0e90b688c726977faf17dbdcafb9d270708632be50989ead1cb5d8e"
+    },
+    {
+      "path": "Packages/AppModules/Sources/AutoFillFeature/PasswordSaveView.swift",
+      "type": "file",
+      "bytes": 2494,
+      "sha256": "da8f0ca2b560a08607ad752e4ed7b169d9e412317575aabb1e8ee883b8fdbb82"
     },
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/AttachmentDTO.swift",
@@ -1022,8 +1037,8 @@
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKAutoFillCredentialView.swift",
       "type": "file",
-      "bytes": 3128,
-      "sha256": "ce0af3c11c4a162a549ca5673449f9941ef7fcbaa947851a1867a2df129be002"
+      "bytes": 3208,
+      "sha256": "2006dbde2cdf059cb29c329cada920eaec7f73808d55f68959c2fe7bb857f324"
     },
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKAutoFillFidoCallbacks.swift",
@@ -1034,8 +1049,8 @@
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKAutoFillPasskeyModels.swift",
       "type": "file",
-      "bytes": 3253,
-      "sha256": "28f4b994eeea57c78325f1a7adb0dd3d4f6c46de07d04aaaa107f1b33fee8aa1"
+      "bytes": 3550,
+      "sha256": "356b620ad2806406338b7bc544b1a647df4dd201cff9ab29489977f938aefc48"
     },
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKAutoFillRegistrationIdentityMapper.swift",
@@ -1046,8 +1061,8 @@
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKAutoFillService.swift",
       "type": "file",
-      "bytes": 7141,
-      "sha256": "8aaf154534aa454ae2a9fcd8d5669ae5df42832730ccc4500ca9f403ca55153c"
+      "bytes": 8859,
+      "sha256": "b766cd493dc4418aeb4b4ed2fc1154ffe4102a469a51ea674a553b88cf5ac7d8"
     },
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKCipherService.swift",
@@ -1082,8 +1097,8 @@
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKPasskeyWrite.swift",
       "type": "file",
-      "bytes": 2990,
-      "sha256": "ff4f96de854096757525273d3836914118eb5cbc7ea4aa0c3bccb9193b68bc66"
+      "bytes": 3503,
+      "sha256": "9483112ab63b4f957d1ce14e7d0f0bd509ced76982e064f06ede36b4bd84d6fa"
     },
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKPasswordGeneratorService.swift",
@@ -1136,8 +1151,8 @@
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKVaultSessionSource.swift",
       "type": "file",
-      "bytes": 24703,
-      "sha256": "f6c8daf491e95642f93c5513b8a76a813aae1bd712a0d9b1cc64214f8d426534"
+      "bytes": 24988,
+      "sha256": "dac6f41aac6f41976074cf71ebdef8769660fbf0387564c776684faf886f9ff0"
     },
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKVaultUnlockService.swift",
@@ -1232,8 +1247,8 @@
     {
       "path": "Packages/AppModules/Sources/Data/CredentialIdentityPublisher.swift",
       "type": "file",
-      "bytes": 7284,
-      "sha256": "5a5a13afce08a0c4fdbea0d2dcfec01257096b8bd80caea4741db461f6788b0e"
+      "bytes": 7984,
+      "sha256": "abf080295fc92055773405fe8ee002b66931a54851897866937b52952c6682b2"
     },
     {
       "path": "Packages/AppModules/Sources/Data/DataModule.swift",
@@ -1268,8 +1283,8 @@
     {
       "path": "Packages/AppModules/Sources/Data/DefaultVaultRepository.swift",
       "type": "file",
-      "bytes": 17145,
-      "sha256": "a3dbc9b6fee418c16f8abadae517f00c4ec5c4081bf390279a24f5f9654aff8b"
+      "bytes": 17459,
+      "sha256": "e699c1195efce2ead599f1254a4c22a00a5956f9063a40037f6bf523a2391afa"
     },
     {
       "path": "Packages/AppModules/Sources/Data/DefaultVaultTimeoutSettingsRepository.swift",
@@ -1316,8 +1331,8 @@
     {
       "path": "Packages/AppModules/Sources/Data/PasskeyRegistrationRecoveryReconciler.swift",
       "type": "file",
-      "bytes": 4625,
-      "sha256": "deeb7de9092b08e00a16344762b8487b028e0d69fa2dd16b89dfe511db001fff"
+      "bytes": 5958,
+      "sha256": "812159d90808c4b030aa0e31a60ac559e2bfad5c27d09fed72cb1b7ecfb67ea3"
     },
     {
       "path": "Packages/AppModules/Sources/Data/PasswordSecondFactorChallenge.swift",
@@ -1454,8 +1469,8 @@
     {
       "path": "Packages/AppModules/Sources/Domain/Domain.swift",
       "type": "file",
-      "bytes": 17955,
-      "sha256": "4807ff71d32e536680fd9f7510994943ac041d0612f162d0e02bce5ecc6aedc6"
+      "bytes": 18426,
+      "sha256": "23ee9539a8bd4d3de50941677e13469f8e5a337fbe0864a69665b118a48960da"
     },
     {
       "path": "Packages/AppModules/Sources/Domain/PasskeyRegistrationRecoveryReview.swift",
@@ -1604,8 +1619,8 @@
     {
       "path": "Packages/AppModules/Sources/PlatformServices/SystemCredentialIdentityStore.swift",
       "type": "file",
-      "bytes": 5676,
-      "sha256": "917ca1c122a399e2aa4146f14467efa73cf4cf8634e5cf150fd2d5a699e365b8"
+      "bytes": 7093,
+      "sha256": "967ee0cca01d83700ecc4187e6558075227447f6b84f4f49ba2bbbf587bd82c7"
     },
     {
       "path": "Packages/AppModules/Sources/PlatformServices/SystemDeviceNameClient.swift",
@@ -1778,14 +1793,14 @@
     {
       "path": "Packages/AppModules/Sources/VaultPresentation/ItemListView.swift",
       "type": "file",
-      "bytes": 7421,
-      "sha256": "739b90c3e2784e0dc92d175aecf8e43b8b376ce0f10f675778fc21884d777f69"
+      "bytes": 7422,
+      "sha256": "e13af0caf743032217aee51a95ccbf4deaf8586a36d134b2916c972464a21458"
     },
     {
       "path": "Packages/AppModules/Sources/VaultPresentation/PasskeyRecoveryReviewView.swift",
       "type": "file",
-      "bytes": 2439,
-      "sha256": "b79affafe3f4b6be85257aa4e31eaae1bb9bae7c069fbfbe7aa6f37fba7a097b"
+      "bytes": 2429,
+      "sha256": "0dd2ba39f33cd23edf40bb7286f6669c0a2e81e484afe699118df3a124df038f"
     },
     {
       "path": "Packages/AppModules/Sources/VaultPresentation/SidebarView.swift",
@@ -1820,8 +1835,8 @@
     {
       "path": "Packages/AppModules/Sources/VaultPresentation/VaultModel.swift",
       "type": "file",
-      "bytes": 19555,
-      "sha256": "a7717dc27f1d64db71f001b4e153c50b6d70c15ae925e06044f7ea38c83b021a"
+      "bytes": 19782,
+      "sha256": "bd832c4f4ccdbcb5405fa0a52f300faba3312bda8828a461de7f63f7a532a162"
     },
     {
       "path": "Packages/AppModules/Sources/VaultPresentation/VaultRootView.swift",
@@ -1964,14 +1979,14 @@
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AutoFillQueryTestSupport.swift",
       "type": "file",
-      "bytes": 6513,
-      "sha256": "9d5d225cabb0e78f222f4a57dfa3d1a99435376cdeb505f5388c54cbdb6513dc"
+      "bytes": 6564,
+      "sha256": "ba66a8207ab864534071abeee599e2cf96b25eed79f9b91f7505ad4e2db492de"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AutoFillRequestCompletionTests.swift",
       "type": "file",
-      "bytes": 12991,
-      "sha256": "44af5a059281d15915392fdc79274f4b4f2cb6629a1c3aae1b16589ec7c5751e"
+      "bytes": 13143,
+      "sha256": "e0e1c7e6695fd71cc44638bb133ad2bfd906500420e8fd75bb2c197d75ee63e8"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AutoFillRequestErrorPolicyTests.swift",
@@ -2030,14 +2045,14 @@
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/CredentialIdentityPublisherTests.swift",
       "type": "file",
-      "bytes": 8681,
-      "sha256": "72d4a90d59c6d8a08034f52c8c06e2fc1f5919e26eabac61e358cd34347dc261"
+      "bytes": 9557,
+      "sha256": "366e58c753bca61700912d2229acb4b1a11542fb84852350b9de72f04427313a"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/CredentialQueryTests.swift",
       "type": "file",
-      "bytes": 8232,
-      "sha256": "4dea4eff827059de22b5eae1b516f4fc3ea61337f43aed4a925f377c18d81b83"
+      "bytes": 11061,
+      "sha256": "d0d92a1d6173b943815f4b5239e3700b5719625397fa96135d4c86bec4509e88"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/CrossProcessFileLockTests.swift",
@@ -2228,8 +2243,8 @@
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasskeyRegistrationPersistenceTests.swift",
       "type": "file",
-      "bytes": 7393,
-      "sha256": "1454210a8b0c017f06d5d1236f5f8c1958f4c9ed6ae4b39b79e38c8ddaadcfba"
+      "bytes": 8926,
+      "sha256": "d483c1a2ba9d054dfec4a509999311522882d698b5cd01017872cb7213ea2681"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasskeyRegistrationProjectionTests.swift",
@@ -2240,8 +2255,8 @@
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasskeyRegistrationRecoveryReconcilerTests.swift",
       "type": "file",
-      "bytes": 4073,
-      "sha256": "d8f4c4d1136b6774ce957d3f14856e9a7bb0cc8e561226bcee9e7d96c6b82485"
+      "bytes": 5730,
+      "sha256": "affc192499990b012236ace3fc23e66369594b37f8502ff9f5586e3373ede601"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasskeyRegistrationRecoveryReviewTests.swift",
@@ -2252,8 +2267,8 @@
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasskeyRegistrationRecoveryStoreTests.swift",
       "type": "file",
-      "bytes": 11680,
-      "sha256": "ec98484f6c7d9a2f67178d54673bb5ccdfb902d7263ed50ac2c1bdec91c862a1"
+      "bytes": 12796,
+      "sha256": "f665e8da5a0bcb811b88471e5ba9f21cb526ba59afdf9b619194f48cce38e97d"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/PasskeyRegistrationWriterTests.swift",
@@ -2324,8 +2339,8 @@
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKCipherServiceTests.swift",
       "type": "file",
-      "bytes": 8899,
-      "sha256": "812e671897a2465559f99674abd9bf205f6690ed14f50cd9968970ed99c8f21c"
+      "bytes": 10148,
+      "sha256": "e54a34e546b7f120cc62b2fbf69d7403aed0393f7bdc0c26449188063ecae09c"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKDecryptionIntegrityTests.swift",
@@ -2350,6 +2365,12 @@
       "type": "file",
       "bytes": 5371,
       "sha256": "72c7d2f17f89e30944f042d2f3b3a53c260ea75f123854df98bcf7fcc6763e5d"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKPasswordSaveTests.swift",
+      "type": "file",
+      "bytes": 2402,
+      "sha256": "fd0234732f48e55329155a5b5ac969ace8715424872378aaa5e6988ed4c6a067"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKSendCryptographyTests.swift",
@@ -2822,8 +2843,8 @@
     {
       "path": "README.md",
       "type": "file",
-      "bytes": 11354,
-      "sha256": "53d23c2bd303d21b9863a8f62021b77e6274bbe7670b093bd56a0496bfde7e51"
+      "bytes": 11673,
+      "sha256": "21fc40681258cd0d4a459572840a8ad757ef0de7a5e478f3d58a3a26606e389e"
     },
     {
       "path": "SECURITY.md",
@@ -2984,14 +3005,14 @@
     {
       "path": "Tests/PlatformIntegration/PlatformHostingTests.swift",
       "type": "file",
-      "bytes": 14057,
-      "sha256": "c5a993e58c1198601ff30a8200d9640fe88fb624ce9415cde9ea6bdd22cc814f"
+      "bytes": 15917,
+      "sha256": "f4b6afdc498b7f4ea7995d8ea315cfe2640bd0c0fd484227dfa1fb9e63ff5a69"
     },
     {
       "path": "project.yml",
       "type": "file",
-      "bytes": 14252,
-      "sha256": "920fd8f0f044e45ccabe2eddf420b4de686785b4094f9d947dc09d3dbb11eed6"
+      "bytes": 14304,
+      "sha256": "7373e80086e3ab8084aff5e8a6401d55f328357a54fe99142ccae1877b4c568e"
     }
   ]
 }

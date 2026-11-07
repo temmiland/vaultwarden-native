@@ -153,7 +153,11 @@ public actor SDKVaultSessionSource {
                     credentialID: $0.credentialId,
                     userHandle: $0.userHandle
                 ) },
-                isEligibleForAutoFill: true
+                isEligibleForAutoFill: true,
+                domainMatchingURIs: (login.uris ?? []).filter { $0.match == nil || $0.match == .domain }.compactMap(
+                    \.uri
+                ),
+                passwordCiphertextHash: ciphers[id]?.login?.password.map { PasswordSaveFingerprint.make(ciphertext: $0) }
             )
         }
         let snapshot = VaultSnapshot(

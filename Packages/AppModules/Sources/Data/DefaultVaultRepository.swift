@@ -320,7 +320,12 @@ public actor DefaultVaultRepository: VaultRepository {
             do {
                 pendingRecovery = try await registrationRecovery.reconcile(
                     identities: CredentialIdentityMapper.makeIdentities(from: output.identitySources),
-                    canResolve: projection == .current(revision: output.snapshot.revision)
+                    canResolve: projection == .current(revision: output.snapshot.revision),
+                    passwordCiphertextHashes: Dictionary(
+                        output.identitySources.compactMap { source in
+                            source.passwordCiphertextHash.map { (source.cipherID, $0) }
+                        }, uniquingKeysWith: { _, _ in Foundation.Data() }
+                    )
                 )
             } catch is CancellationError { throw CancellationError() }
             catch { pendingRecovery = true }

@@ -65,6 +65,51 @@ public struct SDKAutoFillService: Sendable {
         )
     }
 
+    public func encryptPasswordSave(
+        title: String, username: String, password: String, uri: String,
+        target: SDKAutoFillCredentialView?
+    ) async throws -> SDKAutoFillEncryptedCipher {
+        let view = try Self.passwordSaveView(
+            title: title,
+            username: username,
+            password: password,
+            uri: uri,
+            target: target
+        )
+        let encrypted = try await SDKVaultCryptoService(sessionClient: session).encryptCipher(view)
+        return SDKAutoFillEncryptedCipher(
+            legacyCipher: encrypted.cipher,
+            encryptedFor: encrypted.encryptedFor,
+            lastKnownRevisionDate: target?.legacyView.revisionDate
+        )
+    }
+
+    static func passwordSaveView(
+        title: String,
+        username: String,
+        password: String,
+        uri: String,
+        target: SDKAutoFillCredentialView?
+    ) throws -> CipherView {
+        guard !title.isEmpty, !username.isEmpty, !password.isEmpty, !uri.isEmpty,
+              title.utf8.count <= 4096, username.utf8.count <= 4096,
+              password.utf8.count <= 1_048_576, uri.utf8.count <= 2048,
+              target == nil || target?.allowsPasswordSaving == true else {
+            throw SDKAutoFillFidoError.accessDenied
+        }
+        var draft: VaultItemDraft
+        if let target {
+            draft = try SDKVaultItemDraftMapper.makeDraft(from: target.legacyView)
+        } else {
+            draft = VaultItemDraft(kind: .login)
+            draft.name = title
+            draft.uris = [uri]
+        }
+        draft.username = username
+        draft.password = password
+        return try SDKVaultItemDraftMapper.applying(draft, to: target?.legacyView)
+    }
+
     public func assertion(
         relyingPartyIdentifier: String,
         request: String,

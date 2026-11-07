@@ -245,9 +245,9 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
             )
             return
         }
-        // Legacy identities may remain in the OS index after an app update. They carry no
-        // trustworthy requesting URL, so do not fulfil them; a scoped picker can still be used.
-        cancel(.credentialIdentityNotFound, invocationID: beginInvocation())
+        // Fulfil selected domain identities through the visible, access-checked route.
+        // The UI route revalidates the current URI policy rather than trusting the OS index.
+        cancel(.userInteractionRequired, invocationID: beginInvocation())
     }
 
     // MARK: - Fulfilling one specific, already-chosen credential
@@ -269,9 +269,142 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
             await handlePasskeyRequest(passkeyRequest, invocationID: invocationID)
             return
         }
-        // The identity can predate the safe publication policy and lacks the actual request URL.
-        cancel(.credentialIdentityNotFound, invocationID: invocationID)
+        do {
+            let session = try await session(for: invocationID)
+            if credentialRequest.type == .password,
+               let identity = credentialRequest.credentialIdentity as? ASPasswordCredentialIdentity,
+               identity.serviceIdentifier.type == .domain, let cipherID = identity.recordIdentifier {
+                let password = try await session.credentials.quickTypePassword(
+                    cipherId: cipherID, domain: identity.serviceIdentifier.identifier, username: identity.user
+                )
+                try finish(.password(password), session: session, invocationID: invocationID)
+                return
+            }
+            if #available(macOS 15.0, iOS 18.0, *), credentialRequest.type == .oneTimeCode,
+               let identity = credentialRequest.credentialIdentity as? ASOneTimeCodeCredentialIdentity,
+               identity.serviceIdentifier.type == .domain, let cipherID = identity.recordIdentifier {
+                let code = try await session.credentials.quickTypeOneTimeCode(
+                    cipherId: cipherID, domain: identity.serviceIdentifier.identifier, label: identity.label
+                )
+                try finish(.oneTimeCode(code), session: session, invocationID: invocationID)
+                return
+            }
+            cancel(.credentialIdentityNotFound, invocationID: invocationID)
+        } catch {
+            cancel(
+                AutoFillRequestErrorPolicy.cancellation(for: error, route: .identifiedCredential),
+                invocationID: invocationID
+            )
+        }
     }
+
+    #if os(iOS)
+        @available(iOS 26.2, *)
+        override func performWithoutUserInteractionIfPossible(savePasswordRequest: ASSavePasswordRequest) {
+            // A website event never authorizes an unattended vault mutation.
+            cancel(.userInteractionRequired, invocationID: beginInvocation())
+        }
+
+        @available(iOS 26.2, *)
+        override func prepareInterface(for savePasswordRequest: ASSavePasswordRequest) {
+            startInvocation { provider, id in
+                await provider.preparePasswordSave(savePasswordRequest, invocationID: id)
+            }
+        }
+
+        @available(iOS 26.2, *)
+        private func preparePasswordSave(_ request: ASSavePasswordRequest, invocationID: UUID) async {
+            do {
+                let uri = try passwordSaveURI(request)
+                let session = try await session(for: invocationID)
+                let result = try await session.credentials.logins(matching: [uri])
+                try requireInvocation(invocationID)
+                showPasswordSave(
+                    request,
+                    matches: result.items,
+                    isSaving: false,
+                    canSave: true,
+                    error: result.warningMessage,
+                    invocationID: invocationID
+                )
+            } catch {
+                showPasswordSave(
+                    request,
+                    matches: [],
+                    isSaving: false,
+                    canSave: false,
+                    error: "Open Vaultwarden, unlock and sync before saving this password.",
+                    invocationID: invocationID
+                )
+            }
+        }
+
+        @available(iOS 26.2, *)
+        private func passwordSaveURI(_ request: ASSavePasswordRequest) throws -> String {
+            let value = request.serviceIdentifier.identifier
+            let uri = request.serviceIdentifier.type == .domain ? "https://" + value : value
+            guard value.utf8.count <= 2048, let url = URL(string: uri), url.host?.isEmpty == false,
+                  ["https", "http"].contains(url.scheme?.lowercased() ?? ""),
+                  url.user == nil, url.password == nil, !request.credential.password.isEmpty else {
+                throw AutoFillOperationError.accessDenied
+            }
+            return uri
+        }
+
+        @available(iOS 26.2, *)
+        private func showPasswordSave(
+            _ request: ASSavePasswordRequest,
+            matches: [AutoFillLoginSummary],
+            isSaving: Bool,
+            canSave: Bool,
+            error: String?,
+            invocationID: UUID
+        ) {
+            guard lifecycle.isActive(invocationID) else { return }
+            embed(PlatformHostingController(rootView: PasswordSaveView(
+                service: request.serviceIdentifier.identifier, username: request.credential.user,
+                existingItems: matches, isSaving: isSaving, canSave: canSave, errorMessage: error,
+                onSave: { [weak self] username, target in
+                    self?.runAction(invocationID) { provider in
+                        provider.showPasswordSave(
+                            request,
+                            matches: matches,
+                            isSaving: true,
+                            canSave: false,
+                            error: nil,
+                            invocationID: invocationID
+                        )
+                        do {
+                            let uri = try provider.passwordSaveURI(request)
+                            let session = try await provider.session(for: invocationID)
+                            try await AutoFillPasswordSave.save(
+                                title: request.title ?? request.serviceIdentifier.identifier,
+                                username: username, password: request.credential.password, uri: uri,
+                                targetID: target?.cipherId, session: session
+                            )
+                            try provider.finish(
+                                .passwordSaved,
+                                session: session,
+                                invocationID: invocationID,
+                                requireOriginalCache: false
+                            )
+                        } catch {
+                            // A sent request may have succeeded. Require a full sync/review;
+                            // never turn a transport failure into a second create button.
+                            provider.showPasswordSave(
+                                request,
+                                matches: [],
+                                isSaving: false,
+                                canSave: false,
+                                error: "The save could not be completed safely. Open Vaultwarden and sync to check its outcome before trying again.",
+                                invocationID: invocationID
+                            )
+                        }
+                    }
+                }, onCancel: { [weak self] in self?.cancel(.userCanceled, invocationID: invocationID) }
+            )))
+        }
+    #endif
 
     // MARK: - One-time codes (TOTP)
 

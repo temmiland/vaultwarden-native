@@ -10,19 +10,30 @@ public enum SDKPasskeyWriteError: Error, Sendable, Equatable {
 
 extension SDKCipherService {
     public func savePasskeyResponse(_ cipher: SDKAutoFillEncryptedCipher) async throws -> CipherResponseDTO {
+        try await saveCredentialResponse(cipher)
+    }
+
+    public func saveCredentialResponse(_ cipher: SDKAutoFillEncryptedCipher) async throws -> CipherResponseDTO {
         guard cipher.encryptedFor == userID else { throw SDKPasskeyWriteError.notSubmitted }
-        return try await savePasskeyResponse(cipher.value)
+        return try await saveCredentialResponse(
+            cipher.value,
+            lastKnownRevisionDate: cipher.lastKnownRevisionDate ?? cipher.value.revisionDate
+        )
     }
 
     /// Used only by existing passkey registration. Distinguishes a pre-submit failure, a definite
     /// rejection, an ambiguous request and a successful status with unusable projection payload.
     public func savePasskeyResponse(_ cipher: Cipher) async throws -> CipherResponseDTO {
+        try await saveCredentialResponse(cipher, lastKnownRevisionDate: cipher.revisionDate)
+    }
+
+    private func saveCredentialResponse(_ cipher: Cipher, lastKnownRevisionDate: Date) async throws -> CipherResponseDTO {
         let body: Data
         do {
             body = try JSONEncoder().encode(CipherRequestDTO(
                 cipher: cipher,
                 encryptedFor: userID,
-                lastKnownRevisionDate: cipher.id == nil ? nil : cipher.revisionDate
+                lastKnownRevisionDate: cipher.id == nil ? nil : lastKnownRevisionDate
             ))
         } catch { throw SDKPasskeyWriteError.notSubmitted }
         let token: String

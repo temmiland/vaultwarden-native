@@ -8,6 +8,29 @@ import Testing
 @Suite
 struct PasskeyRegistrationPersistenceTests {
     @Test(arguments: [false, true])
+    func passwordJournalSurvivesUncertainAndConfirmedWritesAndPreventsAnotherAttempt(_ confirmed: Bool) async throws {
+        let proof = PasskeyRecoveryJournalFixture.proof, journal = PasskeyRecoveryJournalFixture()
+        let writer = PasskeyRegistrationWriter()
+        let record = PasskeyRegistrationRecoveryRecord(
+            account: proof.account, credentialID: Foundation.Data(), relyingPartyIdentifier: "example.com",
+            targetCipherID: nil, originatingUnlockID: proof.unlockID, kind: .password,
+            passwordCiphertextHash: PasswordSaveFingerprint.make(ciphertext: "encrypted-password")
+        )
+        let operation: @Sendable () async throws -> PasskeyRegistrationReceipt = {
+            try await writer.save(record: record, proof: proof, journal: journal, checkAccess: {}, write: {
+                #expect(journal.entries.first?.kind == .password)
+                if !confirmed { throw SDKPasskeyWriteError.outcomeUnknown }
+                return AutoFillQuerySourceFixture.dto("saved")
+            }, project: { _ in })
+        }
+        if confirmed { #expect(try await !operation().needsProjectionRepair) }
+        else { await #expect(throws: PasskeyRegistrationError.outcomeUnknown) { _ = try await operation() } }
+        #expect(journal.entries.count == 1)
+        #expect(journal.entries.first?.phase == (confirmed ? .confirmed : .submitted))
+        await #expect(throws: PasskeyRegistrationError.recoveryRequired) { _ = try await operation() }
+    }
+
+    @Test(arguments: [false, true])
     func reserveUsesExactAddedBytesAndOriginBeforeCreateOrUpdateHTTP(_ creating: Bool) async throws {
         let source = RegistrationSourceFixture(creating: creating), writer = PasskeyRegistrationWriter()
         let receipt = try await source.persistence(writer: writer).save(source.encrypted)

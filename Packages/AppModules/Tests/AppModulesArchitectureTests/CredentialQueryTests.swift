@@ -8,6 +8,62 @@ import Testing
 @Suite
 struct CredentialQueryTests {
     @Test
+    func quickTypeRevalidatesDomainUsernameAndRevocationBeforeReturningSecrets() async throws {
+        let source = AutoFillQuerySourceFixture()
+        let query = CredentialQuery(source: source)
+        let password = try await query.quickTypePassword(
+            cipherId: "cipher-1",
+            domain: "example.com",
+            username: "fixture-user"
+        )
+        #expect(password.password == "synthetic-password")
+        #expect(
+            try await query.quickTypeOneTimeCode(cipherId: "cipher-1", domain: "example.com", label: "Example").code == "123456"
+        )
+        await #expect(throws: AutoFillOperationError.accessDenied) {
+            _ = try await query.quickTypeOneTimeCode(cipherId: "cipher-1", domain: "example.com", label: "stale-label")
+        }
+        await #expect(throws: AutoFillOperationError.accessDenied) {
+            _ = try await query.quickTypePassword(cipherId: "cipher-1", domain: "example.org", username: "fixture-user")
+        }
+        await #expect(throws: AutoFillOperationError.accessDenied) {
+            _ = try await query.quickTypePassword(cipherId: "cipher-1", domain: "example.com", username: "stale-user")
+        }
+        source.deny()
+        await #expect(throws: CancellationError.self) {
+            _ = try await query.quickTypePassword(cipherId: "cipher-1", domain: "example.com", username: "fixture-user")
+        }
+    }
+
+    @Test(arguments: [UriMatchType.host, .startsWith, .exact, .regularExpression, .never])
+    func quickTypeCannotBypassAChangedStrictURIPolicy(_ mode: UriMatchType) async throws {
+        let source = AutoFillQuerySourceFixture()
+        source.setView(AutoFillQuerySourceFixture.view(uriMatchType: mode))
+        let query = CredentialQuery(source: source)
+        await #expect(throws: AutoFillOperationError.accessDenied) {
+            _ = try await query.quickTypePassword(cipherId: "cipher-1", domain: "example.com", username: "fixture-user")
+        }
+        await #expect(throws: AutoFillOperationError.accessDenied) {
+            _ = try await query.quickTypeOneTimeCode(cipherId: "cipher-1", domain: "example.com", label: "Example")
+        }
+    }
+
+    @Test
+    func quickTypeUsesPublicAndPrivateSuffixBoundariesAndRejectsNonWebServices() {
+        #expect(QuickTypeIdentityPolicy.domain(for: "https://a.example.co.uk/path", matchType: nil) == "example.co.uk")
+        #expect(QuickTypeIdentityPolicy.domain(for: "https://alice.github.io", matchType: .domain) == "alice.github.io")
+        for uri in [
+            "https://github.io",
+            "https://127.0.0.1",
+            "https://localhost",
+            "androidapp://example.com",
+            "https://user:pass@example.com",
+        ] {
+            #expect(QuickTypeIdentityPolicy.domain(for: uri, matchType: .domain) == nil)
+        }
+    }
+
+    @Test
     func freshUnsupportedPayloadBlocksRetainedRegistrationSelectionWithoutBlockingPasswordReads() async throws {
         let source = AutoFillQuerySourceFixture()
         let original = SDKAutoFillCredentialView(legacyView: AutoFillQuerySourceFixture.view())

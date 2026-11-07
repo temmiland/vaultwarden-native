@@ -6,7 +6,7 @@ public enum AutoFillCancellationReason: Sendable, Equatable {
 }
 
 public enum AutoFillCompletionKind: Sendable, Equatable {
-    case password, oneTimeCode, passkeyAssertion, passkeyRegistration
+    case password, oneTimeCode, passkeyAssertion, passkeyRegistration, passwordSaved
 }
 
 public enum AutoFillCompletionError: Error, Sendable, Equatable {
@@ -17,6 +17,7 @@ public enum AutoFillCompletionError: Error, Sendable, Equatable {
 /// An empty SDK-decoded passkey user handle is valid; no private passkey key is carried here.
 public enum AutoFillCompletion: Sendable, CustomStringConvertible, CustomDebugStringConvertible {
     case password(AutoFillPassword)
+    case passwordSaved
     case oneTimeCode(TimeBasedOneTimeCode)
     case passkeyAssertion(
         relyingPartyIdentifier: String,
@@ -33,6 +34,7 @@ public enum AutoFillCompletion: Sendable, CustomStringConvertible, CustomDebugSt
     public var kind: AutoFillCompletionKind {
         switch self {
         case .password: .password
+        case .passwordSaved: .passwordSaved
         case .oneTimeCode: .oneTimeCode
         case .passkeyAssertion: .passkeyAssertion
         case .passkeyRegistration: .passkeyRegistration
@@ -44,6 +46,7 @@ public enum AutoFillCompletion: Sendable, CustomStringConvertible, CustomDebugSt
     func validate(at date: Date) throws {
         let valid: Bool
         switch self {
+        case .passwordSaved: valid = true
         case let .password(value): valid = !value.password.isEmpty // intentionally empty username is allowed
         case let .oneTimeCode(code): try code.validate(at: date); valid = true
         case let .passkeyAssertion(rp, hash, value):

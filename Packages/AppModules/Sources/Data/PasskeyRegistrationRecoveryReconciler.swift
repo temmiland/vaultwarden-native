@@ -6,11 +6,24 @@ public protocol VaultRegistrationRecovery: Sendable {
     /// Return true while a mutation is unresolved. Only a full authoritative sync whose cache
     /// and OS identities were both published can permit removal of a matching journal record.
     func reconcile(identities: [CredentialIdentityDescriptor], canResolve: Bool) async throws -> Bool
+    func reconcile(
+        identities: [CredentialIdentityDescriptor],
+        canResolve: Bool,
+        passwordCiphertextHashes: [CipherID: Foundation.Data]
+    ) async throws -> Bool
     func prepareReview(vaultRevision: UInt64) async throws -> PasskeyRegistrationRecoveryReview
     func abandon(_ review: PasskeyRegistrationRecoveryReview) async throws -> Bool
 }
 
 public extension VaultRegistrationRecovery {
+    func reconcile(
+        identities: [CredentialIdentityDescriptor],
+        canResolve: Bool,
+        passwordCiphertextHashes _: [CipherID: Foundation.Data]
+    ) async throws -> Bool {
+        try await reconcile(identities: identities, canResolve: canResolve)
+    }
+
     func prepareReview(vaultRevision _: UInt64) async throws -> PasskeyRegistrationRecoveryReview { throw PasskeyRegistrationReviewError.unavailable }
     func abandon(_: PasskeyRegistrationRecoveryReview) async throws -> Bool { throw PasskeyRegistrationReviewError.unavailable }
 }
@@ -29,11 +42,30 @@ public actor PasskeyRegistrationRecoveryReconciler: VaultRegistrationRecovery {
     }
 
     public func reconcile(identities: [CredentialIdentityDescriptor], canResolve: Bool) async throws -> Bool {
+        try await reconcile(
+            identities: identities,
+            canResolve: canResolve,
+            passwordCiphertextHashes: [:]
+        )
+    }
+
+    public func reconcile(
+        identities: [CredentialIdentityDescriptor],
+        canResolve: Bool,
+        passwordCiphertextHashes: [CipherID: Foundation.Data]
+    ) async throws -> Bool {
         try checkAccess()
         pendingReview = nil
         let records = try journal.records(requiring: proof)
         guard canResolve else { return !records.isEmpty }
         let resolved = records.filter { record in
+            if record.kind == .password {
+                // Only an authoritative sync can resolve the exact server-confirmed ID.
+                // Strict URI modes need not publish an OS identity to prove the saved login.
+                guard record.phase == .confirmed, let id = record.serverCipherID,
+                      let expected = record.passwordCiphertextHash, expected.count == 32 else { return false }
+                return passwordCiphertextHashes[CipherID(rawValue: id)] == expected
+            }
             let matching = identities.filter { identity in
                 let expectedCipherID = record.serverCipherID ?? record.targetCipherID
                 return identity.kind == .passkey && identity.credentialID == record.credentialID &&

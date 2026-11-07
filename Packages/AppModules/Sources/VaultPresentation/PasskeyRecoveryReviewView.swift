@@ -17,17 +17,17 @@ struct PasskeyRecoveryReviewView: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Review Unresolved Passkey Write").font(.headline)
+            Text("Review Unresolved Credential Save").font(.headline)
             Text(review.relyingPartyIdentifier).textSelection(.enabled)
             Text(review.serverConfirmed ? "The server confirmed the write, but local recovery is unresolved." :
                 "We do not know whether the server accepted the write. A request already sent may still finish.")
             Text(
-                "First inspect this relying party and the vault in an official client. Abandoning tracking removes only this local recovery marker. It does not delete a passkey, undo a server write, or prove that registering again is safe."
+                "First inspect this service and the vault in an official client. Abandoning tracking removes only this local recovery marker. It does not delete a credential, undo a server write, or prove that saving again is safe."
             )
             switch review.readiness {
             case .ready:
                 Toggle(
-                    "I inspected the credential and accept the unresolved outcome and risk of a duplicate if I register again.",
+                    "I inspected the credential and accept the unresolved outcome and risk of a duplicate if I save again.",
                     isOn: $acknowledged
                 )
                 Button("Abandon Local Tracking", role: .destructive) {

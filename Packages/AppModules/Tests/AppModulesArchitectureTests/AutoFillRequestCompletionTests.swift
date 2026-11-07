@@ -5,7 +5,15 @@ import Testing
 
 @Suite @MainActor
 struct AutoFillRequestCompletionTests {
-    @Test(arguments: [AutoFillCompletionKind.password, .oneTimeCode, .passkeyAssertion, .passkeyRegistration])
+    @Test(
+        arguments: [
+            AutoFillCompletionKind.password,
+            .oneTimeCode,
+            .passkeyAssertion,
+            .passkeyRegistration,
+            .passwordSaved,
+        ]
+    )
     func eachOutputStartsExactlyOneContextCallBeforeRetirement(_ kind: AutoFillCompletionKind) throws {
         let lifecycle = ExtensionRequestLifecycle(), context = AutoFillContextFixture()
         let completion = AutoFillRequestCompletion(lifecycle: lifecycle), id = lifecycle.begin()
@@ -252,6 +260,7 @@ struct AutoFillRequestCompletionTests {
     static func payload(_ kind: AutoFillCompletionKind) -> AutoFillCompletion {
         let bytes = Foundation.Data([1])
         switch kind {
+        case .passwordSaved: return .passwordSaved
         case .password: return .password(AutoFillPassword(username: "", password: "synthetic-password"))
         case .oneTimeCode: return .oneTimeCode(TimeBasedOneTimeCode(code: "123456", period: .max, generatedAt: Date()))
         case .passkeyAssertion: return .passkeyAssertion(

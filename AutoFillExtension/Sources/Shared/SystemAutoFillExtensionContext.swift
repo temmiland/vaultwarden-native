@@ -9,6 +9,12 @@ final class SystemAutoFillExtensionContext: AutoFillExtensionContext {
     private let context: ASCredentialProviderExtensionContext
     init(_ context: ASCredentialProviderExtensionContext) { self.context = context }
     func supports(_ kind: AutoFillCompletionKind) -> Bool {
+        if kind == .passwordSaved {
+            #if os(iOS)
+                if #available(iOS 26.2, *) { return true }
+            #endif
+            return false
+        }
         if kind == .oneTimeCode {
             if #available(macOS 15.0, iOS 18.0, *) { return true }
             return false
@@ -18,6 +24,13 @@ final class SystemAutoFillExtensionContext: AutoFillExtensionContext {
 
     func complete(_ credential: AutoFillCompletion) {
         switch credential {
+        case .passwordSaved:
+            #if os(iOS)
+                guard #available(iOS 26.2, *) else { cancel(.failed); return }
+                context.completeSavePasswordRequest(completionHandler: nil)
+            #else
+                cancel(.failed)
+            #endif
         case let .password(value):
             context.completeRequest(
                 withSelectedCredential: ASPasswordCredential(user: value.username, password: value.password),

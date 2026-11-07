@@ -39,9 +39,9 @@ struct ItemListView: View {
             }
             if model.state.loadWarnings.contains(.passkeyRegistrationRecoveryPending) {
                 Section {
-                    Label("Passkey write needs recovery", systemImage: "exclamationmark.triangle")
+                    Label("Credential save needs recovery", systemImage: "exclamationmark.triangle")
                     Text(
-                        "Don't register again yet. Retry sync to verify the saved passkey and repair AutoFill. If this warning remains, inspect the vault in an official client; the write is still unresolved."
+                        "Don't save again yet. Retry sync to verify the saved credential and repair AutoFill. If this warning remains, inspect the vault in an official client; the write is still unresolved."
                     )
                     .font(.caption)
                     Button("Retry Sync") { Task { await model.perform(.loadVault) } }

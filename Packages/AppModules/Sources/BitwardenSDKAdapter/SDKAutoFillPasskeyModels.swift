@@ -1,3 +1,4 @@
+import AutoFillContract
 import BitwardenSdk
 import Foundation
 
@@ -9,11 +10,16 @@ public enum SDKAutoFillFidoError: Error, Sendable, Equatable {
 public struct SDKAutoFillEncryptedCipher: Sendable, CustomStringConvertible, CustomDebugStringConvertible {
     let value: Cipher
     let encryptedFor: String
-    public init(legacyCipher: Cipher, encryptedFor: String) {
-        value = legacyCipher; self.encryptedFor = encryptedFor
+    let lastKnownRevisionDate: Date?
+    public init(legacyCipher: Cipher, encryptedFor: String, lastKnownRevisionDate: Date? = nil) {
+        value = legacyCipher; self.encryptedFor = encryptedFor; self.lastKnownRevisionDate = lastKnownRevisionDate
     }
 
     public var id: String? { value.id }
+    public var passwordCiphertextHash: Foundation.Data? {
+        value.login?.password.map { PasswordSaveFingerprint.make(ciphertext: $0) }
+    }
+
     public var allowsPasskeyRegistration: Bool {
         SDKVaultAccessPolicy.allowsUnpromptedSecretAccess(value) && value.edit && value.type == .login && value.login != nil
     }

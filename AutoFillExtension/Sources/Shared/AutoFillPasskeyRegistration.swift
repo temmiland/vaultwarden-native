@@ -139,7 +139,7 @@ enum AutoFillPasskeyRegistration {
 
 /// Invocation-scoped transport composition. The original cache fences pre-submit HTTP; post-send
 /// checks are proof-only because the confirmed write's own projection will advance that UUID.
-private struct ExtensionHTTPClient: HTTPClient {
+struct ExtensionHTTPClient: HTTPClient {
     let base: any HTTPClient
     let session: ExtensionVaultSession
     func send(_ request: HTTPRequest) async throws -> HTTPResponse {

@@ -10,6 +10,32 @@ struct SDKCipherServiceTests {
     private let apiURL = URL(string: "https://vault.example.com/api")!
 
     @Test
+    func passwordUpdateUsesTheObservedServerRevisionRatherThanTheNewEncryptionTimestamp() async throws {
+        let http = MockHTTPClient()
+        http.responses = [
+            HTTPResponse(
+                statusCode: 200,
+                headers: [:],
+                body: try JSONEncoder().encode(AutoFillQuerySourceFixture.dto("existing"))
+            ),
+        ]
+        let service = SDKCipherService(httpClient: http, apiURL: apiURL, userID: "user-1", accessToken: { "token" })
+        let original = Date(timeIntervalSince1970: 1_700_000_000)
+        let encrypted = SDKAutoFillEncryptedCipher(
+            legacyCipher: .fixture(id: "existing"),
+            encryptedFor: "user-1",
+            lastKnownRevisionDate: original
+        )
+        _ = try await service.saveCredentialResponse(encrypted)
+        let request = try #require(http.calls.first?.request)
+        let body = try #require(request.body)
+        let object = try #require(JSONSerialization.jsonObject(with: body) as? [String: Any])
+        let revision = try #require(object["lastKnownRevisionDate"] as? String)
+        #expect(revision.hasPrefix("2023-11-14T22:13:20"))
+        #expect(request.method == .put && request.redirectPolicy == .reject)
+    }
+
+    @Test
     func ownedAuthorizationFailureRetainsItsPreSubmissionClassification() async throws {
         let http = MockHTTPClient()
         let service = SDKCipherService(

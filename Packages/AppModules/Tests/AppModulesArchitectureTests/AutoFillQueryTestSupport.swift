@@ -124,7 +124,8 @@ final class AutoFillQuerySourceFixture: AutoFillCredentialSource, @unchecked Sen
         seed: String? = "synthetic-seed",
         password: String? = "synthetic-password",
         hasPasskeys: Bool = false,
-        reprompt: CipherRepromptType = .none
+        reprompt: CipherRepromptType = .none,
+        uriMatchType: UriMatchType = .domain
     ) -> CipherView {
         .fixture(
             id: id,
@@ -132,7 +133,7 @@ final class AutoFillQuerySourceFixture: AutoFillCredentialSource, @unchecked Sen
                 username: "fixture-user",
                 password: password,
                 passwordRevisionDate: nil,
-                uris: [LoginUriView(uri: "https://example.com", match: .domain, uriChecksum: nil)],
+                uris: [LoginUriView(uri: "https://example.com", match: uriMatchType, uriChecksum: nil)],
                 totp: seed,
                 autofillOnPageLoad: nil,
                 fido2Credentials: hasPasskeys ? [Fido2Credential(

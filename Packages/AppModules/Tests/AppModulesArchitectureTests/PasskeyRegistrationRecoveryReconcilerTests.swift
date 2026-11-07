@@ -6,6 +6,30 @@ import Testing
 
 @Suite
 struct PasskeyRegistrationRecoveryReconcilerTests {
+    @Test
+    func passwordSavesNeedConfirmedExactCipherAndAuthoritativeSyncEvenWithoutQuickType() async throws {
+        let proof = PasskeyRecoveryJournalFixture.proof
+        let journal = PasskeyRecoveryJournalFixture()
+        let record = PasskeyRegistrationRecoveryRecord(
+            account: proof.account, credentialID: Foundation.Data(), relyingPartyIdentifier: "example.com",
+            targetCipherID: nil, originatingUnlockID: proof.unlockID, kind: .password,
+            passwordCiphertextHash: PasswordSaveFingerprint.make(ciphertext: "encrypted-new-password")
+        )
+        try record.validate()
+        try journal.reserve(record, requiring: proof)
+        let recovery = make(journal)
+        let observed = [CipherID(rawValue: "saved"): PasswordSaveFingerprint.make(ciphertext: "encrypted-new-password")]
+        #expect(try await recovery.reconcile(identities: [], canResolve: true, passwordCiphertextHashes: observed))
+        try journal.confirm(record.mutationID, serverCipherID: "saved", requiring: proof)
+        #expect(try await recovery.reconcile(identities: [], canResolve: false, passwordCiphertextHashes: observed))
+        #expect(try await recovery.reconcile(identities: [], canResolve: true, passwordCiphertextHashes: [:]))
+        #expect(try await recovery.reconcile(identities: [], canResolve: true, passwordCiphertextHashes: [
+            CipherID(rawValue: "saved"): PasswordSaveFingerprint.make(ciphertext: "encrypted-old-password"),
+        ]))
+        #expect(try await !recovery.reconcile(identities: [], canResolve: true, passwordCiphertextHashes: observed))
+        #expect(journal.entries.isEmpty)
+    }
+
     private func identity(
         id: UInt8 = 1,
         rp: String = "example.com",

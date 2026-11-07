@@ -6,6 +6,21 @@ import Testing
 @Suite
 struct CredentialIdentityPublisherTests {
     @Test
+    func mapperPublishesDeduplicatedDomainIdentitiesOnlyForExplicitlyEligibleURIs() {
+        let source = VaultLoginIdentitySource(
+            cipherID: CipherID(rawValue: "login"), displayName: "Login", username: "alice",
+            serviceIdentifiers: ["https://strict.example.org/path"], hasOneTimeCode: true, passkeys: [],
+            isEligibleForAutoFill: true,
+            domainMatchingURIs: ["https://login.example.com", "https://example.com/path", "https://alice.github.io"]
+        )
+        let identities = CredentialIdentityMapper.makeIdentities(from: [source])
+        #expect(identities.count == 4)
+        #expect(Set(identities.map(\.serviceIdentifier)) == ["example.com", "alice.github.io"])
+        #expect(identities.filter { $0.kind == .password }.count == 2)
+        #expect(identities.filter { $0.kind == .oneTimeCode }.count == 2)
+    }
+
+    @Test
     func mapperPublishesOnlyPasskeysWithoutSecretsUntilURLScopeCanBeProven() {
         let source = VaultLoginIdentitySource(
             cipherID: CipherID(rawValue: "cipher-1"),

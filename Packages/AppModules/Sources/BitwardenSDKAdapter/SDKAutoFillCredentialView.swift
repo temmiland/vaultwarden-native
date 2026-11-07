@@ -31,6 +31,10 @@ public struct SDKAutoFillCredentialView: Sendable, CustomStringConvertible, Cust
     public var name: String { value.name }
     public var edit: Bool { value.edit && supportsLosslessEditing }
     public var allowsPasskeyRegistration: Bool {
+        allowsPasswordSaving
+    }
+
+    public var allowsPasswordSaving: Bool {
         SDKVaultAccessPolicy.allowsUnpromptedSecretAccess(value) && edit && value.type == .login && value.login != nil
     }
 
