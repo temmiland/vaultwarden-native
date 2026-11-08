@@ -2,6 +2,7 @@
 set -euo pipefail
 REPOSITORY_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VERSION="0.63.0"
+RELEASE_ASSET_ID="536986489"
 ZIP_SHA256="28c7802e11fa5ae113d903066439c6bb1be20a8ac1ad9709c42616a7e273fb0f"
 TOOL_ROOT="$REPOSITORY_ROOT/.build/tools/swiftformat-$VERSION"
 mkdir -p "$TOOL_ROOT"
@@ -9,8 +10,9 @@ if [[ ! -f "$TOOL_ROOT/swiftformat.zip" ]]; then
   DOWNLOAD_PATH="$(mktemp "$TOOL_ROOT/download.XXXXXX")"
   trap 'rm -f "$DOWNLOAD_PATH"' EXIT
   curl --fail --location --silent --show-error \
-    --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 20 --max-time 300 \
-    "https://github.com/nicklockwood/SwiftFormat/releases/download/$VERSION/swiftformat.zip" \
+    --retry 3 --retry-all-errors --retry-delay 2 --retry-max-time 120 --connect-timeout 15 --max-time 60 \
+    --header 'Accept: application/octet-stream' --header 'X-GitHub-Api-Version: 2022-11-28' \
+    "https://api.github.com/repos/nicklockwood/SwiftFormat/releases/assets/$RELEASE_ASSET_ID" \
     --output "$DOWNLOAD_PATH"
   [[ "$(shasum -a 256 "$DOWNLOAD_PATH" | awk '{print $1}')" == "$ZIP_SHA256" ]] || {
     echo "Downloaded tool archive hash mismatch; refusing execution" >&2; exit 1;

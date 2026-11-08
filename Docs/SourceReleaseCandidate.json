@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "purpose": "Public source-only CI candidate snapshot inventory; not the final release, tag, or app publication.",
   "generatedOn": "2026-11-08",
-  "baseCommit": "b3ea7233b6ae5b2b7864072b928ffdaa36c7fdba",
+  "baseCommit": "dfac71008cba3ab52d42c9a9de2a05418f35504d",
   "branch": "source-only-ci-2026-11-07",
   "snapshotIncludesGitHistory": false,
   "snapshotDefinition": "All present tracked files plus present unignored untracked files at generation time, excluding this manifest from its own hash list.",
   "worktreeStatusAtGeneration": {
-    "modifiedOrAddedTrackedEntries": 4,
+    "modifiedOrAddedTrackedEntries": 3,
     "deletedTrackedEntries": 0,
     "untrackedEntriesExcludingManifest": 0
   },
@@ -527,8 +527,8 @@
     {
       "path": "Docs/RemainingReleaseWork.md",
       "type": "file",
-      "bytes": 131570,
-      "sha256": "51cbf5dee52992a8db374e9b39c33e7e04fdf8a4daf19f48de30352a041c974d"
+      "bytes": 131869,
+      "sha256": "204d64a29495f9f9f7a8ce1a03424b48e1c6f63addf739a8fcbddcb039c8b428"
     },
     {
       "path": "Docs/SDKLocalArtifactInventory.json",
@@ -2927,8 +2927,8 @@
     {
       "path": "Scripts/swiftformat.sh",
       "type": "file",
-      "bytes": 1551,
-      "sha256": "cabc27ef26de0e6b317b94936cf74726a1334c4e6cbd1d40c443f72eda7c030e"
+      "bytes": 1695,
+      "sha256": "42095a3bc34bc145224408fd7a37643f2707ebbaf3c18f8e353ec175ad22d77a"
     },
     {
       "path": "Scripts/test-architecture-rules.sh",
@@ -2993,8 +2993,8 @@
     {
       "path": "Scripts/xcodegen.sh",
       "type": "file",
-      "bytes": 1423,
-      "sha256": "7b4fdc9f542b4835f34ddd068d11239589232bbda3d0902a334c9e66c737ea69"
+      "bytes": 1570,
+      "sha256": "d1d4076cfab28e2cfe1b4ad12b55efa6914a4deba4796e0c75f27dbff43d9e03"
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",

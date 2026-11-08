@@ -970,7 +970,10 @@ AutoFill-Extension bauen in Release auf beiden Plattformen unsigned; Quellen-, A
 Format-, Konfigurations- und Preflight-Prüfungen bestehen. Der erste GitHub-Lauf für `b3ea723`
 scheiterte beim Tool-Download mit Transferfehler 56 vor dem SDK-Build; beide Downloader
 wiederholen nun begrenzt fehlgeschlagene Transfers und übernehmen nur vollständige,
-prüfsummengeprüfte Archive.
+prüfsummengeprüfte Archive. Der direkte Release-Download von SwiftFormat scheiterte trotz
+Wiederholungen; derselbe offizielle Release-Asset über die GitHub-API ist erreichbar und hat
+die identische gepinnte SHA-256. Beide Downloader verwenden daher den offiziellen
+API-Asset-Endpunkt mit festem Asset-ID, Version und SHA-256.
 
 **Neuester lokaler Nachweis 2026-11-06:** Eine frische Source-only-Kopie des vollständigen aktuellen
 Arbeitsstands wurde als frische lokale Source-only-Kopie außerhalb des Repositories erstellt. Sie
