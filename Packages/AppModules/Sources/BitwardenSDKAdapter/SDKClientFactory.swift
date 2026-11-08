@@ -38,6 +38,7 @@ public enum SDKClientFactory {
     }
 
     public static func makeClient(tokenProvider: ClientManagedTokens, settings: ClientSettings) -> Client {
-        Client(tokenProvider: tokenProvider, settings: settings)
+        // This client has no UEM provider. Keep its empty profile scoped to this SDK session.
+        Client(tokenProvider: tokenProvider, settings: settings, managedSettings: ManagedSettingsBindingClient())
     }
 }

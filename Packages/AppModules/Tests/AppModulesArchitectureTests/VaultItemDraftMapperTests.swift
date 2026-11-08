@@ -439,7 +439,7 @@ struct VaultItemDraftMapperTests {
                     LoginUriView(uri: "https://example.com", match: .exact, uriChecksum: "uri-row"),
                 ],
                 totp: "fake-test-totp", autofillOnPageLoad: false,
-                fido2Credentials: [Fido2Credential(
+                fido2Credentials: [Fido2CredentialView(
                     credentialId: "fake-credential-id", keyType: "public-key", keyAlgorithm: "ECDSA",
                     keyCurve: "P-256", keyValue: "fake-enc-key", rpId: "example.com", userHandle: nil,
                     userName: nil, counter: "0", rpName: nil, userDisplayName: nil,
@@ -470,7 +470,7 @@ struct VaultItemDraftMapperTests {
             fields: [FieldView(name: "Hidden", value: "fake-field-value", type: .hidden, linkedId: nil)],
             passwordHistory: [PasswordHistoryView(password: "fake-old-password", lastUsedDate: self.revision)],
             creationDate: Date(timeIntervalSince1970: 50), deletedDate: deleted ? self.revision : nil,
-            revisionDate: revision ?? self.revision, archivedDate: archived ? self.revision : nil
+            revisionDate: revision ?? self.revision, archivedDate: archived ? self.revision : nil, partial: false
         )
     }
 }

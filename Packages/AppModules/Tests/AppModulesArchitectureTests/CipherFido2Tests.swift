@@ -73,38 +73,52 @@ struct CipherFido2Tests {
     // MARK: - Save round trip (bug 2)
 
     @Test
-    func savingAnEditedLoginPreservesItsExistingPasskeyInTheOutgoingRequest() throws {
-        let dto = try JSONDecoder().decode(CipherResponseDTO.self, from: Data(fido2JSON.utf8))
-        let cipher = try dto.toSDKCipher()
-
-        // Simulate what VaultModel.saveDraft does: build a draft from the decrypted view,
-        // then turn it back into a CipherView to encrypt and push. We don't have a real FFI Client
-        // in this test target, so exercise the same Login round trip directly instead of going
-        // through decrypt/encrypt.
-        let loginView = LoginView(
-            username: "user", password: "pass", passwordRevisionDate: nil, uris: nil, totp: nil,
-            autofillOnPageLoad: nil, fido2Credentials: cipher.login?.fido2Credentials
+    func savingAnEditedLoginPreservesItsExistingPasskeyInTheOutgoingRequest() async throws {
+        let email = "synthetic@example.invalid", password = "synthetic-test-password"
+        let kdf = Kdf.pbkdf2(iterations: 600_000)
+        let client = SDKClientFactory.makeClient(
+            tokenProvider: SDKManagedTokenAdapter(accessToken: { nil }),
+            settings: SDKClientFactory.makeSettings(
+                identityURL: URL(string: "https://example.invalid/identity")!,
+                apiURL: URL(string: "https://example.invalid/api")!,
+                deviceIdentifier: "synthetic-passkey-roundtrip", applicationVersion: "test"
+            )
         )
-        let existing = CipherView.fixture(id: "cipher-1", login: loginView)
-
-        var draft = try SDKVaultItemDraftMapper.makeDraft(from: existing)
-        draft.name = "Renamed" // an unrelated edit - must not touch the passkey
-        let rebuilt = try SDKVaultItemDraftMapper.applying(draft, to: existing)
-
-        // `encryptCipher(_:)` (real SDK call, not available in this test target) is what would
-        // normally turn `rebuilt.login: LoginView` back into `Login` for the request - since
-        // `Fido2Credential`/`EncString` fields are just Strings, wrap it directly to check the DTO
-        // mapping without needing a real FFI-backed `Client`.
-        let reEncryptedLogin = Login(
-            username: rebuilt.login?.username, password: rebuilt.login?.password,
-            passwordRevisionDate: nil, uris: nil, totp: nil, autofillOnPageLoad: nil,
-            fido2Credentials: rebuilt.login?.fido2Credentials
+        let keys = try client.auth().makeRegisterKeys(email: email, password: password, kdf: kdf)
+        try await client.crypto().initializeUserCrypto(req: InitUserCryptoRequest(
+            userId: "00000000-0000-4000-8000-000000000001", kdfParams: kdf, email: email,
+            accountCryptographicState: .v1(privateKey: keys.keys.private),
+            method: .masterPasswordUnlock(password: password, masterPasswordUnlock: MasterPasswordUnlockData(
+                kdf: kdf, masterKeyWrappedUserKey: keys.encryptedUserKey, salt: email
+            )), upgradeToken: nil
+        ))
+        let crypto = SDKVaultCryptoService(client: client)
+        let credential = Fido2CredentialView.fixture(
+            credentialId: "00000000-0000-4000-8000-000000000002",
+            rpId: "example.com"
         )
-        let requestDTO = try CipherRequestDTO(cipher: cipher.withLogin(reEncryptedLogin), encryptedFor: "user-1")
-        let preservedCredentials = try #require(requestDTO.login?.fido2Credentials)
-        #expect(preservedCredentials.count == 1)
-        #expect(preservedCredentials[0].credentialId == "enc-credential-id")
-        #expect(preservedCredentials[0].rpId == "enc-rp-id")
+        let login = LoginView(
+            username: "user",
+            password: "pass",
+            passwordRevisionDate: nil,
+            uris: nil,
+            totp: nil,
+            autofillOnPageLoad: nil,
+            fido2Credentials: [credential]
+        )
+        let original = CipherView.fixture(id: "00000000-0000-4000-8000-000000000003", login: login)
+        let encrypted = try await crypto.encryptCipher(original)
+        let decoded = try await crypto.decryptCipher(encrypted.cipher)
+        var draft = try SDKVaultItemDraftMapper.makeDraft(from: decoded)
+        draft.name = "Renamed"
+        let rebuilt = try SDKVaultItemDraftMapper.applying(draft, to: decoded)
+        let updated = try await crypto.encryptCipher(rebuilt)
+        let request = try CipherRequestDTO(cipher: updated.cipher, encryptedFor: updated.encryptedFor)
+        #expect(request.login?.fido2Credentials?.count == 1)
+        #expect(request.login?.fido2Credentials?.first?.keyValue != credential.keyValue)
+        let roundTrip = try await crypto.decryptCipher(updated.cipher)
+        #expect(roundTrip.name == "Renamed")
+        #expect(roundTrip.login?.fido2Credentials == [credential])
     }
 
     @Test
@@ -128,7 +142,7 @@ struct CipherFido2Tests {
         let originalLogin = LoginView(
             username: "before", password: "secret", passwordRevisionDate: originalRevision,
             uris: [LoginUriView(uri: "https://example.com/login", match: .exact, uriChecksum: "checksum")],
-            totp: "totp-seed", autofillOnPageLoad: true,
+            totp: "totp-seed", autofillOnPageLoad: true, httpAuthenticationEnabled: true,
             fido2Credentials: [.fixture(credentialId: "cred-1", rpId: "example.com")]
         )
         let existing = CipherView.fixture(id: "cipher-1", login: originalLogin)
@@ -143,6 +157,7 @@ struct CipherFido2Tests {
         #expect(rebuilt.login?.uris?.first?.match == .exact)
         #expect(rebuilt.login?.uris?.first?.uriChecksum == "checksum")
         #expect(rebuilt.login?.autofillOnPageLoad == true)
+        #expect(rebuilt.login?.httpAuthenticationEnabled == true)
         #expect(rebuilt.login?.fido2Credentials?.first?.credentialId == "cred-1")
     }
 
@@ -166,28 +181,13 @@ struct CipherFido2Tests {
     }
 }
 
-private extension Fido2Credential {
-    static func fixture(credentialId: String, rpId: String) -> Fido2Credential {
-        Fido2Credential(
+private extension Fido2CredentialView {
+    static func fixture(credentialId: String, rpId: String) -> Fido2CredentialView {
+        Fido2CredentialView(
             credentialId: credentialId, keyType: "public-key", keyAlgorithm: "ECDSA", keyCurve: "P-256",
             keyValue: "enc-key", rpId: rpId, userHandle: nil, userName: nil, counter: "0",
-            rpName: nil, userDisplayName: nil, discoverable: "true", creationDate: Date()
-        )
-    }
-}
-
-private extension Cipher {
-    /// Test-only helper: `Cipher` has no `with`-style mutator, and pulling in the full 20-argument
-    /// initializer at every call site would obscure what's actually being tested.
-    func withLogin(_ login: Login?) -> Cipher {
-        Cipher(
-            id: id, organizationId: organizationId, folderId: folderId, collectionIds: collectionIds,
-            key: key, name: name, notes: notes, type: type, login: login, identity: identity, card: card,
-            secureNote: secureNote, sshKey: sshKey, bankAccount: bankAccount, driversLicense: driversLicense,
-            passport: passport, favorite: favorite, reprompt: reprompt, organizationUseTotp: organizationUseTotp,
-            edit: edit, permissions: permissions, viewPassword: viewPassword, localData: localData,
-            attachments: attachments, fields: fields, passwordHistory: passwordHistory, creationDate: creationDate,
-            deletedDate: deletedDate, revisionDate: revisionDate, archivedDate: archivedDate, data: data
+            rpName: nil, userDisplayName: nil, discoverable: "true",
+            creationDate: Date(timeIntervalSince1970: 1_700_000_000)
         )
     }
 }

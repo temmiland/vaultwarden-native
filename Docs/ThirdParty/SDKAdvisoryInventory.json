@@ -13,30 +13,6 @@
       "version": "0.5.5"
     },
     {
-      "id": "RUSTSEC-2026-0385",
-      "inIOSNormalOrBuildTree": true,
-      "inMacOSNormalOrBuildTree": true,
-      "package": "ctutils",
-      "patchedVersionRequirements": [
-        ">=0.4.4"
-      ],
-      "reachability": "Target graph membership alone is not an exploitability proof.",
-      "sourceURL": "https://rustsec.org/advisories/RUSTSEC-2026-0385.html",
-      "version": "0.4.2"
-    },
-    {
-      "id": "RUSTSEC-2026-0258",
-      "inIOSNormalOrBuildTree": true,
-      "inMacOSNormalOrBuildTree": true,
-      "package": "h2",
-      "patchedVersionRequirements": [
-        ">=0.4.16"
-      ],
-      "reachability": "Target graph membership alone is not an exploitability proof.",
-      "sourceURL": "https://rustsec.org/advisories/RUSTSEC-2026-0258.html",
-      "version": "0.4.15"
-    },
-    {
       "id": "RUSTSEC-2023-0071",
       "inIOSNormalOrBuildTree": true,
       "inMacOSNormalOrBuildTree": true,
@@ -44,110 +20,32 @@
       "patchedVersionRequirements": [],
       "reachability": "Target graph membership alone is not an exploitability proof.",
       "sourceURL": "https://rustsec.org/advisories/RUSTSEC-2023-0071.html",
-      "version": "0.10.0-rc.18"
-    },
-    {
-      "id": "RUSTSEC-2026-0346",
-      "inIOSNormalOrBuildTree": true,
-      "inMacOSNormalOrBuildTree": true,
-      "package": "rustls",
-      "patchedVersionRequirements": [
-        ">=0.23.46"
-      ],
-      "reachability": "Target graph membership alone is not an exploitability proof.",
-      "sourceURL": "https://rustsec.org/advisories/RUSTSEC-2026-0346.html",
-      "version": "0.23.42"
-    },
-    {
-      "id": "RUSTSEC-2026-0285",
-      "inIOSNormalOrBuildTree": true,
-      "inMacOSNormalOrBuildTree": true,
-      "package": "rustls",
-      "patchedVersionRequirements": [
-        ">=0.23.45"
-      ],
-      "reachability": "Target graph membership alone is not an exploitability proof.",
-      "sourceURL": "https://rustsec.org/advisories/RUSTSEC-2026-0285.html",
-      "version": "0.23.42"
-    },
-    {
-      "id": "RUSTSEC-2026-0348",
-      "inIOSNormalOrBuildTree": true,
-      "inMacOSNormalOrBuildTree": true,
-      "package": "rustls",
-      "patchedVersionRequirements": [
-        ">=0.23.46"
-      ],
-      "reachability": "Requires rustls brotli, absent from the previously inspected target feature set; version hit alone does not make this feature-specific issue applicable.",
-      "sourceURL": "https://rustsec.org/advisories/RUSTSEC-2026-0348.html",
-      "version": "0.23.42"
-    },
-    {
-      "id": "RUSTSEC-2026-0349",
-      "inIOSNormalOrBuildTree": true,
-      "inMacOSNormalOrBuildTree": true,
-      "package": "rustls",
-      "patchedVersionRequirements": [
-        ">=0.23.46"
-      ],
-      "reachability": "Target graph membership alone is not an exploitability proof.",
-      "sourceURL": "https://rustsec.org/advisories/RUSTSEC-2026-0349.html",
-      "version": "0.23.42"
-    },
-    {
-      "id": "RUSTSEC-2026-0382",
-      "inIOSNormalOrBuildTree": true,
-      "inMacOSNormalOrBuildTree": true,
-      "package": "rustls-webpki",
-      "patchedVersionRequirements": [
-        ">=0.103.16, <0.104.0-alpha.1",
-        ">=0.104.0-alpha.8"
-      ],
-      "reachability": "Target graph membership alone is not an exploitability proof.",
-      "sourceURL": "https://rustsec.org/advisories/RUSTSEC-2026-0382.html",
-      "version": "0.103.13"
-    },
-    {
-      "id": "RUSTSEC-2026-0383",
-      "inIOSNormalOrBuildTree": false,
-      "inMacOSNormalOrBuildTree": false,
-      "package": "webpki-root-certs",
-      "patchedVersionRequirements": [
-        ">=1.0.10"
-      ],
-      "reachability": "Target graph membership alone is not an exploitability proof.",
-      "sourceURL": "https://rustsec.org/advisories/RUSTSEC-2026-0383.html",
-      "version": "1.0.9"
-    },
-    {
-      "id": "RUSTSEC-2026-0381",
-      "inIOSNormalOrBuildTree": false,
-      "inMacOSNormalOrBuildTree": false,
-      "package": "webpki-roots",
-      "patchedVersionRequirements": [
-        ">=1.0.10"
-      ],
-      "reachability": "Target graph membership alone is not an exploitability proof.",
-      "sourceURL": "https://rustsec.org/advisories/RUSTSEC-2026-0381.html",
-      "version": "1.0.9"
+      "version": "0.10.0-rc.19"
     }
   ],
-  "cargoLockSHA256": "1a8918fba61d5823bb9be7a4b15c30d2184a70fcbb1d9dd3416eba945bb742fd",
+  "cargoLockSHA256": "4d87866952641365ab38c937087c1b1e2f42d343a5c45b48353b10acc764ae38",
   "database": {
-    "advisory-count": 1402,
-    "last-commit": "263a4d951a0867d4bddc29dddd6d59427c78f9a7",
-    "last-updated": "2026-11-02T12:45:44+01:00"
+    "advisory-count": 1422,
+    "last-commit": "309392b18f6b17022f82c701f300433126901068",
+    "last-updated": "2026-11-06T16:34:32+01:00"
   },
+  "dependencyPatch": "Scripts/patches/0003-update-sdk-dependencies.patch",
+  "dependencyPatchSHA256": "44e11046b48fb4b31ebb9a5ea01368fc1dee42a987162de08fda19e78f343aaa",
+  "remainingFindingsDecision": "Owner directed current compatible updates and continuation despite residual upstream findings. Findings remain disclosed; no claim about identical exposure in official applications.",
+  "reviewedOn": "2026-11-08",
   "schemaVersion": 1,
-  "sdkRevision": "fbd21679c1c3690cba424ad3dbb0ba662eb9863e",
+  "sdkRevision": "a13b4c4e1fa3685280241f417920fd19d7ef24a6",
   "upstreamComparison": {
-    "decision": "No pin upgrade: current upstream still has advisory hits. No manual edits to generated bindings or official SDK sources.",
-    "revision": "a13b4c4e1fa3685280241f417920fd19d7ef24a6",
-    "cargoLockSHA256": "ab52599f2acf0954f5b85214ffc96d9357d8819bc23171e066bc9d11170ce93b",
     "auditDatabaseCommit": "309392b18f6b17022f82c701f300433126901068",
     "auditDatabaseUpdated": "2026-11-06T16:34:32+01:00",
-    "vulnerabilityCount": 2,
-    "remainingAdvisoryIDs": ["RUSTSEC-2026-0387", "RUSTSEC-2023-0071"]
+    "cargoLockSHA256": "ab52599f2acf0954f5b85214ffc96d9357d8819bc23171e066bc9d11170ce93b",
+    "decision": "No pin upgrade: current upstream still has advisory hits. No manual edits to generated bindings or official SDK sources.",
+    "remainingAdvisoryIDs": [
+      "RUSTSEC-2026-0387",
+      "RUSTSEC-2023-0071"
+    ],
+    "revision": "a13b4c4e1fa3685280241f417920fd19d7ef24a6",
+    "vulnerabilityCount": 2
   },
   "warnings": {
     "unmaintained": [
@@ -182,22 +80,6 @@
       {
         "name": "unsafe-libyaml",
         "version": "0.2.11"
-      }
-    ],
-    "unsound": [
-      {
-        "name": "tokio",
-        "version": "1.53.1"
-      }
-    ],
-    "yanked": [
-      {
-        "name": "chacha20",
-        "version": "0.10.1"
-      },
-      {
-        "name": "wnaf",
-        "version": "0.14.0"
       }
     ]
   }

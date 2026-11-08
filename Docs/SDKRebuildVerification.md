@@ -1,6 +1,35 @@
 # Isolierter SDK-Neubau – lokaler Nachweis
 
-## Neuester frischer Source-only-Lauf — 2026-11-06
+## SDK-Aktualisierung — 2026-11-08
+
+Auf Owner-Auftrag wurde das SDK auf Upstream-Pin
+`a13b4c4e1fa3685280241f417920fd19d7ef24a6` aktualisiert. Der isolierte Neubau mit Rust
+1.99.0 und UniFFI 0.32.0 erzeugte alle fünf Apple-Release-Architekturen. Der zusätzliche
+verbindliche Lockfile-Patch aktualisiert die mit diesem Upstream kompatiblen Dependencies;
+`cargo build` und Bindgen verwenden `--locked`.
+
+- Build-Patch SHA-256: `b824cd9c8fba29af01b0f1782f5314721cf10532d180a66303b9aa484a91c70c`
+- Dependency-Patch SHA-256: `44e11046b48fb4b31ebb9a5ea01368fc1dee42a987162de08fda19e78f343aaa`
+- Gepatchtes Cargo.lock SHA-256: `4d87866952641365ab38c937087c1b1e2f42d343a5c45b48353b10acc764ae38`
+- Framework-Inhaltsinventar: [SDKLocalArtifactInventory.json](SDKLocalArtifactInventory.json)
+- Source-/Dependency-/Auditnachweise: [ThirdParty](ThirdParty/)
+
+Pin, Lockfile, alle generierten Swift-Bindings und Framework-Architekturen wurden geprüft.
+Der echte SDK-Client-Smoke sowie 858 AppModules-Tests in 101 Suites bestehen. Der neue
+SDK entschlüsselt Passkey-Private-Keys bereits im CipherView; der Adapter behält diese im
+SDK-Typ, prüft vollständige Entschlüsselung und exportiert nur ausgewählte Metadaten.
+Ein echter SDK-Verschlüsselungs-/Entschlüsselungsroundtrip prüft den Erhalt von Passkeys beim Editieren.
+Die native Integration besteht mit 18 macOS- und 19 iOS-Simulatortests; Format-, Architektur-,
+Secret-/Material-, Simulator-Preflight- und Konfigurationsprüfungen bestehen ebenfalls.
+Die bisherigen Bindings und das Framework bleiben im ignorierten Upgrade-Buildroot als Rollback erhalten.
+
+Das Audit meldet weiterhin RUSTSEC-2026-0387 (`crypto-bigint` 0.5.5) und RUSTSEC-2023-0071
+(`rsa` 0.10.0-rc.19), dazu acht Unmaintained-Warnungen. Der Owner hat die Aktualisierung mit
+verbleibenden Upstream-Befunden ausdrücklich beauftragt. Das ist keine Behauptung identischer
+Ausnutzbarkeit in der offiziellen App, kein sauberes Audit und keine Signierungs-/Geräteabnahme.
+Die folgenden Abschnitte dokumentieren historische Builds vor dieser Aktualisierung.
+
+## Historischer frischer Source-only-Lauf — 2026-11-06
 
 In einer neu erstellten Source-only-Kopie des aktuellen Arbeitsstands wurde
 `bash Scripts/build-sdk.sh --install` vollständig ausgeführt. Die Kopie enthielt weder ein

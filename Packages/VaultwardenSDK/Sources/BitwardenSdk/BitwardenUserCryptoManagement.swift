@@ -39,6 +39,52 @@ fileprivate extension ForeignBytes {
     init(bufferPointer: UnsafeBufferPointer<UInt8>) {
         self.init(len: Int32(bufferPointer.count), data: bufferPointer.baseAddress)
     }
+
+    init(rawBufferPointer: UnsafeRawBufferPointer) {
+        self.init(
+            len: Int32(rawBufferPointer.count),
+            data: rawBufferPointer.baseAddress?.assumingMemoryBound(to: UInt8.self)
+        )
+    }
+}
+
+// Converter for `&[u8]` / `[ByRef] bytes` arguments.
+//
+// Conforms to `FfiConverter` so the compiler enforces the full converter
+// method set. Only the scope-bound `lower(_:_body:)` overload is sound —
+// zero-copy byte buffers only flow foreign -> Rust, and only in argument
+// position. The four protocol-witness methods (`lift`, `lower`, `read`,
+// `write`) `fatalError` at runtime if anyone reaches them.
+//
+// The scope-bound `lower` takes a closure because the `ForeignBytes`
+// pointer is only guaranteed valid for the duration of
+// `Data.withUnsafeBytes`. Callers must run the full FFI call inside
+// the closure body.
+fileprivate enum FfiConverterByRefBytes: FfiConverter {
+    typealias SwiftType = Data
+    typealias FfiType = ForeignBytes
+
+    static func lower<R>(_ value: Data, _ body: (ForeignBytes) throws -> R) rethrows -> R {
+        return try value.withUnsafeBytes { rawBuf in
+            try body(ForeignBytes(rawBufferPointer: rawBuf))
+        }
+    }
+
+    static func lower(_ value: Data) -> ForeignBytes {
+        fatalError("ByRef bytes cannot use the plain lower: returning ForeignBytes escapes the Data.withUnsafeBytes scope. Use the scope-bound lower(_:_body:) overload instead.")
+    }
+
+    static func lift(_ value: ForeignBytes) throws -> Data {
+        fatalError("ByRef bytes cannot be lifted: zero-copy &[u8] only flows foreign->Rust")
+    }
+
+    static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Data {
+        fatalError("ByRef bytes cannot be read from a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+    }
+
+    static func write(_ value: Data, into buf: inout [UInt8]) {
+        fatalError("ByRef bytes cannot be written to a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+    }
 }
 
 // For every type used in the interface, we provide helper methods for conveniently
@@ -419,6 +465,22 @@ fileprivate final class UniffiHandleMap<T>: @unchecked Sendable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterUInt32: FfiConverterPrimitive {
+    typealias FfiType = UInt32
+    typealias SwiftType = UInt32
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> UInt32 {
+        return try lift(readInt(&buf))
+    }
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterBool : FfiConverter {
     typealias FfiType = Int8
     typealias SwiftType = Bool
@@ -455,7 +517,11 @@ fileprivate struct FfiConverterString: FfiConverter {
             return String()
         }
         let bytes = UnsafeBufferPointer<UInt8>(start: value.data!, count: Int(value.len))
-        return String(bytes: bytes, encoding: String.Encoding.utf8)!
+        // Use Swift's native UTF-8 decoder; `String(bytes:encoding:.utf8)` goes
+        // through Foundation's NSString and silently strips a leading U+FEFF BOM.
+        // Invalid UTF-8 substitutes U+FFFD instead of trapping (unreachable
+        // given Rust's `String` invariant).
+        return String(decoding: bytes, as: UTF8.self)
     }
 
     public static func lower(_ value: String) -> RustBuffer {
@@ -471,7 +537,8 @@ fileprivate struct FfiConverterString: FfiConverter {
 
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> String {
         let len: Int32 = try readInt(&buf)
-        return String(bytes: try readBytes(&buf, count: Int(len)), encoding: String.Encoding.utf8)!
+        // See `lift` above for why we avoid Foundation's NSString-backed decoder here.
+        return String(decoding: try readBytes(&buf, count: Int(len)), as: UTF8.self)
     }
 
     public static func write(_ value: String, into buf: inout [UInt8]) {
@@ -498,6 +565,13 @@ public protocol PinSettingsClientProtocol: AnyObject, Sendable {
      * Returns the currently configured PIN, if available.
      */
     func getPin() async  -> String?
+    
+    /**
+     * Returns the number of characters in the PIN, readable while locked, e.g. so the lock screen
+     * can try the PIN as soon as it is fully typed. `None` when no PIN is set, or for a PIN set
+     * before its length was stored that hasn't unlocked since.
+     */
+    func getPinLength() async  -> UInt32?
     
     /**
      * Returns the current status of PIN unlock
@@ -587,8 +661,7 @@ open func getLockType()async  -> PinLockType?  {
         try!  await uniffiRustCallAsync(
             rustFutureFunc: {
                 uniffi_bitwarden_user_crypto_management_fn_method_pinsettingsclient_get_lock_type(
-                    self.uniffiCloneHandle()
-                    
+                        self.uniffiCloneHandle()
                 )
             },
             pollFunc: ffi_bitwarden_user_crypto_management_rust_future_poll_rust_buffer,
@@ -608,14 +681,35 @@ open func getPin()async  -> String?  {
         try!  await uniffiRustCallAsync(
             rustFutureFunc: {
                 uniffi_bitwarden_user_crypto_management_fn_method_pinsettingsclient_get_pin(
-                    self.uniffiCloneHandle()
-                    
+                        self.uniffiCloneHandle()
                 )
             },
             pollFunc: ffi_bitwarden_user_crypto_management_rust_future_poll_rust_buffer,
             completeFunc: ffi_bitwarden_user_crypto_management_rust_future_complete_rust_buffer,
             freeFunc: ffi_bitwarden_user_crypto_management_rust_future_free_rust_buffer,
             liftFunc: FfiConverterOptionString.lift,
+            errorHandler: nil
+            
+        )
+}
+    
+    /**
+     * Returns the number of characters in the PIN, readable while locked, e.g. so the lock screen
+     * can try the PIN as soon as it is fully typed. `None` when no PIN is set, or for a PIN set
+     * before its length was stored that hasn't unlocked since.
+     */
+open func getPinLength()async  -> UInt32?  {
+    return
+        try!  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_bitwarden_user_crypto_management_fn_method_pinsettingsclient_get_pin_length(
+                        self.uniffiCloneHandle()
+                )
+            },
+            pollFunc: ffi_bitwarden_user_crypto_management_rust_future_poll_rust_buffer,
+            completeFunc: ffi_bitwarden_user_crypto_management_rust_future_complete_rust_buffer,
+            freeFunc: ffi_bitwarden_user_crypto_management_rust_future_free_rust_buffer,
+            liftFunc: FfiConverterOptionUInt32.lift,
             errorHandler: nil
             
         )
@@ -629,8 +723,7 @@ open func getStatus()async  -> PinUnlockStatus  {
         try!  await uniffiRustCallAsync(
             rustFutureFunc: {
                 uniffi_bitwarden_user_crypto_management_fn_method_pinsettingsclient_get_status(
-                    self.uniffiCloneHandle()
-                    
+                        self.uniffiCloneHandle()
                 )
             },
             pollFunc: ffi_bitwarden_user_crypto_management_rust_future_poll_rust_buffer,
@@ -653,8 +746,7 @@ open func setPin(pin: String, lockType: PinLockType)async throws   {
         try  await uniffiRustCallAsync(
             rustFutureFunc: {
                 uniffi_bitwarden_user_crypto_management_fn_method_pinsettingsclient_set_pin(
-                    self.uniffiCloneHandle(),
-                    FfiConverterString.lower(pin),FfiConverterTypePinLockType_lower(lockType)
+                        self.uniffiCloneHandle(),FfiConverterString.lower(pin),FfiConverterTypePinLockType_lower(lockType)
                 )
             },
             pollFunc: ffi_bitwarden_user_crypto_management_rust_future_poll_void,
@@ -673,8 +765,7 @@ open func unsetPin()async   {
         try!  await uniffiRustCallAsync(
             rustFutureFunc: {
                 uniffi_bitwarden_user_crypto_management_fn_method_pinsettingsclient_unset_pin(
-                    self.uniffiCloneHandle()
-                    
+                        self.uniffiCloneHandle()
                 )
             },
             pollFunc: ffi_bitwarden_user_crypto_management_rust_future_poll_void,
@@ -694,8 +785,7 @@ open func validatePin(pin: String)async  -> Bool  {
         try!  await uniffiRustCallAsync(
             rustFutureFunc: {
                 uniffi_bitwarden_user_crypto_management_fn_method_pinsettingsclient_validate_pin(
-                    self.uniffiCloneHandle(),
-                    FfiConverterString.lower(pin)
+                        self.uniffiCloneHandle(),FfiConverterString.lower(pin)
                 )
             },
             pollFunc: ffi_bitwarden_user_crypto_management_rust_future_poll_i8,
@@ -768,9 +858,45 @@ public protocol UserCryptoManagementClientProtocol: AnyObject, Sendable {
     func changeKdf(password: String, newKdf: Kdf) async throws 
     
     /**
+     * Records the id of the user's current user key with the server, and stores it as the id the
+     * server knows.
+     *
+     * Safe to call when no backfill is needed, but [`Self::user_key_id_needs_backfill`] avoids the
+     * round trip.
+     *
+     * Requires the client to be unlocked so the current user key is available in memory.
+     */
+    func userKeyIdBackfill() async throws 
+    
+    /**
+     * Returns whether the server is missing the id of the user's current user key.
+     */
+    func userKeyIdNeedsBackfill() async throws  -> Bool
+    
+    /**
      * Returns the PIN settings sub-client.
      */
     func pinSettings()  -> PinSettingsClient
+    
+    /**
+     * Returns whether the client may prompt the user to migrate to v2 encryption.
+     *
+     * [`MigrationPermission::Wait`] means the user is still inside the two-week grace period and
+     * the prompt must not be shown. [`MigrationPermission::Migrate`] means the grace period has
+     * elapsed.
+     *
+     * The first call has a side effect: when no timestamp is stored, it writes
+     * the current timestamp and returns [`MigrationPermission::Wait`]. The
+     * window is therefore two weeks from the first call, not from login. A
+     * client that never calls this method never opens the window.
+     *
+     * The SDK never clears the timestamp. Clearing is the client's decision
+     * and resets the window. The timestamp is persisted so a user who logs out
+     * often cannot avoid the prompt indefinitely.
+     *
+     * Panics when no state bridge is registered.
+     */
+    func requestPermissionToMigrateToV2() async  -> MigrationPermission
     
 }
 /**
@@ -837,8 +963,7 @@ open func changeKdf(password: String, newKdf: Kdf)async throws   {
         try  await uniffiRustCallAsync(
             rustFutureFunc: {
                 uniffi_bitwarden_user_crypto_management_fn_method_usercryptomanagementclient_change_kdf(
-                    self.uniffiCloneHandle(),
-                    FfiConverterString.lower(password),FfiConverterTypeKdf_lower(newKdf)
+                        self.uniffiCloneHandle(),FfiConverterString.lower(password),FfiConverterTypeKdf_lower(newKdf)
                 )
             },
             pollFunc: ffi_bitwarden_user_crypto_management_rust_future_poll_void,
@@ -850,14 +975,94 @@ open func changeKdf(password: String, newKdf: Kdf)async throws   {
 }
     
     /**
+     * Records the id of the user's current user key with the server, and stores it as the id the
+     * server knows.
+     *
+     * Safe to call when no backfill is needed, but [`Self::user_key_id_needs_backfill`] avoids the
+     * round trip.
+     *
+     * Requires the client to be unlocked so the current user key is available in memory.
+     */
+open func userKeyIdBackfill()async throws   {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_bitwarden_user_crypto_management_fn_method_usercryptomanagementclient_user_key_id_backfill(
+                        self.uniffiCloneHandle()
+                )
+            },
+            pollFunc: ffi_bitwarden_user_crypto_management_rust_future_poll_void,
+            completeFunc: ffi_bitwarden_user_crypto_management_rust_future_complete_void,
+            freeFunc: ffi_bitwarden_user_crypto_management_rust_future_free_void,
+            liftFunc: { $0 },
+            errorHandler: FfiConverterTypeKeyIdBackfillError_lift
+        )
+}
+    
+    /**
+     * Returns whether the server is missing the id of the user's current user key.
+     */
+open func userKeyIdNeedsBackfill()async throws  -> Bool  {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_bitwarden_user_crypto_management_fn_method_usercryptomanagementclient_user_key_id_needs_backfill(
+                        self.uniffiCloneHandle()
+                )
+            },
+            pollFunc: ffi_bitwarden_user_crypto_management_rust_future_poll_i8,
+            completeFunc: ffi_bitwarden_user_crypto_management_rust_future_complete_i8,
+            freeFunc: ffi_bitwarden_user_crypto_management_rust_future_free_i8,
+            liftFunc: FfiConverterBool.lift,
+            errorHandler: FfiConverterTypeKeyIdBackfillError_lift
+        )
+}
+    
+    /**
      * Returns the PIN settings sub-client.
      */
 open func pinSettings() -> PinSettingsClient  {
     return try!  FfiConverterTypePinSettingsClient_lift(try! rustCall() {
+        uniffiCallStatus in
     uniffi_bitwarden_user_crypto_management_fn_method_usercryptomanagementclient_pin_settings(
-            self.uniffiCloneHandle(),$0
+            self.uniffiCloneHandle(),uniffiCallStatus
     )
 })
+}
+    
+    /**
+     * Returns whether the client may prompt the user to migrate to v2 encryption.
+     *
+     * [`MigrationPermission::Wait`] means the user is still inside the two-week grace period and
+     * the prompt must not be shown. [`MigrationPermission::Migrate`] means the grace period has
+     * elapsed.
+     *
+     * The first call has a side effect: when no timestamp is stored, it writes
+     * the current timestamp and returns [`MigrationPermission::Wait`]. The
+     * window is therefore two weeks from the first call, not from login. A
+     * client that never calls this method never opens the window.
+     *
+     * The SDK never clears the timestamp. Clearing is the client's decision
+     * and resets the window. The timestamp is persisted so a user who logs out
+     * often cannot avoid the prompt indefinitely.
+     *
+     * Panics when no state bridge is registered.
+     */
+open func requestPermissionToMigrateToV2()async  -> MigrationPermission  {
+    return
+        try!  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_bitwarden_user_crypto_management_fn_method_usercryptomanagementclient_request_permission_to_migrate_to_v2(
+                        self.uniffiCloneHandle()
+                )
+            },
+            pollFunc: ffi_bitwarden_user_crypto_management_rust_future_poll_rust_buffer,
+            completeFunc: ffi_bitwarden_user_crypto_management_rust_future_complete_rust_buffer,
+            freeFunc: ffi_bitwarden_user_crypto_management_rust_future_free_rust_buffer,
+            liftFunc: FfiConverterTypeMigrationPermission_lift,
+            errorHandler: nil
+            
+        )
 }
     
 
@@ -977,12 +1182,20 @@ public func FfiConverterTypePasswordChangeAndRotateUserKeysRequest_lower(_ value
 public struct RotateUserKeysRequest: Equatable, Hashable {
     public let keyRotationMethod: KeyRotationMethod
     public let trustedEmergencyAccessPublicKeys: [PublicKey]
+    /**
+     * Organization public keys the user confirmed as trusted. Only needed when the rotation
+     * shares the new user key for account recovery.
+     */
     public let trustedOrganizationPublicKeys: [PublicKey]
     public let upgradeTokenAction: UpgradeTokenAction
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(keyRotationMethod: KeyRotationMethod, trustedEmergencyAccessPublicKeys: [PublicKey], trustedOrganizationPublicKeys: [PublicKey], upgradeTokenAction: UpgradeTokenAction) {
+    public init(keyRotationMethod: KeyRotationMethod, trustedEmergencyAccessPublicKeys: [PublicKey], 
+        /**
+         * Organization public keys the user confirmed as trusted. Only needed when the rotation
+         * shares the new user key for account recovery.
+         */trustedOrganizationPublicKeys: [PublicKey], upgradeTokenAction: UpgradeTokenAction) {
         self.keyRotationMethod = keyRotationMethod
         self.trustedEmergencyAccessPublicKeys = trustedEmergencyAccessPublicKeys
         self.trustedOrganizationPublicKeys = trustedOrganizationPublicKeys
@@ -1039,7 +1252,8 @@ public func FfiConverterTypeRotateUserKeysRequest_lower(_ value: RotateUserKeysR
 /**
  * Errors that can occur while changing the account KDF settings.
  */
-public enum ChangeKdfError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum ChangeKdfError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -1149,7 +1363,122 @@ public func FfiConverterTypeChangeKdfError_lower(_ value: ChangeKdfError) -> Rus
 }
 
 
-public enum KeyPairRegenerationError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+/**
+ * Errors returned by the user key id backfill.
+ */
+public 
+enum KeyIdBackfillError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+
+    
+    
+    /**
+     * The user key is not in the key store, so the client is locked or not initialized.
+     */
+    case UserKeyNotAvailable(message: String)
+    
+    /**
+     * The current user key carries no key id
+     */
+    case NoKeyId(message: String)
+    
+    /**
+     * The key id the server knows is read from client-managed state, which needs a bridge.
+     */
+    case StateBridgeNotRegistered(message: String)
+    
+    /**
+     * The API call recording the key id failed.
+     */
+    case Api(message: String)
+    
+
+    
+
+    
+
+    
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+    
+}
+
+#if compiler(>=6)
+extension KeyIdBackfillError: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeKeyIdBackfillError: FfiConverterRustBuffer {
+    typealias SwiftType = KeyIdBackfillError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> KeyIdBackfillError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .UserKeyNotAvailable(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 2: return .NoKeyId(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 3: return .StateBridgeNotRegistered(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 4: return .Api(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: KeyIdBackfillError, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        case .UserKeyNotAvailable(_ /* message is ignored*/):
+            writeInt(&buf, Int32(1))
+        case .NoKeyId(_ /* message is ignored*/):
+            writeInt(&buf, Int32(2))
+        case .StateBridgeNotRegistered(_ /* message is ignored*/):
+            writeInt(&buf, Int32(3))
+        case .Api(_ /* message is ignored*/):
+            writeInt(&buf, Int32(4))
+
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeKeyIdBackfillError_lift(_ buf: RustBuffer) throws -> KeyIdBackfillError {
+    return try FfiConverterTypeKeyIdBackfillError.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeKeyIdBackfillError_lower(_ value: KeyIdBackfillError) -> RustBuffer {
+    return FfiConverterTypeKeyIdBackfillError.lower(value)
+}
+
+
+public 
+enum KeyPairRegenerationError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -1238,8 +1567,7 @@ public func FfiConverterTypeKeyPairRegenerationError_lower(_ value: KeyPairRegen
     return FfiConverterTypeKeyPairRegenerationError.lower(value)
 }
 
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
 
 public enum KeyRotationMethod: Equatable, Hashable {
     
@@ -1328,7 +1656,8 @@ public func FfiConverterTypeKeyRotationMethod_lower(_ value: KeyRotationMethod) 
 
 
 
-public enum MigrateToKeyConnectorError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum MigrateToKeyConnectorError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -1427,9 +1756,85 @@ public func FfiConverterTypeMigrateToKeyConnectorError_lower(_ value: MigrateToK
 
 
 /**
+ * Whether the client may prompt the user to migrate to v2 encryption.
+ */
+
+public enum MigrationPermission: Equatable, Hashable {
+    
+    /**
+     * The user is inside the grace period. Do not show the migration prompt.
+     */
+    case wait
+    /**
+     * The grace period has elapsed. Show the migration prompt.
+     */
+    case migrate
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension MigrationPermission: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeMigrationPermission: FfiConverterRustBuffer {
+    typealias SwiftType = MigrationPermission
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> MigrationPermission {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .wait
+        
+        case 2: return .migrate
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: MigrationPermission, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .wait:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .migrate:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeMigrationPermission_lift(_ buf: RustBuffer) throws -> MigrationPermission {
+    return try FfiConverterTypeMigrationPermission.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeMigrationPermission_lower(_ value: MigrationPermission) -> RustBuffer {
+    return FfiConverterTypeMigrationPermission.lower(value)
+}
+
+
+
+/**
  * Errors returned by PIN settings operations.
  */
-public enum PinSettingsError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum PinSettingsError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -1506,7 +1911,8 @@ public func FfiConverterTypePinSettingsError_lower(_ value: PinSettingsError) ->
 }
 
 
-public enum RotateUserKeysError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum RotateUserKeysError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -1620,7 +2026,8 @@ public func FfiConverterTypeRotateUserKeysError_lower(_ value: RotateUserKeysErr
 }
 
 
-public enum SyncError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum SyncError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -1701,8 +2108,7 @@ public func FfiConverterTypeSyncError_lower(_ value: SyncError) -> RustBuffer {
     return FfiConverterTypeSyncError.lower(value)
 }
 
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
 
 public enum UpgradeTokenAction: Equatable, Hashable {
     
@@ -1774,6 +2180,30 @@ public func FfiConverterTypeUpgradeTokenAction_lower(_ value: UpgradeTokenAction
     return FfiConverterTypeUpgradeTokenAction.lower(value)
 }
 
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionUInt32: FfiConverterRustBuffer {
+    typealias SwiftType = UInt32?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterUInt32.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterUInt32.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
@@ -1911,28 +2341,40 @@ private let initializationResult: InitializationResult = {
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
     }
-    if (uniffi_bitwarden_user_crypto_management_checksum_method_pinsettingsclient_get_lock_type() != 47108) {
+    if (uniffi_bitwarden_user_crypto_management_checksum_method_pinsettingsclient_get_lock_type() != 12547) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_bitwarden_user_crypto_management_checksum_method_pinsettingsclient_get_pin() != 40915) {
+    if (uniffi_bitwarden_user_crypto_management_checksum_method_pinsettingsclient_get_pin() != 9959) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_bitwarden_user_crypto_management_checksum_method_pinsettingsclient_get_status() != 13492) {
+    if (uniffi_bitwarden_user_crypto_management_checksum_method_pinsettingsclient_get_pin_length() != 52322) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_bitwarden_user_crypto_management_checksum_method_pinsettingsclient_set_pin() != 54964) {
+    if (uniffi_bitwarden_user_crypto_management_checksum_method_pinsettingsclient_get_status() != 14937) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_bitwarden_user_crypto_management_checksum_method_pinsettingsclient_unset_pin() != 64665) {
+    if (uniffi_bitwarden_user_crypto_management_checksum_method_pinsettingsclient_set_pin() != 37007) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_bitwarden_user_crypto_management_checksum_method_pinsettingsclient_validate_pin() != 3295) {
+    if (uniffi_bitwarden_user_crypto_management_checksum_method_pinsettingsclient_unset_pin() != 59838) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_bitwarden_user_crypto_management_checksum_method_usercryptomanagementclient_change_kdf() != 59756) {
+    if (uniffi_bitwarden_user_crypto_management_checksum_method_pinsettingsclient_validate_pin() != 27655) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_bitwarden_user_crypto_management_checksum_method_usercryptomanagementclient_pin_settings() != 40704) {
+    if (uniffi_bitwarden_user_crypto_management_checksum_method_usercryptomanagementclient_change_kdf() != 43896) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_bitwarden_user_crypto_management_checksum_method_usercryptomanagementclient_user_key_id_backfill() != 42991) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_bitwarden_user_crypto_management_checksum_method_usercryptomanagementclient_user_key_id_needs_backfill() != 59669) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_bitwarden_user_crypto_management_checksum_method_usercryptomanagementclient_pin_settings() != 55321) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_bitwarden_user_crypto_management_checksum_method_usercryptomanagementclient_request_permission_to_migrate_to_v2() != 32658) {
         return InitializationResult.apiChecksumMismatch
     }
 

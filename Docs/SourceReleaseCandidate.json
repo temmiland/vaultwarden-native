@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
   "purpose": "Public source-only CI candidate snapshot inventory; not the final release, tag, or app publication.",
-  "generatedOn": "2026-11-07",
-  "baseCommit": "e36f50a341f92eb361702adfb093348dc8cd7d56",
+  "generatedOn": "2026-11-08",
+  "baseCommit": "24dc262c7beaa1c405656ab32defbdcaf5652d13",
   "branch": "source-only-ci-2026-11-07",
   "snapshotIncludesGitHistory": false,
   "snapshotDefinition": "All present tracked files plus present unignored untracked files at generation time, excluding this manifest from its own hash list.",
   "worktreeStatusAtGeneration": {
-    "modifiedOrAddedTrackedEntries": 37,
-    "deletedTrackedEntries": 0,
-    "untrackedEntriesExcludingManifest": 4
+    "modifiedOrAddedTrackedEntries": 49,
+    "deletedTrackedEntries": 1,
+    "untrackedEntriesExcludingManifest": 3
   },
   "excludedPaths": [
     ".git/",
@@ -22,9 +22,11 @@
     "generated Xcode projects and user state",
     "other Git-ignored files"
   ],
-  "deletedFromBase": [],
+  "deletedFromBase": [
+    "Packages/VaultwardenSDK/Sources/BitwardenSdk/bitwarden_importers.swift"
+  ],
   "selfHashOmitted": true,
-  "includedFileCountExcludingManifest": 498,
+  "includedFileCountExcludingManifest": 500,
   "files": [
     {
       "path": ".github/workflows/verify-source.yml",
@@ -527,20 +529,20 @@
     {
       "path": "Docs/RemainingReleaseWork.md",
       "type": "file",
-      "bytes": 129670,
-      "sha256": "31554f307165b1e491a5d1c627760f7fb2e29ac5ad5f8e5590ca2ca4b4fad9ab"
+      "bytes": 130911,
+      "sha256": "7d66881c03e60ca63b3a32486bd0f3d9ddad2f85cf3dbfed6b661c082a4982ea"
     },
     {
       "path": "Docs/SDKLocalArtifactInventory.json",
       "type": "file",
-      "bytes": 14100,
-      "sha256": "b71d8b6c15ec502a0fdf5468fccdc6747abede90353d0599d26318d29493b7c5"
+      "bytes": 14912,
+      "sha256": "68ed7fdafe872d9534ddd8366f4f332a539a3ec77c2426c5ec805aa6e37807a0"
     },
     {
       "path": "Docs/SDKRebuildVerification.md",
       "type": "file",
-      "bytes": 4524,
-      "sha256": "1230dc8fb569d5121ac6afb4d25360dbe9f913807b2906f7183e3a220c32d3f3"
+      "bytes": 6600,
+      "sha256": "92274b4d0252cf23b4248aa5ce4b02c6e67781adeabe414a5cadd4f95862d128"
     },
     {
       "path": "Docs/ThirdParty/Bitwarden-LICENSE.txt",
@@ -551,8 +553,8 @@
     {
       "path": "Docs/ThirdParty/Bitwarden-LICENSE_GPL.txt",
       "type": "file",
-      "bytes": 35141,
-      "sha256": "589ed823e9a84c56feb95ac58e7cf384626b9cbf4fda2a907bc36e103de1bad2"
+      "bytes": 35140,
+      "sha256": "b98fbb37db5b23bc5cfdcd16793206a5a7120a7b01f75374e5e0888376e4691c"
     },
     {
       "path": "Docs/ThirdParty/Bitwarden-LICENSE_SDK.txt",
@@ -569,20 +571,20 @@
     {
       "path": "Docs/ThirdParty/SDKAdvisoryInventory.json",
       "type": "file",
-      "bytes": 6414,
-      "sha256": "d3795c50ede2bf82f1ca1e5916338c61eff1330a147c4647780d91e1e22df5f5"
+      "bytes": 2766,
+      "sha256": "8ad1e53ab59eb014a989b89d34a5beaa4549239a1a17d837235f74fbf3d9cd9f"
     },
     {
       "path": "Docs/ThirdParty/SDKDependencyInventory.json",
       "type": "file",
-      "bytes": 253182,
-      "sha256": "fb23343b3fd174dd47e02b1f6a70e7070d36d5afed411addb3adb35bd203e944"
+      "bytes": 257129,
+      "sha256": "56874071c5439296f5712571932c771dc5abb6f1c9ddeeb4c8314858bdf81357"
     },
     {
       "path": "Docs/ThirdParty/SourceMaterialInventory.json",
       "type": "file",
-      "bytes": 8577,
-      "sha256": "f9f245578dc1345c137135889d0b730ed87663f8a5c484447c792622a38600a0"
+      "bytes": 9116,
+      "sha256": "c80574382c3e8bc08f1c1075bde028a9bf4946786b3405f15ca1ce82b1d9eda7"
     },
     {
       "path": "Docs/ThreatModel.md",
@@ -1001,8 +1003,8 @@
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/CipherDTO.swift",
       "type": "file",
-      "bytes": 31867,
-      "sha256": "150e7c59759637d03e56dd60535a5ead6f4674f76f3c62397a444e71263043b5"
+      "bytes": 31928,
+      "sha256": "898ba2ff4958c53b8acbacbf81def473bdb4a790aa4c78234cc1a35b2d66650f"
     },
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/CipherPayloadSupport.swift",
@@ -1061,8 +1063,8 @@
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKAutoFillService.swift",
       "type": "file",
-      "bytes": 8859,
-      "sha256": "b766cd493dc4418aeb4b4ed2fc1154ffe4102a469a51ea674a553b88cf5ac7d8"
+      "bytes": 8855,
+      "sha256": "eefcd15e3a02ce3aca57523364c19dbd6579bb4d4e5c09cbb430216d768198ca"
     },
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKCipherService.swift",
@@ -1073,14 +1075,14 @@
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKClientFactory.swift",
       "type": "file",
-      "bytes": 1375,
-      "sha256": "2dd9c26220d6c57eb23d2aa6f0079066674c83f86537b4d2d19391d72e5cca2b"
+      "bytes": 1519,
+      "sha256": "811d26e8a690e8e46d6828fd7f70c4aca445d7615f902ba74d3cfcea3af3af0d"
     },
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKDecryptionIntegrity.swift",
       "type": "file",
-      "bytes": 5104,
-      "sha256": "69274a525c75a9120fc07c61a084cc442bb775aa39e27706cf6c717b6b3b14c9"
+      "bytes": 5517,
+      "sha256": "eeeea734f30866d3ee684ec0bc71c388dbe16f16d003c237fa8eda469ccd53e2"
     },
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKKeyDerivationMapper.swift",
@@ -1115,8 +1117,8 @@
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKSendCryptography.swift",
       "type": "file",
-      "bytes": 18152,
-      "sha256": "4412cd27633f8fd22563c9847b8912bea0576272cdbda4c8d10f183026f4aa2b"
+      "bytes": 18286,
+      "sha256": "834ec43aa6462ab3c0fb4be40e1ef11d47533d374cc54785bc9832b14ad4cc17"
     },
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKSessionClient.swift",
@@ -1127,20 +1129,20 @@
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKVaultAccessPolicy.swift",
       "type": "file",
-      "bytes": 2835,
-      "sha256": "bdc1443aef1415c4f1daf9a2194bafdd85dc83f8f844e7ce46fdb2b88106b146"
+      "bytes": 2854,
+      "sha256": "0343a73ebc326a916f258c7e1f8dc618f1e9bb18e1940c5c3f0b2d845a5732ec"
     },
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKVaultCryptoService.swift",
       "type": "file",
-      "bytes": 7144,
-      "sha256": "6250aa302c54df06b4cd157f226f64580518ac6d3c39437e4aa6747135e3cfe6"
+      "bytes": 6967,
+      "sha256": "eafdba0883e92b9ad7855f165809ecfc7f2874dce1e87280f7bfcdda450256a8"
     },
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKVaultItemDraftMapper.swift",
       "type": "file",
-      "bytes": 9470,
-      "sha256": "4100df0115b5f6fef6d0e9849e60f81dd11b16c250b4615ff219abf6fa62de06"
+      "bytes": 9595,
+      "sha256": "e166cd497a228bf74bf13987134bf48e927abeaaa98608df752359882e13628e"
     },
     {
       "path": "Packages/AppModules/Sources/BitwardenSDKAdapter/SDKVaultPresentationMapper.swift",
@@ -1979,8 +1981,8 @@
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AutoFillQueryTestSupport.swift",
       "type": "file",
-      "bytes": 6564,
-      "sha256": "ba66a8207ab864534071abeee599e2cf96b25eed79f9b91f7505ad4e2db492de"
+      "bytes": 6568,
+      "sha256": "da1a3bc91daa82f3237e7b0052129f04348fbf806eb8d713d6873be22db9940e"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AutoFillRequestCompletionTests.swift",
@@ -2009,8 +2011,8 @@
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/CipherFido2Tests.swift",
       "type": "file",
-      "bytes": 9291,
-      "sha256": "eeb1498cf589a211b2c1e84b395189220d450dbf94d30c594fc5d04a9823ebf0"
+      "bytes": 8958,
+      "sha256": "6707390bb8a113ef394aed06999f16fb880153ca0321c6673245178ec389bb81"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/CipherPayloadSafetyTests.swift",
@@ -2189,8 +2191,8 @@
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/LiveServerContractTests.swift",
       "type": "file",
-      "bytes": 40182,
-      "sha256": "47d271743607bdd3b54992e104dcc07930e51a482885743cc23dd953944880e5"
+      "bytes": 40203,
+      "sha256": "2bef749bea15a267a98e2dfc88f4872df91d50300b7a5d19bd94dff657b7687d"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/MockDeviceManagementService.swift",
@@ -2345,8 +2347,8 @@
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKDecryptionIntegrityTests.swift",
       "type": "file",
-      "bytes": 4058,
-      "sha256": "94bd4d6d9fabcb475c571499e011f098b87bd442d3c86c5f89bdd6750f9deeed"
+      "bytes": 4478,
+      "sha256": "627f8aa3bd1331cb7d8a5e2f8a6d4b721cbac636efb121e13c50c2d516836cba"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKKeyDerivationMapperTests.swift",
@@ -2375,8 +2377,8 @@
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKSendCryptographyTests.swift",
       "type": "file",
-      "bytes": 21160,
-      "sha256": "d38ad17ad7f45282cfd1a8cab42db193910fd1a306c535d0dc7f57b270653eac"
+      "bytes": 21295,
+      "sha256": "4feed7657ecd196dc0d143f799ed8136379fdd6724aca009b957330841332d80"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SDKVaultAttachmentSafetyTests.swift",
@@ -2537,8 +2539,8 @@
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/VaultItemDraftMapperTests.swift",
       "type": "file",
-      "bytes": 23478,
-      "sha256": "37095ab56ac1f35d064cb7743ccd2092fd6647e2278c1bfc3d4e354e9edb0367"
+      "bytes": 23498,
+      "sha256": "e0eb7628ee55044beb178c50f1d6d6f338ede87b1717be46a1a4c41881807119"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/VaultModelTests.swift",
@@ -2561,8 +2563,8 @@
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/VaultTestSupport.swift",
       "type": "file",
-      "bytes": 13269,
-      "sha256": "d0d4611cdebdedab531181433a7c979de7bacb14b70ca6a465d70fcc0a2f349a"
+      "bytes": 13388,
+      "sha256": "a15dcb69509b0aba33b307f5e665c273e099c95772af573d549b061edfa21039"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/VaultTimeoutWatchdogTests.swift",
@@ -2693,140 +2695,146 @@
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenApiBase.swift",
       "type": "file",
-      "bytes": 23319,
-      "sha256": "1b64b96505d95c5805f4f976462af86db35d04e0a597b3b842ae4c9b8ffcbcf3"
+      "bytes": 25581,
+      "sha256": "3fce0a70c511221487276407e46797dd8f74b20ca5f7325b3b59cd74e234c581"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenAuth.swift",
       "type": "file",
-      "bytes": 117652,
-      "sha256": "c361a9b84a0728f0f083f0d80e9bd7bbedb8133dc460477d523cc2197ba5f068"
+      "bytes": 123951,
+      "sha256": "e8ca85a64ad5f16bfc66533d43a6fc133e5bab41c9ff7852879ce677082c67f7"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenCollections.swift",
       "type": "file",
-      "bytes": 30156,
-      "sha256": "b3b693aec616b3c6cc81c34272b56c106e65b1ff1e646b8c1669acd4e22077ef"
+      "bytes": 42401,
+      "sha256": "2cf47042e6d041b47caa395a8e22fa20b4645bf51682d8d33a7edcd14f779a02"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenCore.swift",
       "type": "file",
-      "bytes": 277227,
-      "sha256": "60d801f5e20b93352e935940e081110cefb7bcb7df61026e63ae8f5aced7a11a"
+      "bytes": 291543,
+      "sha256": "a81abba272970e0dad3d7463ccc5e42c12679c63eaf21ae82621751d10784692"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenCrypto.swift",
       "type": "file",
-      "bytes": 52887,
-      "sha256": "c74b1bae9cd4566fce146a3aaa4ec41e23c96efd735e605c02996384b11a75cb"
+      "bytes": 53319,
+      "sha256": "2b5600146dddf27cdaef98e1c99a07a89687c0567158a0f04e3c0275cc11c9b6"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenCryptoSyncHandler.swift",
       "type": "file",
-      "bytes": 33960,
-      "sha256": "001dddcc06e9a75809a233731fc3dec7d5f51c920e9c12443ccd363c81c1ad07"
+      "bytes": 37551,
+      "sha256": "6a01fe9ff3dbc21f0069a833222e23124428cc3f5b4fe8586e970fc0411e5d41"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenEncoding.swift",
       "type": "file",
-      "bytes": 19485,
-      "sha256": "453bbac4ea0683d6301c8733ef8777f203dd2c5533c1e166a7d1de0a2a13c64b"
+      "bytes": 21580,
+      "sha256": "198f20b96fc4a22c2c38bcac1f2ba2c22703f54bd28087088c150f39ae72c459"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenExporters.swift",
       "type": "file",
-      "bytes": 24584,
-      "sha256": "4a483baa21531cc886be619c3e53ad74d7efa04dbc477d87f0a754e2bde10d7d"
+      "bytes": 26878,
+      "sha256": "ce85e49cab9152e4be15a270e3ef466c63450ecdbedd5b6d2b3d64e57e050145"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenFido.swift",
       "type": "file",
-      "bytes": 145406,
-      "sha256": "1a1847236580dfc28d57a5c61eecf0a9d7fb491d3eae3fb6938b39ebc7a5c450"
+      "bytes": 147645,
+      "sha256": "211f34a46e31343d7e8d1d88d074d9c406c6899f672b9a7d99cfaf459ac9153c"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenGenerators.swift",
       "type": "file",
-      "bytes": 50546,
-      "sha256": "76e6c286602f19f05654c5ca64eefbf486afdbff08bc49ec705bffcb3f4f57cb"
+      "bytes": 52575,
+      "sha256": "2fb464fc32b1ac3108a45de7b18859926f455df67a22e657ec02a183e322584e"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenImporters.swift",
+      "type": "file",
+      "bytes": 70419,
+      "sha256": "105cb2f9a7295364d91aff17710da17c2ed992cd4e6856a58146a38cd0c24992"
+    },
+    {
+      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenManagedSettings.swift",
+      "type": "file",
+      "bytes": 26599,
+      "sha256": "fe7071ebbff2b98d545a609a97a04a614b3fdd2fcf536e6c8c3de9eee1f23147"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenOrganizations.swift",
       "type": "file",
-      "bytes": 72191,
-      "sha256": "64d109067086f034457cc72a82e8c0a0dbfc535fc3d4e73bd4a5655f4b2826c6"
+      "bytes": 90773,
+      "sha256": "0ea7399af97d7f45aa76266da56f00f11284f10b12b58acc195184898895ae97"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenPM.swift",
       "type": "file",
-      "bytes": 17005,
-      "sha256": "6ae624b7a2893e0ab994887b9b0885e0eaeb4f0f29ec9ce210bf4b6a3874526e"
+      "bytes": 19432,
+      "sha256": "4a9fa0ae65cde80a83c8fa67d5e5e8b2959182f1683120e24fb42da43e53c00b"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenPolicies.swift",
       "type": "file",
-      "bytes": 42344,
-      "sha256": "284b6b748135fcc011d9205152b8d8be9c08f08e45f31605194718f37a5188c8"
+      "bytes": 85245,
+      "sha256": "ce2767d467fbcba42ecfd8b5ddb5328e6706483c31a39c56e4915d116b241448"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenRandom.swift",
       "type": "file",
-      "bytes": 27654,
-      "sha256": "b1ca97ea6b79f64990bba03c6665ae6f672b198d263ddab64bd546fdae2cf777"
+      "bytes": 30251,
+      "sha256": "86f204233e185ebde669b526add7b0f748c16e764ef98fa5cad854ca224302df"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenSDK.swift",
       "type": "file",
-      "bytes": 567824,
-      "sha256": "ff3cede1ee4b95eaddc8b77ffa8e4a12686cae924ac36b4388c18ada3bb970d2"
+      "bytes": 651405,
+      "sha256": "1bac8a70198ac68f5d1eb09ba2eeb51361d64ed249664ac2e6d0813c2956b4d9"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenSend.swift",
       "type": "file",
-      "bytes": 97931,
-      "sha256": "1cb4f38a63275ed22367162de13e94ee015c03e9e43dfb5493794242b457f90c"
+      "bytes": 129875,
+      "sha256": "473398a73af41811222a552c01dd628c20efedd50d0e1cb1ce7dc41998aa8b10"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenServerCommunicationConfig.swift",
       "type": "file",
-      "bytes": 59098,
-      "sha256": "25fd1c528e8f7b82ee500cf5003153c65743fbefd016e86e034019da061deb07"
+      "bytes": 61868,
+      "sha256": "2329f6896f6c0c6402435f33a24beb9a440bdbf0a42c8e4ab073f86a639364a2"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenSsh.swift",
       "type": "file",
-      "bytes": 24912,
-      "sha256": "e584954565350bc95b6ed7b904e16b0d06b4994797c2ae80ce6d9b181c71cfc5"
+      "bytes": 27208,
+      "sha256": "db8a90322ceaf0fc10b9c9f137136d3331d5a2a30f784322c946d6e56b6e8752"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenState.swift",
       "type": "file",
-      "bytes": 22361,
-      "sha256": "bf53532c1a219eeb5951d3b8fbad52e006ceb09883d0b03f55cee0d620ff60aa"
+      "bytes": 24790,
+      "sha256": "59c0d176df8f87f22100387827a41d96580889d3e581e3425beb1fde3931f281"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenUnlock.swift",
       "type": "file",
-      "bytes": 17033,
-      "sha256": "4394cc609548bc032dbb5ef3232bba6195f8a2e1c2b33833fbe50c52f9c4ffed"
+      "bytes": 32707,
+      "sha256": "fce5f4918f0f3ca652d0c69ff43f2f790a6a9dd0b41922b1b0fa242537c54bf1"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenUserCryptoManagement.swift",
       "type": "file",
-      "bytes": 60601,
-      "sha256": "313e28baaa4aaba7c652b4dd4aa148eac3136ec70ce8644b3a7e3425f59f8f3b"
+      "bytes": 75840,
+      "sha256": "d2d01e2d2c5ee3f28539f56c4dbf8db4a5a5febda50490901026ef7cb4e5f066"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/BitwardenVault.swift",
       "type": "file",
-      "bytes": 322955,
-      "sha256": "d317220686160f3f6f2fae702050271fbd0b6661b4c0d4de9b41fa3d8bc838a8"
-    },
-    {
-      "path": "Packages/VaultwardenSDK/Sources/BitwardenSdk/bitwarden_importers.swift",
-      "type": "file",
-      "bytes": 34673,
-      "sha256": "44f888398cc0b05fc33256c38011fbfd50b0a3834b7ec1670c8acb5d5c52a10a"
+      "bytes": 350127,
+      "sha256": "79f5d254dbec7c367dbbb9250cfea324ba8b6d7e4988330d7015c569a1db2466"
     },
     {
       "path": "Packages/VaultwardenSDK/Sources/BitwardenSdkSupport/NaiveDateFormatter.swift",
@@ -2837,14 +2845,14 @@
     {
       "path": "Packages/VaultwardenSDK/Tests/BitwardenSdkTests/ClientSmokeTests.swift",
       "type": "file",
-      "bytes": 1644,
-      "sha256": "5c5563469d0f6189a2f6c075caa4926b483abfc30bb1dc8b8c06ca6a923472c4"
+      "bytes": 1693,
+      "sha256": "4713a161ad4f0e04f87504cee0e98a8282b21c88c4008a375284cd37040dfcec"
     },
     {
       "path": "README.md",
       "type": "file",
-      "bytes": 11673,
-      "sha256": "21fc40681258cd0d4a459572840a8ad757ef0de7a5e478f3d58a3a26606e389e"
+      "bytes": 12066,
+      "sha256": "cf2f45d94ffefb96dd70a30f0ab8eb7605ab759948692fb56bd40246db69d98d"
     },
     {
       "path": "SECURITY.md",
@@ -2855,8 +2863,8 @@
     {
       "path": "Scripts/build-sdk.sh",
       "type": "file",
-      "bytes": 5609,
-      "sha256": "f0efd1d9cf3cb20792b0df7193338b64592b884062073cdb68574ee4354e4652"
+      "bytes": 8738,
+      "sha256": "1f17641dde378c984395637754f65b7bc032d49bc464551dbfdbf3666e341462"
     },
     {
       "path": "Scripts/build-unsigned.sh",
@@ -2891,14 +2899,20 @@
     {
       "path": "Scripts/patches/0001-add-macos-target-to-xcframework-build.patch",
       "type": "file",
-      "bytes": 4021,
-      "sha256": "95f74e5f6d544be11f8b3542bbf90dd7ad4fc9ae00ad2ca5f3389041622748df"
+      "bytes": 2763,
+      "sha256": "b824cd9c8fba29af01b0f1782f5314721cf10532d180a66303b9aa484a91c70c"
     },
     {
       "path": "Scripts/patches/0002-sdk-dependency-mitigation-experimental.patch",
       "type": "file",
       "bytes": 3829,
       "sha256": "2025ab24ccf654e48a69654ad37e31b09de8a7dcb8104d052e109ae48d23f230"
+    },
+    {
+      "path": "Scripts/patches/0003-update-sdk-dependencies.patch",
+      "type": "file",
+      "bytes": 18398,
+      "sha256": "44e11046b48fb4b31ebb9a5ea01368fc1dee42a987162de08fda19e78f343aaa"
     },
     {
       "path": "Scripts/sdk-artifact-inventory.swift",
@@ -2987,8 +3001,8 @@
     {
       "path": "THIRD_PARTY_NOTICES.md",
       "type": "file",
-      "bytes": 5906,
-      "sha256": "e4d87b81d31234b08cf1f7a3d8ef072458f04fb8fb8c9d6b8e23997d07191806"
+      "bytes": 6165,
+      "sha256": "0f6966078389e2ef005dd41c54c762b2e1fed109ed761e5fe0cde9365088f3f0"
     },
     {
       "path": "Tests/PlatformIntegration/CompositionIntegrationTests.swift",

@@ -129,7 +129,7 @@ struct LiveServerContractTests {
             let email = "contract-\(UUID().uuidString.lowercased())@example.invalid"
             let password = UUID().uuidString + UUID().uuidString
             let kdf = Kdf.pbkdf2(iterations: 600_000)
-            let client = Client(tokenProvider: LocalContractTokenProvider(), settings: ClientSettings(
+            let client = SDKClientFactory.makeClient(tokenProvider: LocalContractTokenProvider(), settings: ClientSettings(
                 identityUrl: environment.identityURL.absoluteString, apiUrl: environment.apiURL.absoluteString,
                 userAgent: "local-synthetic-contract", deviceType: .macOsDesktop,
                 deviceIdentifier: UUID().uuidString, bitwardenClientVersion: "0.0.1", bitwardenPackageType: nil

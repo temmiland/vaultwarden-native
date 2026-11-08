@@ -7,8 +7,8 @@ import Foundation
 // Depending on the consumer's build setup, the low-level FFI code
 // might be in a separate module, or it might be compiled inline into
 // this module. This is a bit of light hackery to work with both.
-#if canImport(bitwarden_importersFFI)
-import bitwarden_importersFFI
+#if canImport(BitwardenManagedSettingsFFI)
+import BitwardenManagedSettingsFFI
 #endif
 
 fileprivate extension RustBuffer {
@@ -25,19 +25,65 @@ fileprivate extension RustBuffer {
     }
 
     static func from(_ ptr: UnsafeBufferPointer<UInt8>) -> RustBuffer {
-        try! rustCall { ffi_bitwarden_importers_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
+        try! rustCall { ffi_bitwarden_managed_settings_types_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
     }
 
     // Frees the buffer in place.
     // The buffer must not be used after this is called.
     func deallocate() {
-        try! rustCall { ffi_bitwarden_importers_rustbuffer_free(self, $0) }
+        try! rustCall { ffi_bitwarden_managed_settings_types_rustbuffer_free(self, $0) }
     }
 }
 
 fileprivate extension ForeignBytes {
     init(bufferPointer: UnsafeBufferPointer<UInt8>) {
         self.init(len: Int32(bufferPointer.count), data: bufferPointer.baseAddress)
+    }
+
+    init(rawBufferPointer: UnsafeRawBufferPointer) {
+        self.init(
+            len: Int32(rawBufferPointer.count),
+            data: rawBufferPointer.baseAddress?.assumingMemoryBound(to: UInt8.self)
+        )
+    }
+}
+
+// Converter for `&[u8]` / `[ByRef] bytes` arguments.
+//
+// Conforms to `FfiConverter` so the compiler enforces the full converter
+// method set. Only the scope-bound `lower(_:_body:)` overload is sound —
+// zero-copy byte buffers only flow foreign -> Rust, and only in argument
+// position. The four protocol-witness methods (`lift`, `lower`, `read`,
+// `write`) `fatalError` at runtime if anyone reaches them.
+//
+// The scope-bound `lower` takes a closure because the `ForeignBytes`
+// pointer is only guaranteed valid for the duration of
+// `Data.withUnsafeBytes`. Callers must run the full FFI call inside
+// the closure body.
+fileprivate enum FfiConverterByRefBytes: FfiConverter {
+    typealias SwiftType = Data
+    typealias FfiType = ForeignBytes
+
+    static func lower<R>(_ value: Data, _ body: (ForeignBytes) throws -> R) rethrows -> R {
+        return try value.withUnsafeBytes { rawBuf in
+            try body(ForeignBytes(rawBufferPointer: rawBuf))
+        }
+    }
+
+    static func lower(_ value: Data) -> ForeignBytes {
+        fatalError("ByRef bytes cannot use the plain lower: returning ForeignBytes escapes the Data.withUnsafeBytes scope. Use the scope-bound lower(_:_body:) overload instead.")
+    }
+
+    static func lift(_ value: ForeignBytes) throws -> Data {
+        fatalError("ByRef bytes cannot be lifted: zero-copy &[u8] only flows foreign->Rust")
+    }
+
+    static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Data {
+        fatalError("ByRef bytes cannot be read from a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+    }
+
+    static func write(_ value: Data, into buf: inout [UInt8]) {
+        fatalError("ByRef bytes cannot be written to a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
     }
 }
 
@@ -281,7 +327,7 @@ private func makeRustCall<T, E: Swift.Error>(
     _ callback: (UnsafeMutablePointer<RustCallStatus>) -> T,
     errorHandler: ((RustBuffer) throws -> E)?
 ) throws -> T {
-    uniffiEnsureBitwardenImportersInitialized()
+    uniffiEnsureBitwardenManagedSettingsTypesInitialized()
     var callStatus = RustCallStatus.init()
     let returnedVal = callback(&callStatus)
     try uniffiCheckCallStatus(callStatus: callStatus, errorHandler: errorHandler)
@@ -435,6 +481,22 @@ fileprivate struct FfiConverterUInt32: FfiConverterPrimitive {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterInt64: FfiConverterPrimitive {
+    typealias FfiType = Int64
+    typealias SwiftType = Int64
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Int64 {
+        return try lift(readInt(&buf))
+    }
+
+    public static func write(_ value: Int64, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterString: FfiConverter {
     typealias SwiftType = String
     typealias FfiType = RustBuffer
@@ -447,7 +509,11 @@ fileprivate struct FfiConverterString: FfiConverter {
             return String()
         }
         let bytes = UnsafeBufferPointer<UInt8>(start: value.data!, count: Int(value.len))
-        return String(bytes: bytes, encoding: String.Encoding.utf8)!
+        // Use Swift's native UTF-8 decoder; `String(bytes:encoding:.utf8)` goes
+        // through Foundation's NSString and silently strips a leading U+FEFF BOM.
+        // Invalid UTF-8 substitutes U+FFFD instead of trapping (unreachable
+        // given Rust's `String` invariant).
+        return String(decoding: bytes, as: UTF8.self)
     }
 
     public static func lower(_ value: String) -> RustBuffer {
@@ -463,7 +529,8 @@ fileprivate struct FfiConverterString: FfiConverter {
 
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> String {
         let len: Int32 = try readInt(&buf)
-        return String(bytes: try readBytes(&buf, count: Int(len)), encoding: String.Encoding.utf8)!
+        // See `lift` above for why we avoid Foundation's NSString-backed decoder here.
+        return String(decoding: try readBytes(&buf, count: Int(len)), as: UTF8.self)
     }
 
     public static func write(_ value: String, into buf: inout [UInt8]) {
@@ -475,85 +542,52 @@ fileprivate struct FfiConverterString: FfiConverter {
 
 
 /**
- * Number of imported ciphers of a given type.
- */
-public struct CipherTypeCount: Equatable, Hashable {
-    public var type: CipherType
-    public var count: UInt32
-
-    // Default memberwise initializers are never public by default, so we
-    // declare one manually.
-    public init(type: CipherType, count: UInt32) {
-        self.type = type
-        self.count = count
-    }
-
-    
-
-    
-}
-
-#if compiler(>=6)
-extension CipherTypeCount: Sendable {}
-#endif
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeCipherTypeCount: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CipherTypeCount {
-        return
-            try CipherTypeCount(
-                type: FfiConverterTypeCipherType.read(from: &buf), 
-                count: FfiConverterUInt32.read(from: &buf)
-        )
-    }
-
-    public static func write(_ value: CipherTypeCount, into buf: inout [UInt8]) {
-        FfiConverterTypeCipherType.write(value.type, into: &buf)
-        FfiConverterUInt32.write(value.count, into: &buf)
-    }
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeCipherTypeCount_lift(_ buf: RustBuffer) throws -> CipherTypeCount {
-    return try FfiConverterTypeCipherTypeCount.lift(buf)
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeCipherTypeCount_lower(_ value: CipherTypeCount) -> RustBuffer {
-    return FfiConverterTypeCipherTypeCount.lower(value)
-}
-
-
-/**
- * Destination options for a vault import.
+ * A point-in-time snapshot of administrator-forced configuration for this client.
  *
- * `organization_id` selects the destination: `None` imports into the user's personal vault (groups
- * become personal folders), `Some` imports into that organization (ciphers are encrypted with the
- * org key). `target_folder` (personal) and `target_collection` (organization) nest the import
- * under an existing destination, mirroring the client's import-target behavior; each carries both
- * its id and name together so a half-specified target can't be expressed. `restricted_types` are
- * dropped before submission.
+ * `settings` maps dotted keys (e.g. `"generator.password.length"`) to JSON-encoded
+ * strings. A plain `String` is used (not `serde_json::Value`) because it has a UniFFI
+ * representation. Callers parse on demand through [`get_as`](ManagementProfile::get_as).
+ *
+ * This is client configuration forced by an operating system's Unified Endpoint Management
+ * (UEM/MDM) channel. It is not Vault Data and involves no cryptography.
  */
-public struct ImportOptions: Equatable, Hashable {
-    public var organizationId: OrganizationId?
-    public var targetFolder: ImportTargetFolder?
-    public var targetCollection: ImportTargetCollection?
-    public var restrictedTypes: [CipherType]
+public struct ManagementProfile: Equatable, Hashable {
+    /**
+     * Schema version. Bumped when the dotted-key namespace changes incompatibly.
+     */
+    public let version: UInt32
+    /**
+     * Unix timestamp (seconds) at which the host last refreshed the profile.
+     *
+     * This field participates in equality, so two profiles carrying identical `settings` compare
+     * unequal when the host re-read the source and re-stamped the timestamp. Do not use `==` to
+     * detect whether the managed settings themselves changed; compare `settings` instead.
+     */
+    public let updatedAt: Int64
+    /**
+     * Dotted key to JSON-encoded value string.
+     */
+    public let settings: [String: String]
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(organizationId: OrganizationId?, targetFolder: ImportTargetFolder?, targetCollection: ImportTargetCollection?, restrictedTypes: [CipherType]) {
-        self.organizationId = organizationId
-        self.targetFolder = targetFolder
-        self.targetCollection = targetCollection
-        self.restrictedTypes = restrictedTypes
+    public init(
+        /**
+         * Schema version. Bumped when the dotted-key namespace changes incompatibly.
+         */version: UInt32, 
+        /**
+         * Unix timestamp (seconds) at which the host last refreshed the profile.
+         *
+         * This field participates in equality, so two profiles carrying identical `settings` compare
+         * unequal when the host re-read the source and re-stamped the timestamp. Do not use `==` to
+         * detect whether the managed settings themselves changed; compare `settings` instead.
+         */updatedAt: Int64, 
+        /**
+         * Dotted key to JSON-encoded value string.
+         */settings: [String: String]) {
+        self.version = version
+        self.updatedAt = updatedAt
+        self.settings = settings
     }
 
     
@@ -562,28 +596,26 @@ public struct ImportOptions: Equatable, Hashable {
 }
 
 #if compiler(>=6)
-extension ImportOptions: Sendable {}
+extension ManagementProfile: Sendable {}
 #endif
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeImportOptions: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ImportOptions {
+public struct FfiConverterTypeManagementProfile: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ManagementProfile {
         return
-            try ImportOptions(
-                organizationId: FfiConverterOptionTypeOrganizationId.read(from: &buf), 
-                targetFolder: FfiConverterOptionTypeImportTargetFolder.read(from: &buf), 
-                targetCollection: FfiConverterOptionTypeImportTargetCollection.read(from: &buf), 
-                restrictedTypes: FfiConverterSequenceTypeCipherType.read(from: &buf)
+            try ManagementProfile(
+                version: FfiConverterUInt32.read(from: &buf), 
+                updatedAt: FfiConverterInt64.read(from: &buf), 
+                settings: FfiConverterDictionaryStringString.read(from: &buf)
         )
     }
 
-    public static func write(_ value: ImportOptions, into buf: inout [UInt8]) {
-        FfiConverterOptionTypeOrganizationId.write(value.organizationId, into: &buf)
-        FfiConverterOptionTypeImportTargetFolder.write(value.targetFolder, into: &buf)
-        FfiConverterOptionTypeImportTargetCollection.write(value.targetCollection, into: &buf)
-        FfiConverterSequenceTypeCipherType.write(value.restrictedTypes, into: &buf)
+    public static func write(_ value: ManagementProfile, into buf: inout [UInt8]) {
+        FfiConverterUInt32.write(value.version, into: &buf)
+        FfiConverterInt64.write(value.updatedAt, into: &buf)
+        FfiConverterDictionaryStringString.write(value.settings, into: &buf)
     }
 }
 
@@ -591,216 +623,30 @@ public struct FfiConverterTypeImportOptions: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeImportOptions_lift(_ buf: RustBuffer) throws -> ImportOptions {
-    return try FfiConverterTypeImportOptions.lift(buf)
+public func FfiConverterTypeManagementProfile_lift(_ buf: RustBuffer) throws -> ManagementProfile {
+    return try FfiConverterTypeManagementProfile.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeImportOptions_lower(_ value: ImportOptions) -> RustBuffer {
-    return FfiConverterTypeImportOptions.lower(value)
+public func FfiConverterTypeManagementProfile_lower(_ value: ManagementProfile) -> RustBuffer {
+    return FfiConverterTypeManagementProfile.lower(value)
 }
 
 
 /**
- * Counts of what an import submitted to the server, broken down by cipher type so the client can
- * render its per-type result table.
+ * Errors that can occur while reading a [`ManagementProfile`].
  */
-public struct ImportSummary: Equatable, Hashable {
-    public var ciphers: [CipherTypeCount]
-    public var folders: UInt32
-    public var collections: UInt32
-
-    // Default memberwise initializers are never public by default, so we
-    // declare one manually.
-    public init(ciphers: [CipherTypeCount], folders: UInt32, collections: UInt32) {
-        self.ciphers = ciphers
-        self.folders = folders
-        self.collections = collections
-    }
+public 
+enum ManagedSettingsError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
-
-    
-}
-
-#if compiler(>=6)
-extension ImportSummary: Sendable {}
-#endif
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeImportSummary: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ImportSummary {
-        return
-            try ImportSummary(
-                ciphers: FfiConverterSequenceTypeCipherTypeCount.read(from: &buf), 
-                folders: FfiConverterUInt32.read(from: &buf), 
-                collections: FfiConverterUInt32.read(from: &buf)
-        )
-    }
-
-    public static func write(_ value: ImportSummary, into buf: inout [UInt8]) {
-        FfiConverterSequenceTypeCipherTypeCount.write(value.ciphers, into: &buf)
-        FfiConverterUInt32.write(value.folders, into: &buf)
-        FfiConverterUInt32.write(value.collections, into: &buf)
-    }
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeImportSummary_lift(_ buf: RustBuffer) throws -> ImportSummary {
-    return try FfiConverterTypeImportSummary.lift(buf)
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeImportSummary_lower(_ value: ImportSummary) -> RustBuffer {
-    return FfiConverterTypeImportSummary.lower(value)
-}
-
-
-/**
- * An existing organization collection to assign an org import to.
- */
-public struct ImportTargetCollection: Equatable, Hashable {
-    public var id: CollectionId
-    public var name: String
-
-    // Default memberwise initializers are never public by default, so we
-    // declare one manually.
-    public init(id: CollectionId, name: String) {
-        self.id = id
-        self.name = name
-    }
-
-    
-
-    
-}
-
-#if compiler(>=6)
-extension ImportTargetCollection: Sendable {}
-#endif
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeImportTargetCollection: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ImportTargetCollection {
-        return
-            try ImportTargetCollection(
-                id: FfiConverterTypeCollectionId.read(from: &buf), 
-                name: FfiConverterString.read(from: &buf)
-        )
-    }
-
-    public static func write(_ value: ImportTargetCollection, into buf: inout [UInt8]) {
-        FfiConverterTypeCollectionId.write(value.id, into: &buf)
-        FfiConverterString.write(value.name, into: &buf)
-    }
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeImportTargetCollection_lift(_ buf: RustBuffer) throws -> ImportTargetCollection {
-    return try FfiConverterTypeImportTargetCollection.lift(buf)
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeImportTargetCollection_lower(_ value: ImportTargetCollection) -> RustBuffer {
-    return FfiConverterTypeImportTargetCollection.lower(value)
-}
-
-
-/**
- * An existing personal folder to nest a personal import under.
- */
-public struct ImportTargetFolder: Equatable, Hashable {
-    public var id: FolderId
-    public var name: String
-
-    // Default memberwise initializers are never public by default, so we
-    // declare one manually.
-    public init(id: FolderId, name: String) {
-        self.id = id
-        self.name = name
-    }
-
-    
-
-    
-}
-
-#if compiler(>=6)
-extension ImportTargetFolder: Sendable {}
-#endif
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeImportTargetFolder: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ImportTargetFolder {
-        return
-            try ImportTargetFolder(
-                id: FfiConverterTypeFolderId.read(from: &buf), 
-                name: FfiConverterString.read(from: &buf)
-        )
-    }
-
-    public static func write(_ value: ImportTargetFolder, into buf: inout [UInt8]) {
-        FfiConverterTypeFolderId.write(value.id, into: &buf)
-        FfiConverterString.write(value.name, into: &buf)
-    }
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeImportTargetFolder_lift(_ buf: RustBuffer) throws -> ImportTargetFolder {
-    return try FfiConverterTypeImportTargetFolder.lift(buf)
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeImportTargetFolder_lower(_ value: ImportTargetFolder) -> RustBuffer {
-    return FfiConverterTypeImportTargetFolder.lower(value)
-}
-
-
-public enum ImportError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
-
-    
-    
-    case KdbxInvalidFormat(message: String)
-    
-    case KdbxFileTooLarge(message: String)
-    
-    case KdbxWrongCredentials(message: String)
-    
-    case KdbxCorruptOrUnsupported(message: String)
-    
-    case NotAuthenticated(message: String)
-    
-    case Api(message: String)
-    
-    case BitwardenCrypto(message: String)
     
     /**
-     * Encryption from the shared import bridge (`bitwarden_exporters::encrypt_import`).
+     * The value stored under the requested key could not be parsed as the expected shape.
      */
-    case Export(message: String)
+    case Decode(message: String)
     
 
     
@@ -815,51 +661,23 @@ public enum ImportError: Swift.Error, Equatable, Hashable, Foundation.LocalizedE
 }
 
 #if compiler(>=6)
-extension ImportError: Sendable {}
+extension ManagedSettingsError: Sendable {}
 #endif
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeImportError: FfiConverterRustBuffer {
-    typealias SwiftType = ImportError
+public struct FfiConverterTypeManagedSettingsError: FfiConverterRustBuffer {
+    typealias SwiftType = ManagedSettingsError
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ImportError {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ManagedSettingsError {
         let variant: Int32 = try readInt(&buf)
         switch variant {
 
         
 
         
-        case 1: return .KdbxInvalidFormat(
-            message: try FfiConverterString.read(from: &buf)
-        )
-        
-        case 2: return .KdbxFileTooLarge(
-            message: try FfiConverterString.read(from: &buf)
-        )
-        
-        case 3: return .KdbxWrongCredentials(
-            message: try FfiConverterString.read(from: &buf)
-        )
-        
-        case 4: return .KdbxCorruptOrUnsupported(
-            message: try FfiConverterString.read(from: &buf)
-        )
-        
-        case 5: return .NotAuthenticated(
-            message: try FfiConverterString.read(from: &buf)
-        )
-        
-        case 6: return .Api(
-            message: try FfiConverterString.read(from: &buf)
-        )
-        
-        case 7: return .BitwardenCrypto(
-            message: try FfiConverterString.read(from: &buf)
-        )
-        
-        case 8: return .Export(
+        case 1: return .Decode(
             message: try FfiConverterString.read(from: &buf)
         )
         
@@ -868,28 +686,14 @@ public struct FfiConverterTypeImportError: FfiConverterRustBuffer {
         }
     }
 
-    public static func write(_ value: ImportError, into buf: inout [UInt8]) {
+    public static func write(_ value: ManagedSettingsError, into buf: inout [UInt8]) {
         switch value {
 
         
 
         
-        case .KdbxInvalidFormat(_ /* message is ignored*/):
+        case .Decode(_ /* message is ignored*/):
             writeInt(&buf, Int32(1))
-        case .KdbxFileTooLarge(_ /* message is ignored*/):
-            writeInt(&buf, Int32(2))
-        case .KdbxWrongCredentials(_ /* message is ignored*/):
-            writeInt(&buf, Int32(3))
-        case .KdbxCorruptOrUnsupported(_ /* message is ignored*/):
-            writeInt(&buf, Int32(4))
-        case .NotAuthenticated(_ /* message is ignored*/):
-            writeInt(&buf, Int32(5))
-        case .Api(_ /* message is ignored*/):
-            writeInt(&buf, Int32(6))
-        case .BitwardenCrypto(_ /* message is ignored*/):
-            writeInt(&buf, Int32(7))
-        case .Export(_ /* message is ignored*/):
-            writeInt(&buf, Int32(8))
 
         
         }
@@ -900,136 +704,40 @@ public struct FfiConverterTypeImportError: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeImportError_lift(_ buf: RustBuffer) throws -> ImportError {
-    return try FfiConverterTypeImportError.lift(buf)
+public func FfiConverterTypeManagedSettingsError_lift(_ buf: RustBuffer) throws -> ManagedSettingsError {
+    return try FfiConverterTypeManagedSettingsError.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeImportError_lower(_ value: ImportError) -> RustBuffer {
-    return FfiConverterTypeImportError.lower(value)
+public func FfiConverterTypeManagedSettingsError_lower(_ value: ManagedSettingsError) -> RustBuffer {
+    return FfiConverterTypeManagedSettingsError.lower(value)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterOptionTypeImportTargetCollection: FfiConverterRustBuffer {
-    typealias SwiftType = ImportTargetCollection?
-
-    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
-        guard let value = value else {
-            writeInt(&buf, Int8(0))
-            return
-        }
-        writeInt(&buf, Int8(1))
-        FfiConverterTypeImportTargetCollection.write(value, into: &buf)
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
-        switch try readInt(&buf) as Int8 {
-        case 0: return nil
-        case 1: return try FfiConverterTypeImportTargetCollection.read(from: &buf)
-        default: throw UniffiInternalError.unexpectedOptionalTag
-        }
-    }
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-fileprivate struct FfiConverterOptionTypeImportTargetFolder: FfiConverterRustBuffer {
-    typealias SwiftType = ImportTargetFolder?
-
-    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
-        guard let value = value else {
-            writeInt(&buf, Int8(0))
-            return
-        }
-        writeInt(&buf, Int8(1))
-        FfiConverterTypeImportTargetFolder.write(value, into: &buf)
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
-        switch try readInt(&buf) as Int8 {
-        case 0: return nil
-        case 1: return try FfiConverterTypeImportTargetFolder.read(from: &buf)
-        default: throw UniffiInternalError.unexpectedOptionalTag
-        }
-    }
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-fileprivate struct FfiConverterOptionTypeOrganizationId: FfiConverterRustBuffer {
-    typealias SwiftType = OrganizationId?
-
-    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
-        guard let value = value else {
-            writeInt(&buf, Int8(0))
-            return
-        }
-        writeInt(&buf, Int8(1))
-        FfiConverterTypeOrganizationId.write(value, into: &buf)
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
-        switch try readInt(&buf) as Int8 {
-        case 0: return nil
-        case 1: return try FfiConverterTypeOrganizationId.read(from: &buf)
-        default: throw UniffiInternalError.unexpectedOptionalTag
-        }
-    }
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-fileprivate struct FfiConverterSequenceTypeCipherTypeCount: FfiConverterRustBuffer {
-    typealias SwiftType = [CipherTypeCount]
-
-    public static func write(_ value: [CipherTypeCount], into buf: inout [UInt8]) {
+fileprivate struct FfiConverterDictionaryStringString: FfiConverterRustBuffer {
+    public static func write(_ value: [String: String], into buf: inout [UInt8]) {
         let len = Int32(value.count)
         writeInt(&buf, len)
-        for item in value {
-            FfiConverterTypeCipherTypeCount.write(item, into: &buf)
+        for (key, value) in value {
+            FfiConverterString.write(key, into: &buf)
+            FfiConverterString.write(value, into: &buf)
         }
     }
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [CipherTypeCount] {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [String: String] {
         let len: Int32 = try readInt(&buf)
-        var seq = [CipherTypeCount]()
-        seq.reserveCapacity(Int(len))
-        for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeCipherTypeCount.read(from: &buf))
+        var dict = [String: String]()
+        dict.reserveCapacity(Int(len))
+        for _ in 0..<len {
+            let key = try FfiConverterString.read(from: &buf)
+            let value = try FfiConverterString.read(from: &buf)
+            dict[key] = value
         }
-        return seq
-    }
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-fileprivate struct FfiConverterSequenceTypeCipherType: FfiConverterRustBuffer {
-    typealias SwiftType = [CipherType]
-
-    public static func write(_ value: [CipherType], into buf: inout [UInt8]) {
-        let len = Int32(value.count)
-        writeInt(&buf, len)
-        for item in value {
-            FfiConverterTypeCipherType.write(item, into: &buf)
-        }
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [CipherType] {
-        let len: Int32 = try readInt(&buf)
-        var seq = [CipherType]()
-        seq.reserveCapacity(Int(len))
-        for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeCipherType.read(from: &buf))
-        }
-        return seq
+        return dict
     }
 }
 
@@ -1044,20 +752,17 @@ private let initializationResult: InitializationResult = {
     // Get the bindings contract version from our ComponentInterface
     let bindings_contract_version = 30
     // Get the scaffolding contract version by calling the into the dylib
-    let scaffolding_contract_version = ffi_bitwarden_importers_uniffi_contract_version()
+    let scaffolding_contract_version = ffi_bitwarden_managed_settings_types_uniffi_contract_version()
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
     }
 
-    uniffiEnsureBitwardenCollectionsInitialized()
-    uniffiEnsureBitwardenCoreInitialized()
-    uniffiEnsureBitwardenVaultInitialized()
     return InitializationResult.ok
 }()
 
 // Make the ensure init function public so that other modules which have external type references to
 // our types can call it.
-public func uniffiEnsureBitwardenImportersInitialized() {
+public func uniffiEnsureBitwardenManagedSettingsTypesInitialized() {
     switch initializationResult {
     case .ok:
         break

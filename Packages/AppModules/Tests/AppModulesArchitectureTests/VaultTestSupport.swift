@@ -240,6 +240,7 @@ extension Cipher {
     static func fixture(
         id: String? = "cipher-1",
         name: String? = "Example",
+        key: String? = nil,
         type: CipherType = .login,
         login: Login? = Login(
             username: "user",
@@ -256,7 +257,7 @@ extension Cipher {
             organizationId: nil,
             folderId: nil,
             collectionIds: [],
-            key: nil,
+            key: key,
             name: name,
             notes: nil,
             type: type,
@@ -282,7 +283,8 @@ extension Cipher {
             deletedDate: nil,
             revisionDate: Date(timeIntervalSince1970: 0),
             archivedDate: nil,
-            data: nil
+            data: nil,
+            partialData: nil
         )
     }
 }
@@ -314,7 +316,8 @@ extension CipherView {
         attachmentDecryptionFailures: [String]? = nil,
         deletedDate: Date? = nil,
         revisionDate: Date = Date(timeIntervalSince1970: 0),
-        archivedDate: Date? = nil
+        archivedDate: Date? = nil,
+        partial: Bool = false
     ) -> CipherView {
         CipherView(
             id: id,
@@ -349,7 +352,8 @@ extension CipherView {
             creationDate: Date(timeIntervalSince1970: 0),
             deletedDate: deletedDate,
             revisionDate: revisionDate,
-            archivedDate: archivedDate
+            archivedDate: archivedDate,
+            partial: partial
         )
     }
 }

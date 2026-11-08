@@ -6,6 +6,14 @@ import Testing
 @Suite
 struct SDKDecryptionIntegrityTests {
     @Test
+    func missingDecryptedCipherKeyCannotBecomeAnEditableProjection() {
+        #expect(throws: SDKDecryptionIntegrityError.incompleteCipher) {
+            try SDKDecryptionIntegrity.validate(.fixture(key: "encrypted-item-key"), decrypted: .fixture())
+        }
+        #expect(!SDKVaultAccessPolicy.isEligibleForAutoFill(CipherView.fixture(partial: true)))
+    }
+
+    @Test
     func completeProjectionAndLegitimateEmptyOptionalValuesAreAccepted() throws {
         try SDKDecryptionIntegrity.validate(.fixture(), decrypted: .fixture())
         let login = LoginView(
@@ -48,6 +56,7 @@ struct SDKDecryptionIntegrityTests {
     @Test
     func emptyMandatoryNameAndLostPayloadCannotBecomeAnEditableBlankItem() {
         for view in [CipherView.fixture(name: ""), .fixture(login: nil), .fixture(id: "another-item"),
+                     .fixture(partial: true),
                      .fixture(organizationId: "another-owner")] {
             #expect(throws: SDKDecryptionIntegrityError.incompleteCipher) {
                 try SDKDecryptionIntegrity.validate(.fixture(), decrypted: view)

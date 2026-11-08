@@ -39,6 +39,52 @@ fileprivate extension ForeignBytes {
     init(bufferPointer: UnsafeBufferPointer<UInt8>) {
         self.init(len: Int32(bufferPointer.count), data: bufferPointer.baseAddress)
     }
+
+    init(rawBufferPointer: UnsafeRawBufferPointer) {
+        self.init(
+            len: Int32(rawBufferPointer.count),
+            data: rawBufferPointer.baseAddress?.assumingMemoryBound(to: UInt8.self)
+        )
+    }
+}
+
+// Converter for `&[u8]` / `[ByRef] bytes` arguments.
+//
+// Conforms to `FfiConverter` so the compiler enforces the full converter
+// method set. Only the scope-bound `lower(_:_body:)` overload is sound —
+// zero-copy byte buffers only flow foreign -> Rust, and only in argument
+// position. The four protocol-witness methods (`lift`, `lower`, `read`,
+// `write`) `fatalError` at runtime if anyone reaches them.
+//
+// The scope-bound `lower` takes a closure because the `ForeignBytes`
+// pointer is only guaranteed valid for the duration of
+// `Data.withUnsafeBytes`. Callers must run the full FFI call inside
+// the closure body.
+fileprivate enum FfiConverterByRefBytes: FfiConverter {
+    typealias SwiftType = Data
+    typealias FfiType = ForeignBytes
+
+    static func lower<R>(_ value: Data, _ body: (ForeignBytes) throws -> R) rethrows -> R {
+        return try value.withUnsafeBytes { rawBuf in
+            try body(ForeignBytes(rawBufferPointer: rawBuf))
+        }
+    }
+
+    static func lower(_ value: Data) -> ForeignBytes {
+        fatalError("ByRef bytes cannot use the plain lower: returning ForeignBytes escapes the Data.withUnsafeBytes scope. Use the scope-bound lower(_:_body:) overload instead.")
+    }
+
+    static func lift(_ value: ForeignBytes) throws -> Data {
+        fatalError("ByRef bytes cannot be lifted: zero-copy &[u8] only flows foreign->Rust")
+    }
+
+    static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Data {
+        fatalError("ByRef bytes cannot be read from a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+    }
+
+    static func write(_ value: Data, into buf: inout [UInt8]) {
+        fatalError("ByRef bytes cannot be written to a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+    }
 }
 
 // For every type used in the interface, we provide helper methods for conveniently
@@ -455,7 +501,11 @@ fileprivate struct FfiConverterString: FfiConverter {
             return String()
         }
         let bytes = UnsafeBufferPointer<UInt8>(start: value.data!, count: Int(value.len))
-        return String(bytes: bytes, encoding: String.Encoding.utf8)!
+        // Use Swift's native UTF-8 decoder; `String(bytes:encoding:.utf8)` goes
+        // through Foundation's NSString and silently strips a leading U+FEFF BOM.
+        // Invalid UTF-8 substitutes U+FFFD instead of trapping (unreachable
+        // given Rust's `String` invariant).
+        return String(decoding: bytes, as: UTF8.self)
     }
 
     public static func lower(_ value: String) -> RustBuffer {
@@ -471,7 +521,8 @@ fileprivate struct FfiConverterString: FfiConverter {
 
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> String {
         let len: Int32 = try readInt(&buf)
-        return String(bytes: try readBytes(&buf, count: Int(len)), encoding: String.Encoding.utf8)!
+        // See `lift` above for why we avoid Foundation's NSString-backed decoder here.
+        return String(decoding: try readBytes(&buf, count: Int(len)), as: UTF8.self)
     }
 
     public static func write(_ value: String, into buf: inout [UInt8]) {
@@ -479,6 +530,56 @@ fileprivate struct FfiConverterString: FfiConverter {
         writeInt(&buf, len)
         writeBytes(&buf, value.utf8)
     }
+}
+
+
+public struct AncestorMap: Equatable, Hashable {
+    public let ancestors: [CollectionId: String]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(ancestors: [CollectionId: String]) {
+        self.ancestors = ancestors
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension AncestorMap: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeAncestorMap: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AncestorMap {
+        return
+            try AncestorMap(
+                ancestors: FfiConverterDictionaryTypeCollectionIdString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: AncestorMap, into buf: inout [UInt8]) {
+        FfiConverterDictionaryTypeCollectionIdString.write(value.ancestors, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAncestorMap_lift(_ buf: RustBuffer) throws -> AncestorMap {
+    return try FfiConverterTypeAncestorMap.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAncestorMap_lower(_ value: AncestorMap) -> RustBuffer {
+    return FfiConverterTypeAncestorMap.lower(value)
 }
 
 
@@ -492,10 +593,19 @@ public struct Collection: Equatable, Hashable {
     public let manage: Bool
     public let defaultUserCollectionEmail: String?
     public let type: CollectionType
+    /**
+     * True when an enabled PAM access rule governs the collection. Derived by the server; `None`
+     * when the source does not say.
+     */
+    public let hasEnabledAccessRule: Bool?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(id: CollectionId?, organizationId: OrganizationId, name: EncString, externalId: String?, hidePasswords: Bool, readOnly: Bool, manage: Bool, defaultUserCollectionEmail: String?, type: CollectionType) {
+    public init(id: CollectionId?, organizationId: OrganizationId, name: EncString, externalId: String?, hidePasswords: Bool, readOnly: Bool, manage: Bool, defaultUserCollectionEmail: String?, type: CollectionType, 
+        /**
+         * True when an enabled PAM access rule governs the collection. Derived by the server; `None`
+         * when the source does not say.
+         */hasEnabledAccessRule: Bool? = nil) {
         self.id = id
         self.organizationId = organizationId
         self.name = name
@@ -505,6 +615,7 @@ public struct Collection: Equatable, Hashable {
         self.manage = manage
         self.defaultUserCollectionEmail = defaultUserCollectionEmail
         self.type = type
+        self.hasEnabledAccessRule = hasEnabledAccessRule
     }
 
     
@@ -531,7 +642,8 @@ public struct FfiConverterTypeCollection: FfiConverterRustBuffer {
                 readOnly: FfiConverterBool.read(from: &buf), 
                 manage: FfiConverterBool.read(from: &buf), 
                 defaultUserCollectionEmail: FfiConverterOptionString.read(from: &buf), 
-                type: FfiConverterTypeCollectionType.read(from: &buf)
+                type: FfiConverterTypeCollectionType.read(from: &buf), 
+                hasEnabledAccessRule: FfiConverterOptionBool.read(from: &buf)
         )
     }
 
@@ -545,6 +657,7 @@ public struct FfiConverterTypeCollection: FfiConverterRustBuffer {
         FfiConverterBool.write(value.manage, into: &buf)
         FfiConverterOptionString.write(value.defaultUserCollectionEmail, into: &buf)
         FfiConverterTypeCollectionType.write(value.type, into: &buf)
+        FfiConverterOptionBool.write(value.hasEnabledAccessRule, into: &buf)
     }
 }
 
@@ -573,10 +686,19 @@ public struct CollectionView: Equatable, Hashable {
     public let readOnly: Bool
     public let manage: Bool
     public let type: CollectionType
+    /**
+     * True when an enabled PAM access rule governs the collection. Derived by the server; `None`
+     * when the source does not say.
+     */
+    public let hasEnabledAccessRule: Bool?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(id: CollectionId?, organizationId: OrganizationId, name: String, externalId: String?, hidePasswords: Bool, readOnly: Bool, manage: Bool, type: CollectionType) {
+    public init(id: CollectionId?, organizationId: OrganizationId, name: String, externalId: String?, hidePasswords: Bool, readOnly: Bool, manage: Bool, type: CollectionType, 
+        /**
+         * True when an enabled PAM access rule governs the collection. Derived by the server; `None`
+         * when the source does not say.
+         */hasEnabledAccessRule: Bool? = nil) {
         self.id = id
         self.organizationId = organizationId
         self.name = name
@@ -585,6 +707,7 @@ public struct CollectionView: Equatable, Hashable {
         self.readOnly = readOnly
         self.manage = manage
         self.type = type
+        self.hasEnabledAccessRule = hasEnabledAccessRule
     }
 
     
@@ -610,7 +733,8 @@ public struct FfiConverterTypeCollectionView: FfiConverterRustBuffer {
                 hidePasswords: FfiConverterBool.read(from: &buf), 
                 readOnly: FfiConverterBool.read(from: &buf), 
                 manage: FfiConverterBool.read(from: &buf), 
-                type: FfiConverterTypeCollectionType.read(from: &buf)
+                type: FfiConverterTypeCollectionType.read(from: &buf), 
+                hasEnabledAccessRule: FfiConverterOptionBool.read(from: &buf)
         )
     }
 
@@ -623,6 +747,7 @@ public struct FfiConverterTypeCollectionView: FfiConverterRustBuffer {
         FfiConverterBool.write(value.readOnly, into: &buf)
         FfiConverterBool.write(value.manage, into: &buf)
         FfiConverterTypeCollectionType.write(value.type, into: &buf)
+        FfiConverterOptionBool.write(value.hasEnabledAccessRule, into: &buf)
     }
 }
 
@@ -642,7 +767,81 @@ public func FfiConverterTypeCollectionView_lower(_ value: CollectionView) -> Rus
 }
 
 
-public enum CollectionDecryptError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+/**
+ * Represents the result of decrypting a list of collections.
+ *
+ * This struct contains two vectors: `successes` and `failures`.
+ * `successes` contains the decrypted `CollectionView` objects,
+ * while `failures` contains the original `Collection` objects that failed to decrypt.
+ */
+public struct DecryptCollectionListResult: Equatable, Hashable {
+    /**
+     * The decrypted `CollectionView` objects.
+     */
+    public let successes: [CollectionView]
+    /**
+     * The original `Collection` objects that failed to decrypt.
+     */
+    public let failures: [Collection]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * The decrypted `CollectionView` objects.
+         */successes: [CollectionView], 
+        /**
+         * The original `Collection` objects that failed to decrypt.
+         */failures: [Collection]) {
+        self.successes = successes
+        self.failures = failures
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension DecryptCollectionListResult: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeDecryptCollectionListResult: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DecryptCollectionListResult {
+        return
+            try DecryptCollectionListResult(
+                successes: FfiConverterSequenceTypeCollectionView.read(from: &buf), 
+                failures: FfiConverterSequenceTypeCollection.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: DecryptCollectionListResult, into buf: inout [UInt8]) {
+        FfiConverterSequenceTypeCollectionView.write(value.successes, into: &buf)
+        FfiConverterSequenceTypeCollection.write(value.failures, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDecryptCollectionListResult_lift(_ buf: RustBuffer) throws -> DecryptCollectionListResult {
+    return try FfiConverterTypeDecryptCollectionListResult.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDecryptCollectionListResult_lower(_ value: DecryptCollectionListResult) -> RustBuffer {
+    return FfiConverterTypeDecryptCollectionListResult.lower(value)
+}
+
+
+public 
+enum CollectionDecryptError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -715,8 +914,89 @@ public func FfiConverterTypeCollectionDecryptError_lower(_ value: CollectionDecr
     return FfiConverterTypeCollectionDecryptError.lower(value)
 }
 
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
+/**
+ * Generic error type for collection encryption errors.
+ *
+ * This intentionally mirrors `bitwarden_vault::EncryptError` rather than depending on it, to
+ * avoid creating a circular dependency between the `bitwarden-collections` and `bitwarden-vault`
+ * crates.
+ */
+public 
+enum CollectionEncryptError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+
+    
+    
+    case Crypto(message: String)
+    
+
+    
+
+    
+
+    
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+    
+}
+
+#if compiler(>=6)
+extension CollectionEncryptError: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCollectionEncryptError: FfiConverterRustBuffer {
+    typealias SwiftType = CollectionEncryptError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CollectionEncryptError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .Crypto(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: CollectionEncryptError, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        case .Crypto(_ /* message is ignored*/):
+            writeInt(&buf, Int32(1))
+
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCollectionEncryptError_lift(_ buf: RustBuffer) throws -> CollectionEncryptError {
+    return try FfiConverterTypeCollectionEncryptError.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCollectionEncryptError_lower(_ value: CollectionEncryptError) -> RustBuffer {
+    return FfiConverterTypeCollectionEncryptError.lower(value)
+}
+
+
 /**
  * Type of collection
  */
@@ -795,6 +1075,30 @@ public func FfiConverterTypeCollectionType_lower(_ value: CollectionType) -> Rus
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionBool: FfiConverterRustBuffer {
+    typealias SwiftType = Bool?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterBool.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterBool.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
     typealias SwiftType = String?
 
@@ -840,11 +1144,83 @@ fileprivate struct FfiConverterOptionTypeCollectionId: FfiConverterRustBuffer {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeCollection: FfiConverterRustBuffer {
+    typealias SwiftType = [Collection]
 
-/**
- * Typealias from the type name used in the UDL file to the builtin type.  This
- * is needed because the UDL type name is used in function/method signatures.
- */
+    public static func write(_ value: [Collection], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeCollection.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Collection] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [Collection]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeCollection.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeCollectionView: FfiConverterRustBuffer {
+    typealias SwiftType = [CollectionView]
+
+    public static func write(_ value: [CollectionView], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeCollectionView.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [CollectionView] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [CollectionView]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeCollectionView.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterDictionaryTypeCollectionIdString: FfiConverterRustBuffer {
+    public static func write(_ value: [CollectionId: String], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for (key, value) in value {
+            FfiConverterTypeCollectionId.write(key, into: &buf)
+            FfiConverterString.write(value, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [CollectionId: String] {
+        let len: Int32 = try readInt(&buf)
+        var dict = [CollectionId: String]()
+        dict.reserveCapacity(Int(len))
+        for _ in 0..<len {
+            let key = try FfiConverterTypeCollectionId.read(from: &buf)
+            let value = try FfiConverterString.read(from: &buf)
+            dict[key] = value
+        }
+        return dict
+    }
+}
+
+
 public typealias CollectionId = Uuid
 
 #if swift(>=5.8)

@@ -39,6 +39,52 @@ fileprivate extension ForeignBytes {
     init(bufferPointer: UnsafeBufferPointer<UInt8>) {
         self.init(len: Int32(bufferPointer.count), data: bufferPointer.baseAddress)
     }
+
+    init(rawBufferPointer: UnsafeRawBufferPointer) {
+        self.init(
+            len: Int32(rawBufferPointer.count),
+            data: rawBufferPointer.baseAddress?.assumingMemoryBound(to: UInt8.self)
+        )
+    }
+}
+
+// Converter for `&[u8]` / `[ByRef] bytes` arguments.
+//
+// Conforms to `FfiConverter` so the compiler enforces the full converter
+// method set. Only the scope-bound `lower(_:_body:)` overload is sound —
+// zero-copy byte buffers only flow foreign -> Rust, and only in argument
+// position. The four protocol-witness methods (`lift`, `lower`, `read`,
+// `write`) `fatalError` at runtime if anyone reaches them.
+//
+// The scope-bound `lower` takes a closure because the `ForeignBytes`
+// pointer is only guaranteed valid for the duration of
+// `Data.withUnsafeBytes`. Callers must run the full FFI call inside
+// the closure body.
+fileprivate enum FfiConverterByRefBytes: FfiConverter {
+    typealias SwiftType = Data
+    typealias FfiType = ForeignBytes
+
+    static func lower<R>(_ value: Data, _ body: (ForeignBytes) throws -> R) rethrows -> R {
+        return try value.withUnsafeBytes { rawBuf in
+            try body(ForeignBytes(rawBufferPointer: rawBuf))
+        }
+    }
+
+    static func lower(_ value: Data) -> ForeignBytes {
+        fatalError("ByRef bytes cannot use the plain lower: returning ForeignBytes escapes the Data.withUnsafeBytes scope. Use the scope-bound lower(_:_body:) overload instead.")
+    }
+
+    static func lift(_ value: ForeignBytes) throws -> Data {
+        fatalError("ByRef bytes cannot be lifted: zero-copy &[u8] only flows foreign->Rust")
+    }
+
+    static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Data {
+        fatalError("ByRef bytes cannot be read from a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+    }
+
+    static func write(_ value: Data, into buf: inout [UInt8]) {
+        fatalError("ByRef bytes cannot be written to a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+    }
 }
 
 // For every type used in the interface, we provide helper methods for conveniently
@@ -487,7 +533,11 @@ fileprivate struct FfiConverterString: FfiConverter {
             return String()
         }
         let bytes = UnsafeBufferPointer<UInt8>(start: value.data!, count: Int(value.len))
-        return String(bytes: bytes, encoding: String.Encoding.utf8)!
+        // Use Swift's native UTF-8 decoder; `String(bytes:encoding:.utf8)` goes
+        // through Foundation's NSString and silently strips a leading U+FEFF BOM.
+        // Invalid UTF-8 substitutes U+FFFD instead of trapping (unreachable
+        // given Rust's `String` invariant).
+        return String(decoding: bytes, as: UTF8.self)
     }
 
     public static func lower(_ value: String) -> RustBuffer {
@@ -503,7 +553,8 @@ fileprivate struct FfiConverterString: FfiConverter {
 
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> String {
         let len: Int32 = try readInt(&buf)
-        return String(bytes: try readBytes(&buf, count: Int(len)), encoding: String.Encoding.utf8)!
+        // See `lift` above for why we avoid Foundation's NSString-backed decoder here.
+        return String(decoding: try readBytes(&buf, count: Int(len)), as: UTF8.self)
     }
 
     public static func write(_ value: String, into buf: inout [UInt8]) {
@@ -1108,7 +1159,7 @@ public struct LoginSuccessResponse: Equatable, Hashable {
      * If the user is subject to an organization master password policy,
      * this field contains the requirements of that policy.
      */
-    public let masterPasswordPolicy: MasterPasswordPolicyResponse?
+    public let masterPasswordPolicy: MasterPasswordPolicyData?
     /**
      * The user's account cryptographic keys (wrapped with the user key).
      */
@@ -1163,7 +1214,7 @@ public struct LoginSuccessResponse: Equatable, Hashable {
         /**
          * If the user is subject to an organization master password policy,
          * this field contains the requirements of that policy.
-         */masterPasswordPolicy: MasterPasswordPolicyResponse?, 
+         */masterPasswordPolicy: MasterPasswordPolicyData?, 
         /**
          * The user's account cryptographic keys (wrapped with the user key).
          */wrappedAccountCryptoState: WrappedAccountCryptographicState?) {
@@ -1209,7 +1260,7 @@ public struct FfiConverterTypeLoginSuccessResponse: FfiConverterRustBuffer {
                 forcePasswordReset: FfiConverterOptionBool.read(from: &buf), 
                 apiUseKeyConnector: FfiConverterOptionBool.read(from: &buf), 
                 userDecryptionOptions: FfiConverterTypeUserDecryptionOptionsResponse.read(from: &buf), 
-                masterPasswordPolicy: FfiConverterOptionTypeMasterPasswordPolicyResponse.read(from: &buf), 
+                masterPasswordPolicy: FfiConverterOptionTypeMasterPasswordPolicyData.read(from: &buf), 
                 wrappedAccountCryptoState: FfiConverterOptionTypeWrappedAccountCryptographicState.read(from: &buf)
         )
     }
@@ -1226,7 +1277,7 @@ public struct FfiConverterTypeLoginSuccessResponse: FfiConverterRustBuffer {
         FfiConverterOptionBool.write(value.forcePasswordReset, into: &buf)
         FfiConverterOptionBool.write(value.apiUseKeyConnector, into: &buf)
         FfiConverterTypeUserDecryptionOptionsResponse.write(value.userDecryptionOptions, into: &buf)
-        FfiConverterOptionTypeMasterPasswordPolicyResponse.write(value.masterPasswordPolicy, into: &buf)
+        FfiConverterOptionTypeMasterPasswordPolicyData.write(value.masterPasswordPolicy, into: &buf)
         FfiConverterOptionTypeWrappedAccountCryptographicState.write(value.wrappedAccountCryptoState, into: &buf)
     }
 }
@@ -1404,6 +1455,75 @@ public func FfiConverterTypePasswordPreloginResponse_lift(_ buf: RustBuffer) thr
 #endif
 public func FfiConverterTypePasswordPreloginResponse_lower(_ value: PasswordPreloginResponse) -> RustBuffer {
     return FfiConverterTypePasswordPreloginResponse.lower(value)
+}
+
+
+/**
+ * Open-organization-invite data to include on the register-finish payload.
+ */
+public struct RegistrationFinishOpenOrgInviteData: Equatable, Hashable {
+    /**
+     * The organization the registrant is joining via the open invite link.
+     */
+    public let organizationId: OrganizationId
+    /**
+     * The bearer code from the shared invite URL. Must be a UUID.
+     */
+    public let code: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * The organization the registrant is joining via the open invite link.
+         */organizationId: OrganizationId, 
+        /**
+         * The bearer code from the shared invite URL. Must be a UUID.
+         */code: String) {
+        self.organizationId = organizationId
+        self.code = code
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension RegistrationFinishOpenOrgInviteData: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRegistrationFinishOpenOrgInviteData: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RegistrationFinishOpenOrgInviteData {
+        return
+            try RegistrationFinishOpenOrgInviteData(
+                organizationId: FfiConverterTypeOrganizationId.read(from: &buf), 
+                code: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: RegistrationFinishOpenOrgInviteData, into buf: inout [UInt8]) {
+        FfiConverterTypeOrganizationId.write(value.organizationId, into: &buf)
+        FfiConverterString.write(value.code, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRegistrationFinishOpenOrgInviteData_lift(_ buf: RustBuffer) throws -> RegistrationFinishOpenOrgInviteData {
+    return try FfiConverterTypeRegistrationFinishOpenOrgInviteData.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRegistrationFinishOpenOrgInviteData_lower(_ value: RegistrationFinishOpenOrgInviteData) -> RustBuffer {
+    return FfiConverterTypeRegistrationFinishOpenOrgInviteData.lower(value)
 }
 
 
@@ -1890,7 +2010,7 @@ public struct UserMasterPasswordRegistrationRequest: Equatable, Hashable {
      */
     public let organizationUserId: OrganizationId?
     /**
-     * Optional organization invite token for joining an organization
+     * Optional direct organization invite token for joining an organization
      */
     public let orgInviteToken: String?
     /**
@@ -1913,6 +2033,11 @@ public struct UserMasterPasswordRegistrationRequest: Equatable, Hashable {
      * Optional provider user ID for provider invitations
      */
     public let providerUserId: UserId?
+    /**
+     * Optional open-organization-invite identifiers when finishing registration with an open
+     * organization invite link in client state.
+     */
+    public let openOrgInvite: RegistrationFinishOpenOrgInviteData?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
@@ -1939,7 +2064,7 @@ public struct UserMasterPasswordRegistrationRequest: Equatable, Hashable {
          * Optional organization user ID for organization invitations
          */organizationUserId: OrganizationId?, 
         /**
-         * Optional organization invite token for joining an organization
+         * Optional direct organization invite token for joining an organization
          */orgInviteToken: String?, 
         /**
          * Optional token for sponsored free family plan
@@ -1955,7 +2080,11 @@ public struct UserMasterPasswordRegistrationRequest: Equatable, Hashable {
          */providerInviteToken: String?, 
         /**
          * Optional provider user ID for provider invitations
-         */providerUserId: UserId?) {
+         */providerUserId: UserId?, 
+        /**
+         * Optional open-organization-invite identifiers when finishing registration with an open
+         * organization invite link in client state.
+         */openOrgInvite: RegistrationFinishOpenOrgInviteData?) {
         self.email = email
         self.salt = salt
         self.masterPassword = masterPassword
@@ -1969,6 +2098,7 @@ public struct UserMasterPasswordRegistrationRequest: Equatable, Hashable {
         self.acceptEmergencyAccessId = acceptEmergencyAccessId
         self.providerInviteToken = providerInviteToken
         self.providerUserId = providerUserId
+        self.openOrgInvite = openOrgInvite
     }
 
     
@@ -1999,7 +2129,8 @@ public struct FfiConverterTypeUserMasterPasswordRegistrationRequest: FfiConverte
                 acceptEmergencyAccessInviteToken: FfiConverterOptionString.read(from: &buf), 
                 acceptEmergencyAccessId: FfiConverterOptionTypeUserId.read(from: &buf), 
                 providerInviteToken: FfiConverterOptionString.read(from: &buf), 
-                providerUserId: FfiConverterOptionTypeUserId.read(from: &buf)
+                providerUserId: FfiConverterOptionTypeUserId.read(from: &buf), 
+                openOrgInvite: FfiConverterOptionTypeRegistrationFinishOpenOrgInviteData.read(from: &buf)
         )
     }
 
@@ -2017,6 +2148,7 @@ public struct FfiConverterTypeUserMasterPasswordRegistrationRequest: FfiConverte
         FfiConverterOptionTypeUserId.write(value.acceptEmergencyAccessId, into: &buf)
         FfiConverterOptionString.write(value.providerInviteToken, into: &buf)
         FfiConverterOptionTypeUserId.write(value.providerUserId, into: &buf)
+        FfiConverterOptionTypeRegistrationFinishOpenOrgInviteData.write(value.openOrgInvite, into: &buf)
     }
 }
 
@@ -2209,8 +2341,7 @@ public func FfiConverterTypeWebAuthnPrfUserDecryptionOption_lower(_ value: WebAu
     return FfiConverterTypeWebAuthnPrfUserDecryptionOption.lower(value)
 }
 
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
 /**
  * Common login response model used across different login methods.
  */
@@ -2285,7 +2416,8 @@ public func FfiConverterTypeLoginResponse_lower(_ value: LoginResponse) -> RustB
  * This enum covers errors specific to the password authentication flow, including
  * credential validation, KDF processing, and API communication errors.
  */
-public enum PasswordLoginError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum PasswordLoginError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -2413,7 +2545,8 @@ public func FfiConverterTypePasswordLoginError_lower(_ value: PasswordLoginError
 /**
  * Error type for password prelogin operations
  */
-public enum PasswordPreloginError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum PasswordPreloginError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -2506,7 +2639,8 @@ public func FfiConverterTypePasswordPreloginError_lower(_ value: PasswordPrelogi
 /**
  * Errors that can occur during user registration.
  */
-public enum RegistrationError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum RegistrationError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -2524,6 +2658,11 @@ public enum RegistrationError: Swift.Error, Equatable, Hashable, Foundation.Loca
      * Cryptography initialization failed.
      */
     case Crypto(message: String)
+    
+    /**
+     * Caller-provided input failed validation (e.g. malformed UUID).
+     */
+    case InvalidInput(message: String)
     
 
     
@@ -2566,6 +2705,10 @@ public struct FfiConverterTypeRegistrationError: FfiConverterRustBuffer {
             message: try FfiConverterString.read(from: &buf)
         )
         
+        case 4: return .InvalidInput(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
 
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -2583,6 +2726,8 @@ public struct FfiConverterTypeRegistrationError: FfiConverterRustBuffer {
             writeInt(&buf, Int32(2))
         case .Crypto(_ /* message is ignored*/):
             writeInt(&buf, Int32(3))
+        case .InvalidInput(_ /* message is ignored*/):
+            writeInt(&buf, Int32(4))
 
         
         }
@@ -2608,7 +2753,8 @@ public func FfiConverterTypeRegistrationError_lower(_ value: RegistrationError) 
 /**
  * Represents the possible, expected errors that can occur when requesting a send access token.
  */
-public enum SendAccessTokenApiErrorResponse: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum SendAccessTokenApiErrorResponse: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -2802,7 +2948,8 @@ public func FfiConverterTypeSendAccessTokenApiErrorResponse_lower(_ value: SendA
  * Represents errors that can occur when requesting a send access token.
  * It includes expected and unexpected API errors.
  */
-public enum SendAccessTokenError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum SendAccessTokenError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -2897,7 +3044,8 @@ public func FfiConverterTypeSendAccessTokenError_lower(_ value: SendAccessTokenE
 /**
  * Invalid grant errors - typically due to invalid credentials.
  */
-public enum SendAccessTokenInvalidGrantError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum SendAccessTokenInvalidGrantError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -2985,7 +3133,8 @@ public func FfiConverterTypeSendAccessTokenInvalidGrantError_lower(_ value: Send
 /**
  * Invalid request errors - typically due to missing parameters.
  */
-public enum SendAccessTokenInvalidRequestError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum SendAccessTokenInvalidRequestError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -3156,6 +3305,30 @@ fileprivate struct FfiConverterOptionTypeKeyConnectorUserDecryptionOption: FfiCo
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeRegistrationFinishOpenOrgInviteData: FfiConverterRustBuffer {
+    typealias SwiftType = RegistrationFinishOpenOrgInviteData?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeRegistrationFinishOpenOrgInviteData.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeRegistrationFinishOpenOrgInviteData.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeTrustedDeviceUserDecryptionOption: FfiConverterRustBuffer {
     typealias SwiftType = TrustedDeviceUserDecryptionOption?
 
@@ -3228,8 +3401,8 @@ fileprivate struct FfiConverterOptionTypeMasterPasswordUnlockData: FfiConverterR
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterOptionTypeMasterPasswordPolicyResponse: FfiConverterRustBuffer {
-    typealias SwiftType = MasterPasswordPolicyResponse?
+fileprivate struct FfiConverterOptionTypeMasterPasswordPolicyData: FfiConverterRustBuffer {
+    typealias SwiftType = MasterPasswordPolicyData?
 
     public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
         guard let value = value else {
@@ -3237,13 +3410,13 @@ fileprivate struct FfiConverterOptionTypeMasterPasswordPolicyResponse: FfiConver
             return
         }
         writeInt(&buf, Int8(1))
-        FfiConverterTypeMasterPasswordPolicyResponse.write(value, into: &buf)
+        FfiConverterTypeMasterPasswordPolicyData.write(value, into: &buf)
     }
 
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
-        case 1: return try FfiConverterTypeMasterPasswordPolicyResponse.read(from: &buf)
+        case 1: return try FfiConverterTypeMasterPasswordPolicyData.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -3467,10 +3640,6 @@ fileprivate struct FfiConverterSequenceString: FfiConverterRustBuffer {
 }
 
 
-/**
- * Typealias from the type name used in the UDL file to the builtin type.  This
- * is needed because the UDL type name is used in function/method signatures.
- */
 public typealias UnexpectedIdentityError = String
 
 #if swift(>=5.8)

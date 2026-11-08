@@ -241,6 +241,7 @@ public struct SDKSendCryptography: SendCryptography, Sendable {
             type: draft.contentKind == .file ? .file : .text,
             file: file,
             text: text,
+            data: existing?.data,
             maxAccessCount: maxAccessCount,
             accessCount: existing?.accessCount ?? 0,
             disabled: draft.isDisabled,
@@ -299,6 +300,7 @@ private struct SendResponseDTO: Codable {
         guard let rawType = type, let rawTypeByte = UInt8(exactly: rawType),
               let type = SendType(rawValue: rawTypeByte), type != .item
         else { throw SendRepositoryError.invalidResponse }
+        guard data == nil else { throw SendRepositoryError.invalidResponse }
         guard let key else { throw SendRepositoryError.invalidResponse }
         guard let revisionDate = revisionDate.flatMap(Self.parseDate) else {
             throw SendRepositoryError.invalidResponse
@@ -334,6 +336,7 @@ private struct SendResponseDTO: Codable {
                 return SendFile(id: value.id, fileName: fileName, size: value.size, sizeName: value.sizeName)
             },
             text: text.map { SendText(text: $0.text, hidden: $0.hidden ?? false) },
+            data: nil,
             maxAccessCount: parsedMaxAccessCount, accessCount: accessCount,
             disabled: disabled ?? false, hideEmail: hideEmail ?? false,
             revisionDate: revisionDate, deletionDate: deletionDate,

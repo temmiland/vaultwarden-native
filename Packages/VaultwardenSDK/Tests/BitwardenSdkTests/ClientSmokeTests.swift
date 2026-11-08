@@ -23,7 +23,7 @@ struct ClientSmokeTests {
             bitwardenPackageType: nil
         )
 
-        let client = Client(tokenProvider: NoOpTokenProvider(), settings: settings)
+        let client = Client(tokenProvider: NoOpTokenProvider(), settings: settings, managedSettings: ManagedSettingsBindingClient())
 
         // A pure-local, no-network SDK call (password strength estimation) — enough to prove the
         // Rust core is genuinely running behind the FFI, not just that the class initialized.

@@ -1,6 +1,6 @@
 # Zentrale Review- und Arbeitscheckliste für GPT-6-Luna
 
-Stand: 2026-11-07; vorherige Review/Umsetzung vom 2026-11-02 und lokaler Serververtrag vom 2026-11-03. Repository: `vaultwarden-macos`; geprüfter HEAD:
+Stand: 2026-11-08; vorherige Review/Umsetzung vom 2026-11-02 und lokaler Serververtrag vom 2026-11-03. Repository: `vaultwarden-macos`; geprüfter HEAD:
 `de5bd0aed51dc87d95ff97d1ca3680968d8f72c3` **plus vorhandene uncommittete Codeänderungen**.
 Ein Commit allein reproduziert diesen Arbeitsstand nicht. Nach dem Review folgte der ausdrückliche
 Auftrag, die Liste umzusetzen. Die vorhandenen Änderungen wurden erhalten und die unten genannten
@@ -733,10 +733,24 @@ Visible-text-/XCUITest-Nachweise, iPad/Fenstergrößen, Multi-Scene, Accessibili
 - [ ] F-16 im beschriebenen Umfang abschließen.
 
 **Status:** Gepinntes SDK und aktueller offizieller HEAD auditiert; zwei Vulnerabilities verbleiben
-im relevanten Zielgraphen. Vor einer installierbaren App sind Upstream-Abhilfe oder eine
-ausdrückliche, dokumentierte Owner-Risikoentscheidung nötig. Ein Source-only-Paket führt den SDK-
+im relevanten Zielgraphen. Der Owner hat am 2026-11-08 die Fortsetzung mit diesen
+verbleibenden Upstream-Befunden beauftragt; behoben sind die beiden Findings damit nicht. Ein Source-only-Paket führt den SDK-
 Code nicht aus, enthält ihn aber samt Buildweg; Befunde müssen dabei sichtbar bleiben. Die
 Rechtefrage für diese SDK-Materialien ist separat F-17.
+**Übernahme 2026-11-08:** SDK-Pin auf `a13b4c4e1fa3685280241f417920fd19d7ef24a6`, Rust
+1.99.0 und UniFFI 0.32.0 aktualisiert; kompatible Cargo-Updates werden jetzt durch den
+verbindlichen Patch `0003-update-sdk-dependencies.patch` reproduzierbar im normalen Build
+angewendet. Alle fünf Release-Slices sind gebaut und installiert. Aktuelles Lockfile:
+`4d87866952641365ab38c937087c1b1e2f42d343a5c45b48353b10acc764ae38`.
+Der erneute Audit (RustSec-DB `309392b18f6b17022f82c701f300433126901068`, 1.422 Advisories)
+meldet zwei Vulnerabilities (`crypto-bigint` 0.5.5 und `rsa` 0.10.0-rc.19) sowie acht
+Unmaintained-Warnungen; frühere Unsound-/Yanked-Warnungen entfallen.
+Der Owner hat ausdrücklich entschieden, mit den kompatiblen Aktualisierungen und verbliebenen
+Upstream-Befunden fortzufahren. Die Findings bleiben offen und sichtbar; daraus wird keine
+Aussage über dieselbe Exposition der offiziellen App abgeleitet. Inventare und Rebuildnachweis
+sind aktualisiert. Die nachfolgenden Versuchsstände sind historische Evidenz, keine Beschreibung
+des jetzt eingebundenen SDKs.
+
 **Aktualisierung 2026-11-06:** `cargo-audit` gegen das unveränderte gepinnte `Cargo.lock` mit RustSec-Datenbank `5c26bd59903e07edadefe5af8a7350e4c588e199` (1.417 Advisories) erneut ausgeführt: dieselben 11 Vulnerability-Einträge, 8 unmaintained, 1 unsound und 2 yanked. Exit 1 entspricht den gemeldeten Advisories. JSON-Nachweis lokal `${TMPDIR:-/tmp}/vw-review-audit-20261106.json`; Bewertung und Abhilfe bleiben offen.
 **Isolierter Abhilfeversuch 2026-11-06:** Ein separater Checkout des Pins aktualisierte nur
 Cargo-Lockfile-Abhängigkeiten: `h2` 0.4.16, `rustls` 0.23.46 (mit `rustls-webpki` 0.103.16),
@@ -945,8 +959,9 @@ nicht mitveröffentlicht.
 - [x] SwiftFormat-Lint, Contributor-Konfigurations-Fixtures, Simulator-Preflight-Fixtures und die
   gepinnte XcodeGen-Version ausführen.
 - [x] macOS- und iOS-App samt AutoFill-Extension unsigned in Debug und Release bauen.
-- [ ] Den finalen Commit aus einem unabhängigen Git-Checkout mit der CI-Toolchain Xcode 26.3
-  bauen und den Remote-CI-Lauf abnehmen.
+- [x] Produktstand `24dc262` aus unabhängigem Git-Checkout mit Xcode 26.3 in GitHub CI
+  bauen: [Lauf 42416802473](https://github.com/temmiland/vaultwarden-native/actions/runs/42416802473) erfolgreich.
+- [ ] Die SDK-Aktualisierung vom 2026-11-08 erneut in Remote-CI abnehmen.
 
 **Neuester lokaler Nachweis 2026-11-06:** Eine frische Source-only-Kopie des vollständigen aktuellen
 Arbeitsstands wurde als frische lokale Source-only-Kopie außerhalb des Repositories erstellt. Sie

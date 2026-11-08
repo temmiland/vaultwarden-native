@@ -10,11 +10,12 @@ public enum SDKDecryptionIntegrityError: Error, Sendable, Equatable {
 /// It never formats/logs ciphertext, plaintext or item identity and creates no JSON secret copy.
 public enum SDKDecryptionIntegrity {
     public static func validate(_ cipher: Cipher, decrypted view: CipherView) throws {
-        guard cipher.id == view.id, cipher.type == view.type,
+        guard !view.partial, cipher.id == view.id, cipher.type == view.type,
               cipher.organizationId == view.organizationId,
               cipher.collectionIds == view.collectionIds,
               cipher.name == nil || !view.name.isEmpty else { throw SDKDecryptionIntegrityError.incompleteCipher }
         try retained(cipher.notes, view.notes)
+        try retained(cipher.key, view.key)
         try retained(cipher.login, view.login)
         try retained(cipher.card, view.card)
         try retained(cipher.identity, view.identity)
@@ -34,8 +35,13 @@ public enum SDKDecryptionIntegrity {
                 try retained(source.uriChecksum, decoded.uriChecksum)
                 guard source.match == decoded.match else { throw SDKDecryptionIntegrityError.incompleteCipher }
             }
-            // These credentials intentionally remain encrypted until the dedicated FIDO call.
+            // Current SDK views contain decrypted passkeys. Reject missing private material
+            // before an unrelated item edit could re-encrypt an incomplete credential.
             try sameCount(original.fido2Credentials, result.fido2Credentials)
+            for credential in result.fido2Credentials ?? [] {
+                guard !credential.credentialId.isEmpty, !credential.keyValue.isEmpty,
+                      !credential.rpId.isEmpty else { throw SDKDecryptionIntegrityError.incompleteCipher }
+            }
         }
         if let original = cipher.card, let result = view.card {
             for (source, decoded) in [

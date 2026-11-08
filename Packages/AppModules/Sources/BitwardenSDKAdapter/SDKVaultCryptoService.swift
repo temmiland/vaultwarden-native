@@ -16,10 +16,8 @@ public protocol VaultCryptoServicing: Sendable {
     func decryptCollections(_ collections: [Collection]) throws -> [CollectionView]
     func generateTotp(key: String, at date: Date?) throws -> TotpResponse
 
-    /// A cipher's `login.fido2Credentials` stays encrypted even after `decrypt(cipher:)` - only
-    /// this call actually decrypts the passkey's display fields (rpId, username, ...). The
-    /// private key material (`keyValue`) stays wrapped regardless; it's only used internally by
-    /// the SDK's own Fido2 authenticator flow, never surfaced here.
+    /// Compatibility seam for presentation metadata. The current SDK decrypts passkeys as part
+    /// of CipherView; callers must map only display fields into Domain, never the raw key value.
     func decryptFido2Credentials(cipherView: CipherView) throws -> [Fido2CredentialView]
 
     /// Passkey fields in the shape the *system* wants: raw `credentialId`/`userHandle` bytes,
@@ -41,7 +39,7 @@ public protocol VaultCryptoServicing: Sendable {
 
     /// Decrypts an already-downloaded encrypted attachment file (`encryptedFilePath`) to plaintext
     /// (`decryptedFilePath`). `attachment` should be the decrypted `AttachmentView` for this
-    /// attachment (its `key` field stays encrypted even after cipher decryption).
+    /// attachment. Current SDK views carry its decrypted key; raw views remain adapter-internal.
     func decryptAttachmentFile(
         cipher: Cipher,
         attachment: AttachmentView,
@@ -110,11 +108,11 @@ public struct SDKVaultCryptoService: VaultCryptoServicing, Sendable {
     }
 
     public func decryptFido2AutofillCredentials(cipherView: CipherView) throws -> [Fido2CredentialAutofillView] {
-        try sessionClient.withClient { try $0.platform().fido2().decryptFido2AutofillCredentials(cipherView: cipherView) }
+        try sessionClient.withClient { try $0.platform().fido2().getFido2AutofillCredentials(cipherView: cipherView) }
     }
 
     public func decryptFido2Credentials(cipherView: CipherView) throws -> [Fido2CredentialView] {
-        try sessionClient.withClient { try $0.vault().ciphers().decryptFido2Credentials(cipherView: cipherView) }
+        try sessionClient.withClient { _ in cipherView.login?.fido2Credentials ?? [] }
     }
 
     public func encryptAttachmentFile(

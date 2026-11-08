@@ -39,6 +39,52 @@ fileprivate extension ForeignBytes {
     init(bufferPointer: UnsafeBufferPointer<UInt8>) {
         self.init(len: Int32(bufferPointer.count), data: bufferPointer.baseAddress)
     }
+
+    init(rawBufferPointer: UnsafeRawBufferPointer) {
+        self.init(
+            len: Int32(rawBufferPointer.count),
+            data: rawBufferPointer.baseAddress?.assumingMemoryBound(to: UInt8.self)
+        )
+    }
+}
+
+// Converter for `&[u8]` / `[ByRef] bytes` arguments.
+//
+// Conforms to `FfiConverter` so the compiler enforces the full converter
+// method set. Only the scope-bound `lower(_:_body:)` overload is sound —
+// zero-copy byte buffers only flow foreign -> Rust, and only in argument
+// position. The four protocol-witness methods (`lift`, `lower`, `read`,
+// `write`) `fatalError` at runtime if anyone reaches them.
+//
+// The scope-bound `lower` takes a closure because the `ForeignBytes`
+// pointer is only guaranteed valid for the duration of
+// `Data.withUnsafeBytes`. Callers must run the full FFI call inside
+// the closure body.
+fileprivate enum FfiConverterByRefBytes: FfiConverter {
+    typealias SwiftType = Data
+    typealias FfiType = ForeignBytes
+
+    static func lower<R>(_ value: Data, _ body: (ForeignBytes) throws -> R) rethrows -> R {
+        return try value.withUnsafeBytes { rawBuf in
+            try body(ForeignBytes(rawBufferPointer: rawBuf))
+        }
+    }
+
+    static func lower(_ value: Data) -> ForeignBytes {
+        fatalError("ByRef bytes cannot use the plain lower: returning ForeignBytes escapes the Data.withUnsafeBytes scope. Use the scope-bound lower(_:_body:) overload instead.")
+    }
+
+    static func lift(_ value: ForeignBytes) throws -> Data {
+        fatalError("ByRef bytes cannot be lifted: zero-copy &[u8] only flows foreign->Rust")
+    }
+
+    static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Data {
+        fatalError("ByRef bytes cannot be read from a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+    }
+
+    static func write(_ value: Data, into buf: inout [UInt8]) {
+        fatalError("ByRef bytes cannot be written to a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+    }
 }
 
 // For every type used in the interface, we provide helper methods for conveniently
@@ -471,7 +517,11 @@ fileprivate struct FfiConverterString: FfiConverter {
             return String()
         }
         let bytes = UnsafeBufferPointer<UInt8>(start: value.data!, count: Int(value.len))
-        return String(bytes: bytes, encoding: String.Encoding.utf8)!
+        // Use Swift's native UTF-8 decoder; `String(bytes:encoding:.utf8)` goes
+        // through Foundation's NSString and silently strips a leading U+FEFF BOM.
+        // Invalid UTF-8 substitutes U+FFFD instead of trapping (unreachable
+        // given Rust's `String` invariant).
+        return String(decoding: bytes, as: UTF8.self)
     }
 
     public static func lower(_ value: String) -> RustBuffer {
@@ -487,7 +537,8 @@ fileprivate struct FfiConverterString: FfiConverter {
 
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> String {
         let len: Int32 = try readInt(&buf)
-        return String(bytes: try readBytes(&buf, count: Int(len)), encoding: String.Encoding.utf8)!
+        // See `lift` above for why we avoid Foundation's NSString-backed decoder here.
+        return String(decoding: try readBytes(&buf, count: Int(len)), as: UTF8.self)
     }
 
     public static func write(_ value: String, into buf: inout [UInt8]) {
@@ -506,12 +557,17 @@ fileprivate struct FfiConverterTimestamp: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Date {
         let seconds: Int64 = try readInt(&buf)
         let nanoseconds: UInt32 = try readInt(&buf)
+        // Build the Date from whole seconds first, then add the nanoseconds as a
+        // separate TimeInterval.  Date stores CFAbsoluteTime (seconds since 2001),
+        // so adding a small fraction to the ~7.8e8 base is twice as precise as
+        // adding it to the ~1.76e9 Unix-epoch value, because the smaller magnitude
+        // leaves more mantissa bits for the sub-second part.
         if seconds >= 0 {
-            let delta = Double(seconds) + (Double(nanoseconds) / 1.0e9)
-            return Date.init(timeIntervalSince1970: delta)
+            return Date(timeIntervalSince1970: Double(seconds))
+                .addingTimeInterval(Double(nanoseconds) / 1.0e9)
         } else {
-            let delta = Double(seconds) - (Double(nanoseconds) / 1.0e9)
-            return Date.init(timeIntervalSince1970: delta)
+            return Date(timeIntervalSince1970: Double(seconds))
+                .addingTimeInterval(-Double(nanoseconds) / 1.0e9)
         }
     }
 
@@ -533,6 +589,933 @@ fileprivate struct FfiConverterTimestamp: FfiConverterRustBuffer {
         writeInt(&buf, sign * seconds)
         writeInt(&buf, nanoseconds)
     }
+}
+
+
+/**
+ * Admin-configured settings controlling who can create, delete, and manage collections and
+ * items.
+ */
+public struct CollectionManagementSettings: Equatable, Hashable {
+    /**
+     * Whether collection creation is restricted to owners and admins only.
+     *
+     * When `false`, any member can create collections and automatically receives manage
+     * permissions over collections they create.
+     */
+    public let limitCollectionCreation: Bool
+    /**
+     * Whether collection deletion is restricted to owners and admins only.
+     *
+     * When `true`, regular users cannot delete collections that they manage.
+     */
+    public let limitCollectionDeletion: Bool
+    /**
+     * Whether item deletion is restricted to members with the Manage collection permission.
+     *
+     * When `false`, members with Edit permission can also delete items within their collections.
+     */
+    public let limitItemDeletion: Bool
+    /**
+     * Whether owners and admins have implicit manage permissions over all collections.
+     *
+     * When `true`, owners and admins can alter items, groups, and permissions across all
+     * collections without requiring explicit collection assignments.
+     * When `false`, admins can only access collections where they have been explicitly assigned.
+     */
+    public let allowAdminAccessToAllCollectionItems: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Whether collection creation is restricted to owners and admins only.
+         *
+         * When `false`, any member can create collections and automatically receives manage
+         * permissions over collections they create.
+         */limitCollectionCreation: Bool, 
+        /**
+         * Whether collection deletion is restricted to owners and admins only.
+         *
+         * When `true`, regular users cannot delete collections that they manage.
+         */limitCollectionDeletion: Bool, 
+        /**
+         * Whether item deletion is restricted to members with the Manage collection permission.
+         *
+         * When `false`, members with Edit permission can also delete items within their collections.
+         */limitItemDeletion: Bool, 
+        /**
+         * Whether owners and admins have implicit manage permissions over all collections.
+         *
+         * When `true`, owners and admins can alter items, groups, and permissions across all
+         * collections without requiring explicit collection assignments.
+         * When `false`, admins can only access collections where they have been explicitly assigned.
+         */allowAdminAccessToAllCollectionItems: Bool) {
+        self.limitCollectionCreation = limitCollectionCreation
+        self.limitCollectionDeletion = limitCollectionDeletion
+        self.limitItemDeletion = limitItemDeletion
+        self.allowAdminAccessToAllCollectionItems = allowAdminAccessToAllCollectionItems
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension CollectionManagementSettings: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCollectionManagementSettings: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CollectionManagementSettings {
+        return
+            try CollectionManagementSettings(
+                limitCollectionCreation: FfiConverterBool.read(from: &buf), 
+                limitCollectionDeletion: FfiConverterBool.read(from: &buf), 
+                limitItemDeletion: FfiConverterBool.read(from: &buf), 
+                allowAdminAccessToAllCollectionItems: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: CollectionManagementSettings, into buf: inout [UInt8]) {
+        FfiConverterBool.write(value.limitCollectionCreation, into: &buf)
+        FfiConverterBool.write(value.limitCollectionDeletion, into: &buf)
+        FfiConverterBool.write(value.limitItemDeletion, into: &buf)
+        FfiConverterBool.write(value.allowAdminAccessToAllCollectionItems, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCollectionManagementSettings_lift(_ buf: RustBuffer) throws -> CollectionManagementSettings {
+    return try FfiConverterTypeCollectionManagementSettings.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCollectionManagementSettings_lower(_ value: CollectionManagementSettings) -> RustBuffer {
+    return FfiConverterTypeCollectionManagementSettings.lower(value)
+}
+
+
+/**
+ * Families sponsorship state for the current user in an organization.
+ */
+public struct FamilySponsorship: Equatable, Hashable {
+    /**
+     * Whether the organization can sponsor a families plan for the current user. This can be
+     * `true` while a sponsorship exists.
+     */
+    public let available: Bool
+    /**
+     * The friendly name of the sponsorship, usually the recipient's email address.
+     * Should never be None, but server validation is not strict enough to guarantee this.
+     */
+    public let friendlyName: String?
+    /**
+     * The date the sponsorship expires. `None` while the sponsorship has been offered but not
+     * yet redeemed.
+     */
+    public let validUntil: DateTime?
+    /**
+     * The date the sponsorship was last synced between a self-hosted instance and the cloud.
+     */
+    public let lastSyncDate: DateTime?
+    /**
+     * Whether the sponsorship is scheduled for deletion.
+     */
+    public let toDelete: Bool?
+    /**
+     * Whether the sponsorship was initiated by an organization admin.
+     */
+    public let isAdminInitiated: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Whether the organization can sponsor a families plan for the current user. This can be
+         * `true` while a sponsorship exists.
+         */available: Bool, 
+        /**
+         * The friendly name of the sponsorship, usually the recipient's email address.
+         * Should never be None, but server validation is not strict enough to guarantee this.
+         */friendlyName: String?, 
+        /**
+         * The date the sponsorship expires. `None` while the sponsorship has been offered but not
+         * yet redeemed.
+         */validUntil: DateTime?, 
+        /**
+         * The date the sponsorship was last synced between a self-hosted instance and the cloud.
+         */lastSyncDate: DateTime?, 
+        /**
+         * Whether the sponsorship is scheduled for deletion.
+         */toDelete: Bool?, 
+        /**
+         * Whether the sponsorship was initiated by an organization admin.
+         */isAdminInitiated: Bool) {
+        self.available = available
+        self.friendlyName = friendlyName
+        self.validUntil = validUntil
+        self.lastSyncDate = lastSyncDate
+        self.toDelete = toDelete
+        self.isAdminInitiated = isAdminInitiated
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension FamilySponsorship: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFamilySponsorship: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FamilySponsorship {
+        return
+            try FamilySponsorship(
+                available: FfiConverterBool.read(from: &buf), 
+                friendlyName: FfiConverterOptionString.read(from: &buf), 
+                validUntil: FfiConverterOptionTypeDateTime.read(from: &buf), 
+                lastSyncDate: FfiConverterOptionTypeDateTime.read(from: &buf), 
+                toDelete: FfiConverterOptionBool.read(from: &buf), 
+                isAdminInitiated: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: FamilySponsorship, into buf: inout [UInt8]) {
+        FfiConverterBool.write(value.available, into: &buf)
+        FfiConverterOptionString.write(value.friendlyName, into: &buf)
+        FfiConverterOptionTypeDateTime.write(value.validUntil, into: &buf)
+        FfiConverterOptionTypeDateTime.write(value.lastSyncDate, into: &buf)
+        FfiConverterOptionBool.write(value.toDelete, into: &buf)
+        FfiConverterBool.write(value.isAdminInitiated, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFamilySponsorship_lift(_ buf: RustBuffer) throws -> FamilySponsorship {
+    return try FfiConverterTypeFamilySponsorship.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFamilySponsorship_lower(_ value: FamilySponsorship) -> RustBuffer {
+    return FfiConverterTypeFamilySponsorship.lower(value)
+}
+
+
+/**
+ * Basic information about the organization.
+ */
+public struct OrganizationDetails: Equatable, Hashable {
+    /**
+     * Unique identifier for the organization.
+     */
+    public let id: OrganizationId
+    /**
+     * Display name of the organization.
+     */
+    public let name: String
+    /**
+     * Whether the organization is currently enabled.
+     */
+    public let enabled: Bool
+    /**
+     * Whether the organization has both a public and private key configured.
+     */
+    public let hasPublicAndPrivateKeys: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Unique identifier for the organization.
+         */id: OrganizationId, 
+        /**
+         * Display name of the organization.
+         */name: String, 
+        /**
+         * Whether the organization is currently enabled.
+         */enabled: Bool, 
+        /**
+         * Whether the organization has both a public and private key configured.
+         */hasPublicAndPrivateKeys: Bool) {
+        self.id = id
+        self.name = name
+        self.enabled = enabled
+        self.hasPublicAndPrivateKeys = hasPublicAndPrivateKeys
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension OrganizationDetails: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeOrganizationDetails: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OrganizationDetails {
+        return
+            try OrganizationDetails(
+                id: FfiConverterTypeOrganizationId.read(from: &buf), 
+                name: FfiConverterString.read(from: &buf), 
+                enabled: FfiConverterBool.read(from: &buf), 
+                hasPublicAndPrivateKeys: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: OrganizationDetails, into buf: inout [UInt8]) {
+        FfiConverterTypeOrganizationId.write(value.id, into: &buf)
+        FfiConverterString.write(value.name, into: &buf)
+        FfiConverterBool.write(value.enabled, into: &buf)
+        FfiConverterBool.write(value.hasPublicAndPrivateKeys, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOrganizationDetails_lift(_ buf: RustBuffer) throws -> OrganizationDetails {
+    return try FfiConverterTypeOrganizationDetails.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOrganizationDetails_lower(_ value: OrganizationDetails) -> RustBuffer {
+    return FfiConverterTypeOrganizationDetails.lower(value)
+}
+
+
+/**
+ * The current user's relationship to the organization.
+ */
+public struct OrganizationMembership: Equatable, Hashable {
+    /**
+     * The user's membership status in the organization.
+     */
+    public let status: OrganizationUserStatusType
+    /**
+     * The user's role in the organization.
+     */
+    public let type: OrganizationUserType
+    /**
+     * The current user's custom permissions, relevant when [`OrganizationUserType::Custom`] is
+     * the user's `type`.
+     */
+    public let permissions: Permissions
+    /**
+     * The current user's personal user ID.
+     */
+    public let userId: UserId
+    /**
+     * The current user's organization membership ID.
+     * None if the current user has access only through a provider.
+     */
+    public let organizationUserId: OrganizationUserId?
+    /**
+     * Whether the current user is a direct member of this organization (as opposed to
+     * provider-only access).
+     */
+    public let isMember: Bool
+    /**
+     * Whether the current user accesses this organization through a provider.
+     */
+    public let isProviderUser: Bool
+    /**
+     * Whether the current user is enrolled in account recovery for this organization.
+     */
+    public let resetPasswordEnrolled: Bool
+    /**
+     * Whether the current user's account is linked to this organization via SSO.
+     */
+    public let ssoBound: Bool
+    /**
+     * Whether the current user's account is claimed by this organization.
+     */
+    public let userIsClaimedByOrganization: Bool
+    /**
+     * Whether the current user has access to Secrets Manager for this organization.
+     */
+    public let accessSecretsManager: Bool
+    /**
+     * Whether the current user has access to Privileged Controls for this organization.
+     */
+    public let accessPam: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * The user's membership status in the organization.
+         */status: OrganizationUserStatusType, 
+        /**
+         * The user's role in the organization.
+         */type: OrganizationUserType, 
+        /**
+         * The current user's custom permissions, relevant when [`OrganizationUserType::Custom`] is
+         * the user's `type`.
+         */permissions: Permissions, 
+        /**
+         * The current user's personal user ID.
+         */userId: UserId, 
+        /**
+         * The current user's organization membership ID.
+         * None if the current user has access only through a provider.
+         */organizationUserId: OrganizationUserId?, 
+        /**
+         * Whether the current user is a direct member of this organization (as opposed to
+         * provider-only access).
+         */isMember: Bool, 
+        /**
+         * Whether the current user accesses this organization through a provider.
+         */isProviderUser: Bool, 
+        /**
+         * Whether the current user is enrolled in account recovery for this organization.
+         */resetPasswordEnrolled: Bool, 
+        /**
+         * Whether the current user's account is linked to this organization via SSO.
+         */ssoBound: Bool, 
+        /**
+         * Whether the current user's account is claimed by this organization.
+         */userIsClaimedByOrganization: Bool, 
+        /**
+         * Whether the current user has access to Secrets Manager for this organization.
+         */accessSecretsManager: Bool, 
+        /**
+         * Whether the current user has access to Privileged Controls for this organization.
+         */accessPam: Bool) {
+        self.status = status
+        self.type = type
+        self.permissions = permissions
+        self.userId = userId
+        self.organizationUserId = organizationUserId
+        self.isMember = isMember
+        self.isProviderUser = isProviderUser
+        self.resetPasswordEnrolled = resetPasswordEnrolled
+        self.ssoBound = ssoBound
+        self.userIsClaimedByOrganization = userIsClaimedByOrganization
+        self.accessSecretsManager = accessSecretsManager
+        self.accessPam = accessPam
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension OrganizationMembership: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeOrganizationMembership: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OrganizationMembership {
+        return
+            try OrganizationMembership(
+                status: FfiConverterTypeOrganizationUserStatusType.read(from: &buf), 
+                type: FfiConverterTypeOrganizationUserType.read(from: &buf), 
+                permissions: FfiConverterTypePermissions.read(from: &buf), 
+                userId: FfiConverterTypeUserId.read(from: &buf), 
+                organizationUserId: FfiConverterOptionTypeOrganizationUserId.read(from: &buf), 
+                isMember: FfiConverterBool.read(from: &buf), 
+                isProviderUser: FfiConverterBool.read(from: &buf), 
+                resetPasswordEnrolled: FfiConverterBool.read(from: &buf), 
+                ssoBound: FfiConverterBool.read(from: &buf), 
+                userIsClaimedByOrganization: FfiConverterBool.read(from: &buf), 
+                accessSecretsManager: FfiConverterBool.read(from: &buf), 
+                accessPam: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: OrganizationMembership, into buf: inout [UInt8]) {
+        FfiConverterTypeOrganizationUserStatusType.write(value.status, into: &buf)
+        FfiConverterTypeOrganizationUserType.write(value.type, into: &buf)
+        FfiConverterTypePermissions.write(value.permissions, into: &buf)
+        FfiConverterTypeUserId.write(value.userId, into: &buf)
+        FfiConverterOptionTypeOrganizationUserId.write(value.organizationUserId, into: &buf)
+        FfiConverterBool.write(value.isMember, into: &buf)
+        FfiConverterBool.write(value.isProviderUser, into: &buf)
+        FfiConverterBool.write(value.resetPasswordEnrolled, into: &buf)
+        FfiConverterBool.write(value.ssoBound, into: &buf)
+        FfiConverterBool.write(value.userIsClaimedByOrganization, into: &buf)
+        FfiConverterBool.write(value.accessSecretsManager, into: &buf)
+        FfiConverterBool.write(value.accessPam, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOrganizationMembership_lift(_ buf: RustBuffer) throws -> OrganizationMembership {
+    return try FfiConverterTypeOrganizationMembership.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOrganizationMembership_lower(_ value: OrganizationMembership) -> RustBuffer {
+    return FfiConverterTypeOrganizationMembership.lower(value)
+}
+
+
+/**
+ * The organization's plan or license: its tier, limits, and feature entitlements.
+ */
+public struct OrganizationPlan: Equatable, Hashable {
+    /**
+     * The subscription tier of the organization.
+     */
+    public let productTierType: ProductTierType
+    /**
+     * The number of licensed seats for the organization.
+     */
+    public let seats: UInt32?
+    /**
+     * The maximum number of collections the organization can create.
+     */
+    public let maxCollections: UInt32?
+    /**
+     * The maximum encrypted storage in gigabytes, if limited.
+     */
+    public let maxStorageGb: UInt32?
+    /**
+     * Whether the organization can create a license file for a self-hosted instance.
+     */
+    public let selfHost: Bool
+    /**
+     * Whether organization members receive premium features.
+     */
+    public let usersGetPremium: Bool
+    /**
+     * Whether the organization has access to policies features.
+     */
+    public let usePolicies: Bool
+    /**
+     * Whether the organization has access to groups features.
+     */
+    public let useGroups: Bool
+    /**
+     * Whether the organization has access to directory sync features.
+     */
+    public let useDirectory: Bool
+    /**
+     * Whether the organization has access to event logging features.
+     */
+    public let useEvents: Bool
+    /**
+     * Whether the organization can enforce TOTP for members.
+     */
+    public let useTotp: Bool
+    /**
+     * Whether the organization has access to two-factor authentication features.
+     */
+    public let use2fa: Bool
+    /**
+     * Whether the organization has access to the Bitwarden Public API.
+     */
+    public let useApi: Bool
+    /**
+     * Whether the organization has access to SSO features.
+     */
+    public let useSso: Bool
+    /**
+     * Whether the organization can manage verified domains.
+     */
+    public let useOrganizationDomains: Bool
+    /**
+     * Whether the organization can use Key Connector for decryption.
+     */
+    public let useKeyConnector: Bool
+    /**
+     * Whether the organization has access to SCIM provisioning.
+     */
+    public let useScim: Bool
+    /**
+     * Whether the organization can use the [`OrganizationUserType::Custom`] role.
+     */
+    public let useCustomPermissions: Bool
+    /**
+     * Whether the organization has access to the account recovery (admin password reset) feature.
+     */
+    public let useResetPassword: Bool
+    /**
+     * Whether the organization has access to Secrets Manager.
+     */
+    public let useSecretsManager: Bool
+    /**
+     * Whether the organization has access to Password Manager.
+     */
+    public let usePasswordManager: Bool
+    /**
+     * Whether the organization has access to Privileged Access Management features.
+     */
+    public let usePam: Bool
+    /**
+     * Whether the organization can use the activate autofill policy.
+     */
+    public let useActivateAutofillPolicy: Bool
+    /**
+     * Whether the organization can automatically confirm new members without manual admin
+     * approval.
+     */
+    public let useAutomaticUserConfirmation: Bool
+    /**
+     * Whether the organization has access to Access Intelligence features.
+     */
+    public let useAccessIntelligence: Bool
+    /**
+     * Whether the organization can sponsor families plans for members (Families For Enterprises).
+     */
+    public let useAdminSponsoredFamilies: Bool
+    /**
+     * Whether Secrets Manager ads are disabled for users.
+     */
+    public let useDisableSmAdsForUsers: Bool
+    /**
+     * Whether the organization has access to phishing blocker features.
+     */
+    public let usePhishingBlocker: Bool
+    /**
+     * Whether the organization has access to the My Items collection feature.
+     * This allows users to store personal items in the organization vault
+     * if the Centralize Organization Ownership policy is enabled.
+     */
+    public let useMyItems: Bool
+    /**
+     * Whether the organization can invite members using invite links.
+     */
+    public let useInviteLinks: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * The subscription tier of the organization.
+         */productTierType: ProductTierType, 
+        /**
+         * The number of licensed seats for the organization.
+         */seats: UInt32?, 
+        /**
+         * The maximum number of collections the organization can create.
+         */maxCollections: UInt32?, 
+        /**
+         * The maximum encrypted storage in gigabytes, if limited.
+         */maxStorageGb: UInt32?, 
+        /**
+         * Whether the organization can create a license file for a self-hosted instance.
+         */selfHost: Bool, 
+        /**
+         * Whether organization members receive premium features.
+         */usersGetPremium: Bool, 
+        /**
+         * Whether the organization has access to policies features.
+         */usePolicies: Bool, 
+        /**
+         * Whether the organization has access to groups features.
+         */useGroups: Bool, 
+        /**
+         * Whether the organization has access to directory sync features.
+         */useDirectory: Bool, 
+        /**
+         * Whether the organization has access to event logging features.
+         */useEvents: Bool, 
+        /**
+         * Whether the organization can enforce TOTP for members.
+         */useTotp: Bool, 
+        /**
+         * Whether the organization has access to two-factor authentication features.
+         */use2fa: Bool, 
+        /**
+         * Whether the organization has access to the Bitwarden Public API.
+         */useApi: Bool, 
+        /**
+         * Whether the organization has access to SSO features.
+         */useSso: Bool, 
+        /**
+         * Whether the organization can manage verified domains.
+         */useOrganizationDomains: Bool, 
+        /**
+         * Whether the organization can use Key Connector for decryption.
+         */useKeyConnector: Bool, 
+        /**
+         * Whether the organization has access to SCIM provisioning.
+         */useScim: Bool, 
+        /**
+         * Whether the organization can use the [`OrganizationUserType::Custom`] role.
+         */useCustomPermissions: Bool, 
+        /**
+         * Whether the organization has access to the account recovery (admin password reset) feature.
+         */useResetPassword: Bool, 
+        /**
+         * Whether the organization has access to Secrets Manager.
+         */useSecretsManager: Bool, 
+        /**
+         * Whether the organization has access to Password Manager.
+         */usePasswordManager: Bool, 
+        /**
+         * Whether the organization has access to Privileged Access Management features.
+         */usePam: Bool, 
+        /**
+         * Whether the organization can use the activate autofill policy.
+         */useActivateAutofillPolicy: Bool, 
+        /**
+         * Whether the organization can automatically confirm new members without manual admin
+         * approval.
+         */useAutomaticUserConfirmation: Bool, 
+        /**
+         * Whether the organization has access to Access Intelligence features.
+         */useAccessIntelligence: Bool, 
+        /**
+         * Whether the organization can sponsor families plans for members (Families For Enterprises).
+         */useAdminSponsoredFamilies: Bool, 
+        /**
+         * Whether Secrets Manager ads are disabled for users.
+         */useDisableSmAdsForUsers: Bool, 
+        /**
+         * Whether the organization has access to phishing blocker features.
+         */usePhishingBlocker: Bool, 
+        /**
+         * Whether the organization has access to the My Items collection feature.
+         * This allows users to store personal items in the organization vault
+         * if the Centralize Organization Ownership policy is enabled.
+         */useMyItems: Bool, 
+        /**
+         * Whether the organization can invite members using invite links.
+         */useInviteLinks: Bool) {
+        self.productTierType = productTierType
+        self.seats = seats
+        self.maxCollections = maxCollections
+        self.maxStorageGb = maxStorageGb
+        self.selfHost = selfHost
+        self.usersGetPremium = usersGetPremium
+        self.usePolicies = usePolicies
+        self.useGroups = useGroups
+        self.useDirectory = useDirectory
+        self.useEvents = useEvents
+        self.useTotp = useTotp
+        self.use2fa = use2fa
+        self.useApi = useApi
+        self.useSso = useSso
+        self.useOrganizationDomains = useOrganizationDomains
+        self.useKeyConnector = useKeyConnector
+        self.useScim = useScim
+        self.useCustomPermissions = useCustomPermissions
+        self.useResetPassword = useResetPassword
+        self.useSecretsManager = useSecretsManager
+        self.usePasswordManager = usePasswordManager
+        self.usePam = usePam
+        self.useActivateAutofillPolicy = useActivateAutofillPolicy
+        self.useAutomaticUserConfirmation = useAutomaticUserConfirmation
+        self.useAccessIntelligence = useAccessIntelligence
+        self.useAdminSponsoredFamilies = useAdminSponsoredFamilies
+        self.useDisableSmAdsForUsers = useDisableSmAdsForUsers
+        self.usePhishingBlocker = usePhishingBlocker
+        self.useMyItems = useMyItems
+        self.useInviteLinks = useInviteLinks
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension OrganizationPlan: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeOrganizationPlan: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OrganizationPlan {
+        return
+            try OrganizationPlan(
+                productTierType: FfiConverterTypeProductTierType.read(from: &buf), 
+                seats: FfiConverterOptionUInt32.read(from: &buf), 
+                maxCollections: FfiConverterOptionUInt32.read(from: &buf), 
+                maxStorageGb: FfiConverterOptionUInt32.read(from: &buf), 
+                selfHost: FfiConverterBool.read(from: &buf), 
+                usersGetPremium: FfiConverterBool.read(from: &buf), 
+                usePolicies: FfiConverterBool.read(from: &buf), 
+                useGroups: FfiConverterBool.read(from: &buf), 
+                useDirectory: FfiConverterBool.read(from: &buf), 
+                useEvents: FfiConverterBool.read(from: &buf), 
+                useTotp: FfiConverterBool.read(from: &buf), 
+                use2fa: FfiConverterBool.read(from: &buf), 
+                useApi: FfiConverterBool.read(from: &buf), 
+                useSso: FfiConverterBool.read(from: &buf), 
+                useOrganizationDomains: FfiConverterBool.read(from: &buf), 
+                useKeyConnector: FfiConverterBool.read(from: &buf), 
+                useScim: FfiConverterBool.read(from: &buf), 
+                useCustomPermissions: FfiConverterBool.read(from: &buf), 
+                useResetPassword: FfiConverterBool.read(from: &buf), 
+                useSecretsManager: FfiConverterBool.read(from: &buf), 
+                usePasswordManager: FfiConverterBool.read(from: &buf), 
+                usePam: FfiConverterBool.read(from: &buf), 
+                useActivateAutofillPolicy: FfiConverterBool.read(from: &buf), 
+                useAutomaticUserConfirmation: FfiConverterBool.read(from: &buf), 
+                useAccessIntelligence: FfiConverterBool.read(from: &buf), 
+                useAdminSponsoredFamilies: FfiConverterBool.read(from: &buf), 
+                useDisableSmAdsForUsers: FfiConverterBool.read(from: &buf), 
+                usePhishingBlocker: FfiConverterBool.read(from: &buf), 
+                useMyItems: FfiConverterBool.read(from: &buf), 
+                useInviteLinks: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: OrganizationPlan, into buf: inout [UInt8]) {
+        FfiConverterTypeProductTierType.write(value.productTierType, into: &buf)
+        FfiConverterOptionUInt32.write(value.seats, into: &buf)
+        FfiConverterOptionUInt32.write(value.maxCollections, into: &buf)
+        FfiConverterOptionUInt32.write(value.maxStorageGb, into: &buf)
+        FfiConverterBool.write(value.selfHost, into: &buf)
+        FfiConverterBool.write(value.usersGetPremium, into: &buf)
+        FfiConverterBool.write(value.usePolicies, into: &buf)
+        FfiConverterBool.write(value.useGroups, into: &buf)
+        FfiConverterBool.write(value.useDirectory, into: &buf)
+        FfiConverterBool.write(value.useEvents, into: &buf)
+        FfiConverterBool.write(value.useTotp, into: &buf)
+        FfiConverterBool.write(value.use2fa, into: &buf)
+        FfiConverterBool.write(value.useApi, into: &buf)
+        FfiConverterBool.write(value.useSso, into: &buf)
+        FfiConverterBool.write(value.useOrganizationDomains, into: &buf)
+        FfiConverterBool.write(value.useKeyConnector, into: &buf)
+        FfiConverterBool.write(value.useScim, into: &buf)
+        FfiConverterBool.write(value.useCustomPermissions, into: &buf)
+        FfiConverterBool.write(value.useResetPassword, into: &buf)
+        FfiConverterBool.write(value.useSecretsManager, into: &buf)
+        FfiConverterBool.write(value.usePasswordManager, into: &buf)
+        FfiConverterBool.write(value.usePam, into: &buf)
+        FfiConverterBool.write(value.useActivateAutofillPolicy, into: &buf)
+        FfiConverterBool.write(value.useAutomaticUserConfirmation, into: &buf)
+        FfiConverterBool.write(value.useAccessIntelligence, into: &buf)
+        FfiConverterBool.write(value.useAdminSponsoredFamilies, into: &buf)
+        FfiConverterBool.write(value.useDisableSmAdsForUsers, into: &buf)
+        FfiConverterBool.write(value.usePhishingBlocker, into: &buf)
+        FfiConverterBool.write(value.useMyItems, into: &buf)
+        FfiConverterBool.write(value.useInviteLinks, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOrganizationPlan_lift(_ buf: RustBuffer) throws -> OrganizationPlan {
+    return try FfiConverterTypeOrganizationPlan.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOrganizationPlan_lower(_ value: OrganizationPlan) -> RustBuffer {
+    return FfiConverterTypeOrganizationPlan.lower(value)
+}
+
+
+/**
+ * The provider managing an organization.
+ */
+public struct OrganizationProvider: Equatable, Hashable {
+    /**
+     * The ID of the provider.
+     */
+    public let id: ProviderId
+    /**
+     * The type of provider.
+     */
+    public let type: ProviderType
+    /**
+     * The name of the provider.
+     * Should never be None, but server validation is not strict enough to guarantee this.
+     */
+    public let name: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * The ID of the provider.
+         */id: ProviderId, 
+        /**
+         * The type of provider.
+         */type: ProviderType, 
+        /**
+         * The name of the provider.
+         * Should never be None, but server validation is not strict enough to guarantee this.
+         */name: String?) {
+        self.id = id
+        self.type = type
+        self.name = name
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension OrganizationProvider: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeOrganizationProvider: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OrganizationProvider {
+        return
+            try OrganizationProvider(
+                id: FfiConverterTypeProviderId.read(from: &buf), 
+                type: FfiConverterTypeProviderType.read(from: &buf), 
+                name: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: OrganizationProvider, into buf: inout [UInt8]) {
+        FfiConverterTypeProviderId.write(value.id, into: &buf)
+        FfiConverterTypeProviderType.write(value.type, into: &buf)
+        FfiConverterOptionString.write(value.name, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOrganizationProvider_lift(_ buf: RustBuffer) throws -> OrganizationProvider {
+    return try FfiConverterTypeOrganizationProvider.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOrganizationProvider_lower(_ value: OrganizationProvider) -> RustBuffer {
+    return FfiConverterTypeOrganizationProvider.lower(value)
 }
 
 
@@ -589,6 +1572,14 @@ public struct Permissions: Equatable, Hashable {
      * Can manage SCIM (System for Cross-domain Identity Management) configuration.
      */
     public let manageScim: Bool
+    /**
+     * Can manage access rules in Privileged Controls.
+     */
+    public let manageAccessRules: Bool
+    /**
+     * Can manage password rotation in Privileged Controls.
+     */
+    public let manageRotation: Bool
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
@@ -628,7 +1619,13 @@ public struct Permissions: Equatable, Hashable {
          */manageResetPassword: Bool, 
         /**
          * Can manage SCIM (System for Cross-domain Identity Management) configuration.
-         */manageScim: Bool) {
+         */manageScim: Bool, 
+        /**
+         * Can manage access rules in Privileged Controls.
+         */manageAccessRules: Bool, 
+        /**
+         * Can manage password rotation in Privileged Controls.
+         */manageRotation: Bool) {
         self.accessEventLogs = accessEventLogs
         self.accessImportExport = accessImportExport
         self.accessReports = accessReports
@@ -641,6 +1638,8 @@ public struct Permissions: Equatable, Hashable {
         self.manageUsers = manageUsers
         self.manageResetPassword = manageResetPassword
         self.manageScim = manageScim
+        self.manageAccessRules = manageAccessRules
+        self.manageRotation = manageRotation
     }
 
     
@@ -670,7 +1669,9 @@ public struct FfiConverterTypePermissions: FfiConverterRustBuffer {
                 managePolicies: FfiConverterBool.read(from: &buf), 
                 manageUsers: FfiConverterBool.read(from: &buf), 
                 manageResetPassword: FfiConverterBool.read(from: &buf), 
-                manageScim: FfiConverterBool.read(from: &buf)
+                manageScim: FfiConverterBool.read(from: &buf), 
+                manageAccessRules: FfiConverterBool.read(from: &buf), 
+                manageRotation: FfiConverterBool.read(from: &buf)
         )
     }
 
@@ -687,6 +1688,8 @@ public struct FfiConverterTypePermissions: FfiConverterRustBuffer {
         FfiConverterBool.write(value.manageUsers, into: &buf)
         FfiConverterBool.write(value.manageResetPassword, into: &buf)
         FfiConverterBool.write(value.manageScim, into: &buf)
+        FfiConverterBool.write(value.manageAccessRules, into: &buf)
+        FfiConverterBool.write(value.manageRotation, into: &buf)
     }
 }
 
@@ -714,529 +1717,65 @@ public func FfiConverterTypePermissions_lower(_ value: Permissions) -> RustBuffe
  */
 public struct ProfileOrganization: Equatable, Hashable {
     /**
-     * Unique identifier for the organization.
+     * Identity of the organization.
      */
-    public let id: Uuid
+    public let details: OrganizationDetails
     /**
-     * Display name of the organization.
+     * The organization's plan or license: tier, limits, and feature entitlements.
      */
-    public let name: String
+    public let plan: OrganizationPlan
     /**
-     * The user's membership status in the organization.
+     * The current user's relationship to the organization.
      */
-    public let status: OrganizationUserStatusType
+    public let membership: OrganizationMembership
     /**
-     * The user's role in the organization.
+     * Admin-configured collection management settings.
      */
-    public let type: OrganizationUserType
+    public let collectionManagement: CollectionManagementSettings
     /**
-     * Whether the organization is currently enabled.
+     * The provider managing this organization, if any.
      */
-    public let enabled: Bool
+    public let provider: OrganizationProvider?
     /**
-     * Whether the organization has access to policies features.
+     * The organization's SSO and Key Connector settings.
      */
-    public let usePolicies: Bool
+    public let sso: SsoSettings
     /**
-     * Whether the organization has access to groups features.
+     * Families sponsorship state for the current user.
      */
-    public let useGroups: Bool
-    /**
-     * Whether the organization has access to directory sync features.
-     */
-    public let useDirectory: Bool
-    /**
-     * Whether the organization has access to event logging features.
-     */
-    public let useEvents: Bool
-    /**
-     * Whether the organization can enforce TOTP for members.
-     */
-    public let useTotp: Bool
-    /**
-     * Whether the organization has access to two-factor authentication features.
-     */
-    public let use2fa: Bool
-    /**
-     * Whether the organization has access to the Bitwarden Public API.
-     */
-    public let useApi: Bool
-    /**
-     * Whether the organization has access to SSO features.
-     */
-    public let useSso: Bool
-    /**
-     * Whether the organization can manage verified domains.
-     */
-    public let useOrganizationDomains: Bool
-    /**
-     * Whether the organization uses Key Connector for decryption.
-     */
-    public let useKeyConnector: Bool
-    /**
-     * Whether the organization has access to SCIM provisioning.
-     */
-    public let useScim: Bool
-    /**
-     * Whether the organization can use the [`OrganizationUserType::Custom`] role.
-     */
-    public let useCustomPermissions: Bool
-    /**
-     * Whether the organization has access to the account recovery (admin password reset) feature.
-     */
-    public let useResetPassword: Bool
-    /**
-     * Whether the organization has access to Secrets Manager.
-     */
-    public let useSecretsManager: Bool
-    /**
-     * Whether the organization has access to Password Manager.
-     */
-    public let usePasswordManager: Bool
-    /**
-     * Whether the organization can use the activate autofill policy.
-     */
-    public let useActivateAutofillPolicy: Bool
-    /**
-     * Whether the organization can automatically confirm new members without manual admin
-     * approval.
-     */
-    public let useAutomaticUserConfirmation: Bool
-    /**
-     * Whether the organization can create a license file for a self-hosted instance.
-     */
-    public let selfHost: Bool
-    /**
-     * Whether organization members receive premium features.
-     */
-    public let usersGetPremium: Bool
-    /**
-     * The number of licensed seats for the organization.
-     */
-    public let seats: UInt32?
-    /**
-     * The maximum number of collections the organization can create.
-     */
-    public let maxCollections: UInt32?
-    /**
-     * The maximum encrypted storage in gigabytes, if limited.
-     */
-    public let maxStorageGb: UInt32?
-    /**
-     * Whether the current user's account is bound to this organization via SSO.
-     */
-    public let ssoBound: Bool
-    /**
-     * The organization's SSO identifier.
-     */
-    public let identifier: String?
-    /**
-     * The current user's custom permissions, relevant when [`OrganizationUserType::Custom`] is
-     * the user's `type`.
-     */
-    public let permissions: Permissions
-    /**
-     * Whether the current user is enrolled in account recovery for this organization.
-     */
-    public let resetPasswordEnrolled: Bool
-    /**
-     * The current user's personal user ID.
-     */
-    public let userId: Uuid?
-    /**
-     * The current user's organization membership ID.
-     */
-    public let organizationUserId: Uuid?
-    /**
-     * Whether the organization has both a public and private key configured.
-     */
-    public let hasPublicAndPrivateKeys: Bool
-    /**
-     * The ID of the provider managing this organization, if any.
-     */
-    public let providerId: Uuid?
-    /**
-     * The name of the provider managing this organization, if any.
-     */
-    public let providerName: String?
-    /**
-     * The type of provider managing this organization, if any.
-     */
-    public let providerType: ProviderType?
-    /**
-     * Whether the current user accesses this organization through a provider.
-     */
-    public let isProviderUser: Bool
-    /**
-     * Whether the current user is a direct member of this organization (as opposed to
-     * provider-only access).
-     */
-    public let isMember: Bool
-    /**
-     * The friendly name of a pending families sponsorship, if any.
-     */
-    public let familySponsorshipFriendlyName: String?
-    /**
-     * Whether the organization can sponsor a families plan for the current user.
-     */
-    public let familySponsorshipAvailable: Bool
-    /**
-     * The subscription tier of the organization.
-     */
-    public let productTierType: ProductTierType
-    /**
-     * Whether Key Connector is enabled for this organization.
-     */
-    public let keyConnectorEnabled: Bool
-    /**
-     * The URL of the Key Connector service, if enabled.
-     */
-    public let keyConnectorUrl: String?
-    /**
-     * The date the families sponsorship was last synced, if applicable.
-     */
-    public let familySponsorshipLastSyncDate: DateTime?
-    /**
-     * The date the families sponsorship expires, if applicable.
-     */
-    public let familySponsorshipValidUntil: DateTime?
-    /**
-     * Whether the families sponsorship is scheduled for deletion.
-     */
-    public let familySponsorshipToDelete: Bool?
-    /**
-     * Whether the current user has access to Secrets Manager for this organization.
-     */
-    public let accessSecretsManager: Bool
-    /**
-     * Whether collection creation is restricted to owners and admins only.
-     *
-     * When `false`, any member can create collections and automatically receives manage
-     * permissions over collections they create.
-     */
-    public let limitCollectionCreation: Bool
-    /**
-     * Whether collection deletion is restricted to owners and admins only.
-     *
-     * When `true`, regular users cannot delete collections that they manage.
-     */
-    public let limitCollectionDeletion: Bool
-    /**
-     * Whether item deletion is restricted to members with the Manage collection permission.
-     *
-     * When `false`, members with Edit permission can also delete items within their collections.
-     */
-    public let limitItemDeletion: Bool
-    /**
-     * Whether owners and admins have implicit manage permissions over all collections.
-     *
-     * When `true`, owners and admins can alter items, groups, and permissions across all
-     * collections without requiring explicit collection assignments.
-     * When `false`, admins can only access collections where they have been explicitly assigned.
-     */
-    public let allowAdminAccessToAllCollectionItems: Bool
-    /**
-     * Whether the current user's account is managed by this organization.
-     */
-    public let userIsManagedByOrganization: Bool
-    /**
-     * Whether the organization has access to Access Intelligence features.
-     */
-    public let useAccessIntelligence: Bool
-    /**
-     * Whether the organization can sponsor families plans for members (Families For Enterprises).
-     */
-    public let useAdminSponsoredFamilies: Bool
-    /**
-     * Whether Secrets Manager ads are disabled for users.
-     */
-    public let useDisableSmAdsForUsers: Bool
-    /**
-     * Whether the organization's Families For Enterprises sponsorship was initiated by an admin.
-     */
-    public let isAdminInitiated: Bool
-    /**
-     * Whether SSO login is currently enabled for this organization.
-     */
-    public let ssoEnabled: Bool
-    /**
-     * The decryption type used for SSO members, if SSO is enabled.
-     */
-    public let ssoMemberDecryptionType: MemberDecryptionType?
-    /**
-     * Whether the organization has access to phishing blocker features.
-     */
-    public let usePhishingBlocker: Bool
-    /**
-     * Whether the organization has access to the My Items collection feature.
-     * This allows users to store personal items in the organization vault
-     * if the Centralize Organization Ownership policy is enabled.
-     */
-    public let useMyItems: Bool
+    public let familySponsorship: FamilySponsorship
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
     public init(
         /**
-         * Unique identifier for the organization.
-         */id: Uuid, 
+         * Identity of the organization.
+         */details: OrganizationDetails, 
         /**
-         * Display name of the organization.
-         */name: String, 
+         * The organization's plan or license: tier, limits, and feature entitlements.
+         */plan: OrganizationPlan, 
         /**
-         * The user's membership status in the organization.
-         */status: OrganizationUserStatusType, 
+         * The current user's relationship to the organization.
+         */membership: OrganizationMembership, 
         /**
-         * The user's role in the organization.
-         */type: OrganizationUserType, 
+         * Admin-configured collection management settings.
+         */collectionManagement: CollectionManagementSettings, 
         /**
-         * Whether the organization is currently enabled.
-         */enabled: Bool, 
+         * The provider managing this organization, if any.
+         */provider: OrganizationProvider?, 
         /**
-         * Whether the organization has access to policies features.
-         */usePolicies: Bool, 
+         * The organization's SSO and Key Connector settings.
+         */sso: SsoSettings, 
         /**
-         * Whether the organization has access to groups features.
-         */useGroups: Bool, 
-        /**
-         * Whether the organization has access to directory sync features.
-         */useDirectory: Bool, 
-        /**
-         * Whether the organization has access to event logging features.
-         */useEvents: Bool, 
-        /**
-         * Whether the organization can enforce TOTP for members.
-         */useTotp: Bool, 
-        /**
-         * Whether the organization has access to two-factor authentication features.
-         */use2fa: Bool, 
-        /**
-         * Whether the organization has access to the Bitwarden Public API.
-         */useApi: Bool, 
-        /**
-         * Whether the organization has access to SSO features.
-         */useSso: Bool, 
-        /**
-         * Whether the organization can manage verified domains.
-         */useOrganizationDomains: Bool, 
-        /**
-         * Whether the organization uses Key Connector for decryption.
-         */useKeyConnector: Bool, 
-        /**
-         * Whether the organization has access to SCIM provisioning.
-         */useScim: Bool, 
-        /**
-         * Whether the organization can use the [`OrganizationUserType::Custom`] role.
-         */useCustomPermissions: Bool, 
-        /**
-         * Whether the organization has access to the account recovery (admin password reset) feature.
-         */useResetPassword: Bool, 
-        /**
-         * Whether the organization has access to Secrets Manager.
-         */useSecretsManager: Bool, 
-        /**
-         * Whether the organization has access to Password Manager.
-         */usePasswordManager: Bool, 
-        /**
-         * Whether the organization can use the activate autofill policy.
-         */useActivateAutofillPolicy: Bool, 
-        /**
-         * Whether the organization can automatically confirm new members without manual admin
-         * approval.
-         */useAutomaticUserConfirmation: Bool, 
-        /**
-         * Whether the organization can create a license file for a self-hosted instance.
-         */selfHost: Bool, 
-        /**
-         * Whether organization members receive premium features.
-         */usersGetPremium: Bool, 
-        /**
-         * The number of licensed seats for the organization.
-         */seats: UInt32?, 
-        /**
-         * The maximum number of collections the organization can create.
-         */maxCollections: UInt32?, 
-        /**
-         * The maximum encrypted storage in gigabytes, if limited.
-         */maxStorageGb: UInt32?, 
-        /**
-         * Whether the current user's account is bound to this organization via SSO.
-         */ssoBound: Bool, 
-        /**
-         * The organization's SSO identifier.
-         */identifier: String?, 
-        /**
-         * The current user's custom permissions, relevant when [`OrganizationUserType::Custom`] is
-         * the user's `type`.
-         */permissions: Permissions, 
-        /**
-         * Whether the current user is enrolled in account recovery for this organization.
-         */resetPasswordEnrolled: Bool, 
-        /**
-         * The current user's personal user ID.
-         */userId: Uuid?, 
-        /**
-         * The current user's organization membership ID.
-         */organizationUserId: Uuid?, 
-        /**
-         * Whether the organization has both a public and private key configured.
-         */hasPublicAndPrivateKeys: Bool, 
-        /**
-         * The ID of the provider managing this organization, if any.
-         */providerId: Uuid?, 
-        /**
-         * The name of the provider managing this organization, if any.
-         */providerName: String?, 
-        /**
-         * The type of provider managing this organization, if any.
-         */providerType: ProviderType?, 
-        /**
-         * Whether the current user accesses this organization through a provider.
-         */isProviderUser: Bool, 
-        /**
-         * Whether the current user is a direct member of this organization (as opposed to
-         * provider-only access).
-         */isMember: Bool, 
-        /**
-         * The friendly name of a pending families sponsorship, if any.
-         */familySponsorshipFriendlyName: String?, 
-        /**
-         * Whether the organization can sponsor a families plan for the current user.
-         */familySponsorshipAvailable: Bool, 
-        /**
-         * The subscription tier of the organization.
-         */productTierType: ProductTierType, 
-        /**
-         * Whether Key Connector is enabled for this organization.
-         */keyConnectorEnabled: Bool, 
-        /**
-         * The URL of the Key Connector service, if enabled.
-         */keyConnectorUrl: String?, 
-        /**
-         * The date the families sponsorship was last synced, if applicable.
-         */familySponsorshipLastSyncDate: DateTime?, 
-        /**
-         * The date the families sponsorship expires, if applicable.
-         */familySponsorshipValidUntil: DateTime?, 
-        /**
-         * Whether the families sponsorship is scheduled for deletion.
-         */familySponsorshipToDelete: Bool?, 
-        /**
-         * Whether the current user has access to Secrets Manager for this organization.
-         */accessSecretsManager: Bool, 
-        /**
-         * Whether collection creation is restricted to owners and admins only.
-         *
-         * When `false`, any member can create collections and automatically receives manage
-         * permissions over collections they create.
-         */limitCollectionCreation: Bool, 
-        /**
-         * Whether collection deletion is restricted to owners and admins only.
-         *
-         * When `true`, regular users cannot delete collections that they manage.
-         */limitCollectionDeletion: Bool, 
-        /**
-         * Whether item deletion is restricted to members with the Manage collection permission.
-         *
-         * When `false`, members with Edit permission can also delete items within their collections.
-         */limitItemDeletion: Bool, 
-        /**
-         * Whether owners and admins have implicit manage permissions over all collections.
-         *
-         * When `true`, owners and admins can alter items, groups, and permissions across all
-         * collections without requiring explicit collection assignments.
-         * When `false`, admins can only access collections where they have been explicitly assigned.
-         */allowAdminAccessToAllCollectionItems: Bool, 
-        /**
-         * Whether the current user's account is managed by this organization.
-         */userIsManagedByOrganization: Bool, 
-        /**
-         * Whether the organization has access to Access Intelligence features.
-         */useAccessIntelligence: Bool, 
-        /**
-         * Whether the organization can sponsor families plans for members (Families For Enterprises).
-         */useAdminSponsoredFamilies: Bool, 
-        /**
-         * Whether Secrets Manager ads are disabled for users.
-         */useDisableSmAdsForUsers: Bool, 
-        /**
-         * Whether the organization's Families For Enterprises sponsorship was initiated by an admin.
-         */isAdminInitiated: Bool, 
-        /**
-         * Whether SSO login is currently enabled for this organization.
-         */ssoEnabled: Bool, 
-        /**
-         * The decryption type used for SSO members, if SSO is enabled.
-         */ssoMemberDecryptionType: MemberDecryptionType?, 
-        /**
-         * Whether the organization has access to phishing blocker features.
-         */usePhishingBlocker: Bool, 
-        /**
-         * Whether the organization has access to the My Items collection feature.
-         * This allows users to store personal items in the organization vault
-         * if the Centralize Organization Ownership policy is enabled.
-         */useMyItems: Bool) {
-        self.id = id
-        self.name = name
-        self.status = status
-        self.type = type
-        self.enabled = enabled
-        self.usePolicies = usePolicies
-        self.useGroups = useGroups
-        self.useDirectory = useDirectory
-        self.useEvents = useEvents
-        self.useTotp = useTotp
-        self.use2fa = use2fa
-        self.useApi = useApi
-        self.useSso = useSso
-        self.useOrganizationDomains = useOrganizationDomains
-        self.useKeyConnector = useKeyConnector
-        self.useScim = useScim
-        self.useCustomPermissions = useCustomPermissions
-        self.useResetPassword = useResetPassword
-        self.useSecretsManager = useSecretsManager
-        self.usePasswordManager = usePasswordManager
-        self.useActivateAutofillPolicy = useActivateAutofillPolicy
-        self.useAutomaticUserConfirmation = useAutomaticUserConfirmation
-        self.selfHost = selfHost
-        self.usersGetPremium = usersGetPremium
-        self.seats = seats
-        self.maxCollections = maxCollections
-        self.maxStorageGb = maxStorageGb
-        self.ssoBound = ssoBound
-        self.identifier = identifier
-        self.permissions = permissions
-        self.resetPasswordEnrolled = resetPasswordEnrolled
-        self.userId = userId
-        self.organizationUserId = organizationUserId
-        self.hasPublicAndPrivateKeys = hasPublicAndPrivateKeys
-        self.providerId = providerId
-        self.providerName = providerName
-        self.providerType = providerType
-        self.isProviderUser = isProviderUser
-        self.isMember = isMember
-        self.familySponsorshipFriendlyName = familySponsorshipFriendlyName
-        self.familySponsorshipAvailable = familySponsorshipAvailable
-        self.productTierType = productTierType
-        self.keyConnectorEnabled = keyConnectorEnabled
-        self.keyConnectorUrl = keyConnectorUrl
-        self.familySponsorshipLastSyncDate = familySponsorshipLastSyncDate
-        self.familySponsorshipValidUntil = familySponsorshipValidUntil
-        self.familySponsorshipToDelete = familySponsorshipToDelete
-        self.accessSecretsManager = accessSecretsManager
-        self.limitCollectionCreation = limitCollectionCreation
-        self.limitCollectionDeletion = limitCollectionDeletion
-        self.limitItemDeletion = limitItemDeletion
-        self.allowAdminAccessToAllCollectionItems = allowAdminAccessToAllCollectionItems
-        self.userIsManagedByOrganization = userIsManagedByOrganization
-        self.useAccessIntelligence = useAccessIntelligence
-        self.useAdminSponsoredFamilies = useAdminSponsoredFamilies
-        self.useDisableSmAdsForUsers = useDisableSmAdsForUsers
-        self.isAdminInitiated = isAdminInitiated
-        self.ssoEnabled = ssoEnabled
-        self.ssoMemberDecryptionType = ssoMemberDecryptionType
-        self.usePhishingBlocker = usePhishingBlocker
-        self.useMyItems = useMyItems
+         * Families sponsorship state for the current user.
+         */familySponsorship: FamilySponsorship) {
+        self.details = details
+        self.plan = plan
+        self.membership = membership
+        self.collectionManagement = collectionManagement
+        self.provider = provider
+        self.sso = sso
+        self.familySponsorship = familySponsorship
     }
 
     
@@ -1255,132 +1794,24 @@ public struct FfiConverterTypeProfileOrganization: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ProfileOrganization {
         return
             try ProfileOrganization(
-                id: FfiConverterTypeUuid.read(from: &buf), 
-                name: FfiConverterString.read(from: &buf), 
-                status: FfiConverterTypeOrganizationUserStatusType.read(from: &buf), 
-                type: FfiConverterTypeOrganizationUserType.read(from: &buf), 
-                enabled: FfiConverterBool.read(from: &buf), 
-                usePolicies: FfiConverterBool.read(from: &buf), 
-                useGroups: FfiConverterBool.read(from: &buf), 
-                useDirectory: FfiConverterBool.read(from: &buf), 
-                useEvents: FfiConverterBool.read(from: &buf), 
-                useTotp: FfiConverterBool.read(from: &buf), 
-                use2fa: FfiConverterBool.read(from: &buf), 
-                useApi: FfiConverterBool.read(from: &buf), 
-                useSso: FfiConverterBool.read(from: &buf), 
-                useOrganizationDomains: FfiConverterBool.read(from: &buf), 
-                useKeyConnector: FfiConverterBool.read(from: &buf), 
-                useScim: FfiConverterBool.read(from: &buf), 
-                useCustomPermissions: FfiConverterBool.read(from: &buf), 
-                useResetPassword: FfiConverterBool.read(from: &buf), 
-                useSecretsManager: FfiConverterBool.read(from: &buf), 
-                usePasswordManager: FfiConverterBool.read(from: &buf), 
-                useActivateAutofillPolicy: FfiConverterBool.read(from: &buf), 
-                useAutomaticUserConfirmation: FfiConverterBool.read(from: &buf), 
-                selfHost: FfiConverterBool.read(from: &buf), 
-                usersGetPremium: FfiConverterBool.read(from: &buf), 
-                seats: FfiConverterOptionUInt32.read(from: &buf), 
-                maxCollections: FfiConverterOptionUInt32.read(from: &buf), 
-                maxStorageGb: FfiConverterOptionUInt32.read(from: &buf), 
-                ssoBound: FfiConverterBool.read(from: &buf), 
-                identifier: FfiConverterOptionString.read(from: &buf), 
-                permissions: FfiConverterTypePermissions.read(from: &buf), 
-                resetPasswordEnrolled: FfiConverterBool.read(from: &buf), 
-                userId: FfiConverterOptionTypeUuid.read(from: &buf), 
-                organizationUserId: FfiConverterOptionTypeUuid.read(from: &buf), 
-                hasPublicAndPrivateKeys: FfiConverterBool.read(from: &buf), 
-                providerId: FfiConverterOptionTypeUuid.read(from: &buf), 
-                providerName: FfiConverterOptionString.read(from: &buf), 
-                providerType: FfiConverterOptionTypeProviderType.read(from: &buf), 
-                isProviderUser: FfiConverterBool.read(from: &buf), 
-                isMember: FfiConverterBool.read(from: &buf), 
-                familySponsorshipFriendlyName: FfiConverterOptionString.read(from: &buf), 
-                familySponsorshipAvailable: FfiConverterBool.read(from: &buf), 
-                productTierType: FfiConverterTypeProductTierType.read(from: &buf), 
-                keyConnectorEnabled: FfiConverterBool.read(from: &buf), 
-                keyConnectorUrl: FfiConverterOptionString.read(from: &buf), 
-                familySponsorshipLastSyncDate: FfiConverterOptionTypeDateTime.read(from: &buf), 
-                familySponsorshipValidUntil: FfiConverterOptionTypeDateTime.read(from: &buf), 
-                familySponsorshipToDelete: FfiConverterOptionBool.read(from: &buf), 
-                accessSecretsManager: FfiConverterBool.read(from: &buf), 
-                limitCollectionCreation: FfiConverterBool.read(from: &buf), 
-                limitCollectionDeletion: FfiConverterBool.read(from: &buf), 
-                limitItemDeletion: FfiConverterBool.read(from: &buf), 
-                allowAdminAccessToAllCollectionItems: FfiConverterBool.read(from: &buf), 
-                userIsManagedByOrganization: FfiConverterBool.read(from: &buf), 
-                useAccessIntelligence: FfiConverterBool.read(from: &buf), 
-                useAdminSponsoredFamilies: FfiConverterBool.read(from: &buf), 
-                useDisableSmAdsForUsers: FfiConverterBool.read(from: &buf), 
-                isAdminInitiated: FfiConverterBool.read(from: &buf), 
-                ssoEnabled: FfiConverterBool.read(from: &buf), 
-                ssoMemberDecryptionType: FfiConverterOptionTypeMemberDecryptionType.read(from: &buf), 
-                usePhishingBlocker: FfiConverterBool.read(from: &buf), 
-                useMyItems: FfiConverterBool.read(from: &buf)
+                details: FfiConverterTypeOrganizationDetails.read(from: &buf), 
+                plan: FfiConverterTypeOrganizationPlan.read(from: &buf), 
+                membership: FfiConverterTypeOrganizationMembership.read(from: &buf), 
+                collectionManagement: FfiConverterTypeCollectionManagementSettings.read(from: &buf), 
+                provider: FfiConverterOptionTypeOrganizationProvider.read(from: &buf), 
+                sso: FfiConverterTypeSsoSettings.read(from: &buf), 
+                familySponsorship: FfiConverterTypeFamilySponsorship.read(from: &buf)
         )
     }
 
     public static func write(_ value: ProfileOrganization, into buf: inout [UInt8]) {
-        FfiConverterTypeUuid.write(value.id, into: &buf)
-        FfiConverterString.write(value.name, into: &buf)
-        FfiConverterTypeOrganizationUserStatusType.write(value.status, into: &buf)
-        FfiConverterTypeOrganizationUserType.write(value.type, into: &buf)
-        FfiConverterBool.write(value.enabled, into: &buf)
-        FfiConverterBool.write(value.usePolicies, into: &buf)
-        FfiConverterBool.write(value.useGroups, into: &buf)
-        FfiConverterBool.write(value.useDirectory, into: &buf)
-        FfiConverterBool.write(value.useEvents, into: &buf)
-        FfiConverterBool.write(value.useTotp, into: &buf)
-        FfiConverterBool.write(value.use2fa, into: &buf)
-        FfiConverterBool.write(value.useApi, into: &buf)
-        FfiConverterBool.write(value.useSso, into: &buf)
-        FfiConverterBool.write(value.useOrganizationDomains, into: &buf)
-        FfiConverterBool.write(value.useKeyConnector, into: &buf)
-        FfiConverterBool.write(value.useScim, into: &buf)
-        FfiConverterBool.write(value.useCustomPermissions, into: &buf)
-        FfiConverterBool.write(value.useResetPassword, into: &buf)
-        FfiConverterBool.write(value.useSecretsManager, into: &buf)
-        FfiConverterBool.write(value.usePasswordManager, into: &buf)
-        FfiConverterBool.write(value.useActivateAutofillPolicy, into: &buf)
-        FfiConverterBool.write(value.useAutomaticUserConfirmation, into: &buf)
-        FfiConverterBool.write(value.selfHost, into: &buf)
-        FfiConverterBool.write(value.usersGetPremium, into: &buf)
-        FfiConverterOptionUInt32.write(value.seats, into: &buf)
-        FfiConverterOptionUInt32.write(value.maxCollections, into: &buf)
-        FfiConverterOptionUInt32.write(value.maxStorageGb, into: &buf)
-        FfiConverterBool.write(value.ssoBound, into: &buf)
-        FfiConverterOptionString.write(value.identifier, into: &buf)
-        FfiConverterTypePermissions.write(value.permissions, into: &buf)
-        FfiConverterBool.write(value.resetPasswordEnrolled, into: &buf)
-        FfiConverterOptionTypeUuid.write(value.userId, into: &buf)
-        FfiConverterOptionTypeUuid.write(value.organizationUserId, into: &buf)
-        FfiConverterBool.write(value.hasPublicAndPrivateKeys, into: &buf)
-        FfiConverterOptionTypeUuid.write(value.providerId, into: &buf)
-        FfiConverterOptionString.write(value.providerName, into: &buf)
-        FfiConverterOptionTypeProviderType.write(value.providerType, into: &buf)
-        FfiConverterBool.write(value.isProviderUser, into: &buf)
-        FfiConverterBool.write(value.isMember, into: &buf)
-        FfiConverterOptionString.write(value.familySponsorshipFriendlyName, into: &buf)
-        FfiConverterBool.write(value.familySponsorshipAvailable, into: &buf)
-        FfiConverterTypeProductTierType.write(value.productTierType, into: &buf)
-        FfiConverterBool.write(value.keyConnectorEnabled, into: &buf)
-        FfiConverterOptionString.write(value.keyConnectorUrl, into: &buf)
-        FfiConverterOptionTypeDateTime.write(value.familySponsorshipLastSyncDate, into: &buf)
-        FfiConverterOptionTypeDateTime.write(value.familySponsorshipValidUntil, into: &buf)
-        FfiConverterOptionBool.write(value.familySponsorshipToDelete, into: &buf)
-        FfiConverterBool.write(value.accessSecretsManager, into: &buf)
-        FfiConverterBool.write(value.limitCollectionCreation, into: &buf)
-        FfiConverterBool.write(value.limitCollectionDeletion, into: &buf)
-        FfiConverterBool.write(value.limitItemDeletion, into: &buf)
-        FfiConverterBool.write(value.allowAdminAccessToAllCollectionItems, into: &buf)
-        FfiConverterBool.write(value.userIsManagedByOrganization, into: &buf)
-        FfiConverterBool.write(value.useAccessIntelligence, into: &buf)
-        FfiConverterBool.write(value.useAdminSponsoredFamilies, into: &buf)
-        FfiConverterBool.write(value.useDisableSmAdsForUsers, into: &buf)
-        FfiConverterBool.write(value.isAdminInitiated, into: &buf)
-        FfiConverterBool.write(value.ssoEnabled, into: &buf)
-        FfiConverterOptionTypeMemberDecryptionType.write(value.ssoMemberDecryptionType, into: &buf)
-        FfiConverterBool.write(value.usePhishingBlocker, into: &buf)
-        FfiConverterBool.write(value.useMyItems, into: &buf)
+        FfiConverterTypeOrganizationDetails.write(value.details, into: &buf)
+        FfiConverterTypeOrganizationPlan.write(value.plan, into: &buf)
+        FfiConverterTypeOrganizationMembership.write(value.membership, into: &buf)
+        FfiConverterTypeCollectionManagementSettings.write(value.collectionManagement, into: &buf)
+        FfiConverterOptionTypeOrganizationProvider.write(value.provider, into: &buf)
+        FfiConverterTypeSsoSettings.write(value.sso, into: &buf)
+        FfiConverterTypeFamilySponsorship.write(value.familySponsorship, into: &buf)
     }
 }
 
@@ -1399,8 +1830,114 @@ public func FfiConverterTypeProfileOrganization_lower(_ value: ProfileOrganizati
     return FfiConverterTypeProfileOrganization.lower(value)
 }
 
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
+/**
+ * An organization's SSO and Key Connector settings.
+ *
+ * This mirrors the server's fields rather than modelling them as an enum, because the server
+ * does not enforce the relationships between them: for example, a decryption type and Key
+ * Connector URL can be present while SSO is disabled.
+ */
+public struct SsoSettings: Equatable, Hashable {
+    /**
+     * Whether SSO login is currently enabled for this organization.
+     */
+    public let enabled: Bool
+    /**
+     * The organization's SSO identifier.
+     */
+    public let identifier: String?
+    /**
+     * The decryption type used for SSO members. `None` when no SSO configuration has been
+     * saved.
+     */
+    public let memberDecryptionType: MemberDecryptionType?
+    /**
+     * Whether members decrypt via Key Connector, as computed by the server.
+     */
+    public let keyConnectorEnabled: Bool
+    /**
+     * The URL of the Key Connector service. Only meaningful when
+     * [`key_connector_enabled`](Self::key_connector_enabled) is `true`.
+     */
+    public let keyConnectorUrl: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Whether SSO login is currently enabled for this organization.
+         */enabled: Bool, 
+        /**
+         * The organization's SSO identifier.
+         */identifier: String?, 
+        /**
+         * The decryption type used for SSO members. `None` when no SSO configuration has been
+         * saved.
+         */memberDecryptionType: MemberDecryptionType?, 
+        /**
+         * Whether members decrypt via Key Connector, as computed by the server.
+         */keyConnectorEnabled: Bool, 
+        /**
+         * The URL of the Key Connector service. Only meaningful when
+         * [`key_connector_enabled`](Self::key_connector_enabled) is `true`.
+         */keyConnectorUrl: String?) {
+        self.enabled = enabled
+        self.identifier = identifier
+        self.memberDecryptionType = memberDecryptionType
+        self.keyConnectorEnabled = keyConnectorEnabled
+        self.keyConnectorUrl = keyConnectorUrl
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension SsoSettings: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSsoSettings: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SsoSettings {
+        return
+            try SsoSettings(
+                enabled: FfiConverterBool.read(from: &buf), 
+                identifier: FfiConverterOptionString.read(from: &buf), 
+                memberDecryptionType: FfiConverterOptionTypeMemberDecryptionType.read(from: &buf), 
+                keyConnectorEnabled: FfiConverterBool.read(from: &buf), 
+                keyConnectorUrl: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: SsoSettings, into buf: inout [UInt8]) {
+        FfiConverterBool.write(value.enabled, into: &buf)
+        FfiConverterOptionString.write(value.identifier, into: &buf)
+        FfiConverterOptionTypeMemberDecryptionType.write(value.memberDecryptionType, into: &buf)
+        FfiConverterBool.write(value.keyConnectorEnabled, into: &buf)
+        FfiConverterOptionString.write(value.keyConnectorUrl, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSsoSettings_lift(_ buf: RustBuffer) throws -> SsoSettings {
+    return try FfiConverterTypeSsoSettings.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSsoSettings_lower(_ value: SsoSettings) -> RustBuffer {
+    return FfiConverterTypeSsoSettings.lower(value)
+}
+
+
 /**
  * The method used to decrypt organization member data.
  */
@@ -1485,8 +2022,7 @@ public func FfiConverterTypeMemberDecryptionType_lower(_ value: MemberDecryption
 }
 
 
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
 /**
  * The membership status of a user within an organization.
  */
@@ -1591,8 +2127,7 @@ public func FfiConverterTypeOrganizationUserStatusType_lower(_ value: Organizati
 }
 
 
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
 /**
  * The role of a user within an organization.
  */
@@ -1612,8 +2147,7 @@ public enum OrganizationUserType: UInt8, Equatable, Hashable {
      */
     case user = 2
     /**
-     * User with a customized set of permissions as indicated by
-     * [`ProfileOrganization::permissions`].
+     * User with a customized set of permissions as indicated by [`Permissions`].
      */
     case custom = 4
 
@@ -1688,8 +2222,7 @@ public func FfiConverterTypeOrganizationUserType_lower(_ value: OrganizationUser
 }
 
 
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
 /**
  * The subscription tier of an organization.
  */
@@ -1794,8 +2327,7 @@ public func FfiConverterTypeProductTierType_lower(_ value: ProductTierType) -> R
 }
 
 
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
 /**
  * The type of provider.
  */
@@ -1957,6 +2489,30 @@ fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeOrganizationProvider: FfiConverterRustBuffer {
+    typealias SwiftType = OrganizationProvider?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeOrganizationProvider.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeOrganizationProvider.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeMemberDecryptionType: FfiConverterRustBuffer {
     typealias SwiftType = MemberDecryptionType?
 
@@ -1973,30 +2529,6 @@ fileprivate struct FfiConverterOptionTypeMemberDecryptionType: FfiConverterRustB
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypeMemberDecryptionType.read(from: &buf)
-        default: throw UniffiInternalError.unexpectedOptionalTag
-        }
-    }
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-fileprivate struct FfiConverterOptionTypeProviderType: FfiConverterRustBuffer {
-    typealias SwiftType = ProviderType?
-
-    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
-        guard let value = value else {
-            writeInt(&buf, Int8(0))
-            return
-        }
-        writeInt(&buf, Int8(1))
-        FfiConverterTypeProviderType.write(value, into: &buf)
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
-        switch try readInt(&buf) as Int8 {
-        case 0: return nil
-        case 1: return try FfiConverterTypeProviderType.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -2029,8 +2561,8 @@ fileprivate struct FfiConverterOptionTypeDateTime: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterOptionTypeUuid: FfiConverterRustBuffer {
-    typealias SwiftType = Uuid?
+fileprivate struct FfiConverterOptionTypeOrganizationUserId: FfiConverterRustBuffer {
+    typealias SwiftType = OrganizationUserId?
 
     public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
         guard let value = value else {
@@ -2038,17 +2570,97 @@ fileprivate struct FfiConverterOptionTypeUuid: FfiConverterRustBuffer {
             return
         }
         writeInt(&buf, Int8(1))
-        FfiConverterTypeUuid.write(value, into: &buf)
+        FfiConverterTypeOrganizationUserId.write(value, into: &buf)
     }
 
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
-        case 1: return try FfiConverterTypeUuid.read(from: &buf)
+        case 1: return try FfiConverterTypeOrganizationUserId.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
 }
+
+
+public typealias OrganizationUserId = Uuid
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeOrganizationUserId: FfiConverter {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OrganizationUserId {
+        return try FfiConverterTypeUuid.read(from: &buf)
+    }
+
+    public static func write(_ value: OrganizationUserId, into buf: inout [UInt8]) {
+        return FfiConverterTypeUuid.write(value, into: &buf)
+    }
+
+    public static func lift(_ value: RustBuffer) throws -> OrganizationUserId {
+        return try FfiConverterTypeUuid_lift(value)
+    }
+
+    public static func lower(_ value: OrganizationUserId) -> RustBuffer {
+        return FfiConverterTypeUuid_lower(value)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOrganizationUserId_lift(_ value: RustBuffer) throws -> OrganizationUserId {
+    return try FfiConverterTypeOrganizationUserId.lift(value)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOrganizationUserId_lower(_ value: OrganizationUserId) -> RustBuffer {
+    return FfiConverterTypeOrganizationUserId.lower(value)
+}
+
+
+
+public typealias ProviderId = Uuid
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeProviderId: FfiConverter {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ProviderId {
+        return try FfiConverterTypeUuid.read(from: &buf)
+    }
+
+    public static func write(_ value: ProviderId, into buf: inout [UInt8]) {
+        return FfiConverterTypeUuid.write(value, into: &buf)
+    }
+
+    public static func lift(_ value: RustBuffer) throws -> ProviderId {
+        return try FfiConverterTypeUuid_lift(value)
+    }
+
+    public static func lower(_ value: ProviderId) -> RustBuffer {
+        return FfiConverterTypeUuid_lower(value)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeProviderId_lift(_ value: RustBuffer) throws -> ProviderId {
+    return try FfiConverterTypeProviderId.lift(value)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeProviderId_lower(_ value: ProviderId) -> RustBuffer {
+    return FfiConverterTypeProviderId.lower(value)
+}
+
 
 private enum InitializationResult {
     case ok

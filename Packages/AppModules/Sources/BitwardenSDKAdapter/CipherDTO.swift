@@ -19,8 +19,8 @@ public struct CipherLoginUriDTO: Codable, Sendable {
 }
 
 /// Mirrors `CipherFido2CredentialModel`. All sub-fields stay opaque strings at this layer (still
-/// encrypted) - only `client.vault().ciphers().decryptFido2Credentials(cipherView:)` produces
-/// human-readable values, and only that call is used for display.
+/// encrypted). The SDK decrypts these into CipherView; only selected display metadata is mapped
+/// out of the adapter. A decrypted Fido2CredentialView also contains raw private key material.
 public struct CipherLoginFido2CredentialDTO: Codable, Sendable {
     public var credentialId: String?
     public var keyType: String?
@@ -491,7 +491,8 @@ public extension CipherResponseDTO {
             deletedDate: try CipherWireValidation.date(deletedDate, field: "deletedDate"),
             revisionDate: revisionDate,
             archivedDate: try CipherWireValidation.date(archivedDate, field: "archivedDate"),
-            data: nil
+            data: nil,
+            partialData: nil
         )
     }
 }

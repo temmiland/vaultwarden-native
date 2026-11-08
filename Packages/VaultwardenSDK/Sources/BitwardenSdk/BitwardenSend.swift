@@ -39,6 +39,52 @@ fileprivate extension ForeignBytes {
     init(bufferPointer: UnsafeBufferPointer<UInt8>) {
         self.init(len: Int32(bufferPointer.count), data: bufferPointer.baseAddress)
     }
+
+    init(rawBufferPointer: UnsafeRawBufferPointer) {
+        self.init(
+            len: Int32(rawBufferPointer.count),
+            data: rawBufferPointer.baseAddress?.assumingMemoryBound(to: UInt8.self)
+        )
+    }
+}
+
+// Converter for `&[u8]` / `[ByRef] bytes` arguments.
+//
+// Conforms to `FfiConverter` so the compiler enforces the full converter
+// method set. Only the scope-bound `lower(_:_body:)` overload is sound —
+// zero-copy byte buffers only flow foreign -> Rust, and only in argument
+// position. The four protocol-witness methods (`lift`, `lower`, `read`,
+// `write`) `fatalError` at runtime if anyone reaches them.
+//
+// The scope-bound `lower` takes a closure because the `ForeignBytes`
+// pointer is only guaranteed valid for the duration of
+// `Data.withUnsafeBytes`. Callers must run the full FFI call inside
+// the closure body.
+fileprivate enum FfiConverterByRefBytes: FfiConverter {
+    typealias SwiftType = Data
+    typealias FfiType = ForeignBytes
+
+    static func lower<R>(_ value: Data, _ body: (ForeignBytes) throws -> R) rethrows -> R {
+        return try value.withUnsafeBytes { rawBuf in
+            try body(ForeignBytes(rawBufferPointer: rawBuf))
+        }
+    }
+
+    static func lower(_ value: Data) -> ForeignBytes {
+        fatalError("ByRef bytes cannot use the plain lower: returning ForeignBytes escapes the Data.withUnsafeBytes scope. Use the scope-bound lower(_:_body:) overload instead.")
+    }
+
+    static func lift(_ value: ForeignBytes) throws -> Data {
+        fatalError("ByRef bytes cannot be lifted: zero-copy &[u8] only flows foreign->Rust")
+    }
+
+    static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Data {
+        fatalError("ByRef bytes cannot be read from a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+    }
+
+    static func write(_ value: Data, into buf: inout [UInt8]) {
+        fatalError("ByRef bytes cannot be written to a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+    }
 }
 
 // For every type used in the interface, we provide helper methods for conveniently
@@ -471,7 +517,11 @@ fileprivate struct FfiConverterString: FfiConverter {
             return String()
         }
         let bytes = UnsafeBufferPointer<UInt8>(start: value.data!, count: Int(value.len))
-        return String(bytes: bytes, encoding: String.Encoding.utf8)!
+        // Use Swift's native UTF-8 decoder; `String(bytes:encoding:.utf8)` goes
+        // through Foundation's NSString and silently strips a leading U+FEFF BOM.
+        // Invalid UTF-8 substitutes U+FFFD instead of trapping (unreachable
+        // given Rust's `String` invariant).
+        return String(decoding: bytes, as: UTF8.self)
     }
 
     public static func lower(_ value: String) -> RustBuffer {
@@ -487,7 +537,8 @@ fileprivate struct FfiConverterString: FfiConverter {
 
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> String {
         let len: Int32 = try readInt(&buf)
-        return String(bytes: try readBytes(&buf, count: Int(len)), encoding: String.Encoding.utf8)!
+        // See `lift` above for why we avoid Foundation's NSString-backed decoder here.
+        return String(decoding: try readBytes(&buf, count: Int(len)), as: UTF8.self)
     }
 
     public static func write(_ value: String, into buf: inout [UInt8]) {
@@ -506,12 +557,17 @@ fileprivate struct FfiConverterTimestamp: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Date {
         let seconds: Int64 = try readInt(&buf)
         let nanoseconds: UInt32 = try readInt(&buf)
+        // Build the Date from whole seconds first, then add the nanoseconds as a
+        // separate TimeInterval.  Date stores CFAbsoluteTime (seconds since 2001),
+        // so adding a small fraction to the ~7.8e8 base is twice as precise as
+        // adding it to the ~1.76e9 Unix-epoch value, because the smaller magnitude
+        // leaves more mantissa bits for the sub-second part.
         if seconds >= 0 {
-            let delta = Double(seconds) + (Double(nanoseconds) / 1.0e9)
-            return Date.init(timeIntervalSince1970: delta)
+            return Date(timeIntervalSince1970: Double(seconds))
+                .addingTimeInterval(Double(nanoseconds) / 1.0e9)
         } else {
-            let delta = Double(seconds) - (Double(nanoseconds) / 1.0e9)
-            return Date.init(timeIntervalSince1970: delta)
+            return Date(timeIntervalSince1970: Double(seconds))
+                .addingTimeInterval(-Double(nanoseconds) / 1.0e9)
         }
     }
 
@@ -536,6 +592,144 @@ fileprivate struct FfiConverterTimestamp: FfiConverterRustBuffer {
 }
 
 
+
+
+/**
+ * Client for the Send sync handler, for callers that fetch sync data themselves (e.g. the Web
+ * client) and only want the Send-persistence part of a sync run.
+ */
+public protocol SendSyncHandlerClientProtocol: AnyObject, Sendable {
+    
+    /**
+     * Persists the sends from a sync response. Call this after each sync.
+     */
+    func onSync(sends: [Send]) async throws 
+    
+}
+/**
+ * Client for the Send sync handler, for callers that fetch sync data themselves (e.g. the Web
+ * client) and only want the Send-persistence part of a sync run.
+ */
+open class SendSyncHandlerClient: SendSyncHandlerClientProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_bitwarden_send_fn_clone_sendsynchandlerclient(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_bitwarden_send_fn_free_sendsynchandlerclient(handle, $0) }
+    }
+
+    
+
+    
+    /**
+     * Persists the sends from a sync response. Call this after each sync.
+     */
+open func onSync(sends: [Send])async throws   {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_bitwarden_send_fn_method_sendsynchandlerclient_on_sync(
+                        self.uniffiCloneHandle(),FfiConverterSequenceTypeSend.lower(sends)
+                )
+            },
+            pollFunc: ffi_bitwarden_send_rust_future_poll_void,
+            completeFunc: ffi_bitwarden_send_rust_future_complete_void,
+            freeFunc: ffi_bitwarden_send_rust_future_free_void,
+            liftFunc: { $0 },
+            errorHandler: FfiConverterTypeSendSyncError_lift
+        )
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSendSyncHandlerClient: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = SendSyncHandlerClient
+
+    public static func lift(_ handle: UInt64) throws -> SendSyncHandlerClient {
+        return SendSyncHandlerClient(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: SendSyncHandlerClient) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SendSyncHandlerClient {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: SendSyncHandlerClient, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSendSyncHandlerClient_lift(_ handle: UInt64) throws -> SendSyncHandlerClient {
+    return try FfiConverterTypeSendSyncHandlerClient.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSendSyncHandlerClient_lower(_ value: SendSyncHandlerClient) -> UInt64 {
+    return FfiConverterTypeSendSyncHandlerClient.lower(value)
+}
+
+
+
+
 public struct Send: Equatable, Hashable {
     public let id: SendId?
     public let accessId: String?
@@ -546,6 +740,7 @@ public struct Send: Equatable, Hashable {
     public let type: SendType
     public let file: SendFile?
     public let text: SendText?
+    public let data: SendItem?
     public let maxAccessCount: UInt32?
     public let accessCount: UInt32
     public let disabled: Bool
@@ -564,7 +759,7 @@ public struct Send: Equatable, Hashable {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(id: SendId?, accessId: String?, name: EncString, notes: EncString?, key: EncString, password: String?, type: SendType, file: SendFile?, text: SendText?, maxAccessCount: UInt32?, accessCount: UInt32, disabled: Bool, hideEmail: Bool, revisionDate: DateTime, deletionDate: DateTime, expirationDate: DateTime?, 
+    public init(id: SendId?, accessId: String?, name: EncString, notes: EncString?, key: EncString, password: String?, type: SendType, file: SendFile?, text: SendText?, data: SendItem?, maxAccessCount: UInt32?, accessCount: UInt32, disabled: Bool, hideEmail: Bool, revisionDate: DateTime, deletionDate: DateTime, expirationDate: DateTime?, 
         /**
          * Email addresses for OTP authentication (comma-separated).
          *
@@ -580,6 +775,7 @@ public struct Send: Equatable, Hashable {
         self.type = type
         self.file = file
         self.text = text
+        self.data = data
         self.maxAccessCount = maxAccessCount
         self.accessCount = accessCount
         self.disabled = disabled
@@ -616,6 +812,7 @@ public struct FfiConverterTypeSend: FfiConverterRustBuffer {
                 type: FfiConverterTypeSendType.read(from: &buf), 
                 file: FfiConverterOptionTypeSendFile.read(from: &buf), 
                 text: FfiConverterOptionTypeSendText.read(from: &buf), 
+                data: FfiConverterOptionTypeSendItem.read(from: &buf), 
                 maxAccessCount: FfiConverterOptionUInt32.read(from: &buf), 
                 accessCount: FfiConverterUInt32.read(from: &buf), 
                 disabled: FfiConverterBool.read(from: &buf), 
@@ -638,6 +835,7 @@ public struct FfiConverterTypeSend: FfiConverterRustBuffer {
         FfiConverterTypeSendType.write(value.type, into: &buf)
         FfiConverterOptionTypeSendFile.write(value.file, into: &buf)
         FfiConverterOptionTypeSendText.write(value.text, into: &buf)
+        FfiConverterOptionTypeSendItem.write(value.data, into: &buf)
         FfiConverterOptionUInt32.write(value.maxAccessCount, into: &buf)
         FfiConverterUInt32.write(value.accessCount, into: &buf)
         FfiConverterBool.write(value.disabled, into: &buf)
@@ -841,6 +1039,370 @@ public func FfiConverterTypeSendFileView_lift(_ buf: RustBuffer) throws -> SendF
 #endif
 public func FfiConverterTypeSendFileView_lower(_ value: SendFileView) -> RustBuffer {
     return FfiConverterTypeSendFileView.lower(value)
+}
+
+
+/**
+ * Item-based send content
+ */
+public struct SendItem: Equatable, Hashable {
+    public let encryptionVersion: SendEncryptionType
+    /**
+     * Opaque sealed cipher blob, see [`CipherView::seal_blob_for_item_sends`].
+     */
+    public let data: String
+    /**
+     * Partially encrypted metadata used to display item information that is
+     * not stored directly on the CipherView (e.g. folder/collection names)
+     */
+    public let metadata: SendItemMetadata
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(encryptionVersion: SendEncryptionType, 
+        /**
+         * Opaque sealed cipher blob, see [`CipherView::seal_blob_for_item_sends`].
+         */data: String, 
+        /**
+         * Partially encrypted metadata used to display item information that is
+         * not stored directly on the CipherView (e.g. folder/collection names)
+         */metadata: SendItemMetadata) {
+        self.encryptionVersion = encryptionVersion
+        self.data = data
+        self.metadata = metadata
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension SendItem: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSendItem: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SendItem {
+        return
+            try SendItem(
+                encryptionVersion: FfiConverterTypeSendEncryptionType.read(from: &buf), 
+                data: FfiConverterString.read(from: &buf), 
+                metadata: FfiConverterTypeSendItemMetadata.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: SendItem, into buf: inout [UInt8]) {
+        FfiConverterTypeSendEncryptionType.write(value.encryptionVersion, into: &buf)
+        FfiConverterString.write(value.data, into: &buf)
+        FfiConverterTypeSendItemMetadata.write(value.metadata, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSendItem_lift(_ buf: RustBuffer) throws -> SendItem {
+    return try FfiConverterTypeSendItem.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSendItem_lower(_ value: SendItem) -> RustBuffer {
+    return FfiConverterTypeSendItem.lower(value)
+}
+
+
+/**
+ * Encrypted metadata of an Item Send
+ */
+public struct SendItemMetadata: Equatable, Hashable {
+    /**
+     * Id of the vault item being sent
+     */
+    public let itemId: CipherId
+    /**
+     * The name of the folder the vault item being sent belongs to
+     */
+    public let folderName: EncString?
+    /**
+     * The name of the collections the vault item being sent belongs to
+     */
+    public let collectionNames: [EncString]?
+    /**
+     * The name of the organization the vault item being sent belongs to
+     */
+    public let organizationName: String?
+    /**
+     * The date the vault item being sent was created
+     */
+    public let creationDate: DateTime?
+    /**
+     * The date the vault item being sent was last edited
+     */
+    public let revisionDate: DateTime?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Id of the vault item being sent
+         */itemId: CipherId, 
+        /**
+         * The name of the folder the vault item being sent belongs to
+         */folderName: EncString?, 
+        /**
+         * The name of the collections the vault item being sent belongs to
+         */collectionNames: [EncString]?, 
+        /**
+         * The name of the organization the vault item being sent belongs to
+         */organizationName: String?, 
+        /**
+         * The date the vault item being sent was created
+         */creationDate: DateTime?, 
+        /**
+         * The date the vault item being sent was last edited
+         */revisionDate: DateTime?) {
+        self.itemId = itemId
+        self.folderName = folderName
+        self.collectionNames = collectionNames
+        self.organizationName = organizationName
+        self.creationDate = creationDate
+        self.revisionDate = revisionDate
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension SendItemMetadata: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSendItemMetadata: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SendItemMetadata {
+        return
+            try SendItemMetadata(
+                itemId: FfiConverterTypeCipherId.read(from: &buf), 
+                folderName: FfiConverterOptionTypeEncString.read(from: &buf), 
+                collectionNames: FfiConverterOptionSequenceTypeEncString.read(from: &buf), 
+                organizationName: FfiConverterOptionString.read(from: &buf), 
+                creationDate: FfiConverterOptionTypeDateTime.read(from: &buf), 
+                revisionDate: FfiConverterOptionTypeDateTime.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: SendItemMetadata, into buf: inout [UInt8]) {
+        FfiConverterTypeCipherId.write(value.itemId, into: &buf)
+        FfiConverterOptionTypeEncString.write(value.folderName, into: &buf)
+        FfiConverterOptionSequenceTypeEncString.write(value.collectionNames, into: &buf)
+        FfiConverterOptionString.write(value.organizationName, into: &buf)
+        FfiConverterOptionTypeDateTime.write(value.creationDate, into: &buf)
+        FfiConverterOptionTypeDateTime.write(value.revisionDate, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSendItemMetadata_lift(_ buf: RustBuffer) throws -> SendItemMetadata {
+    return try FfiConverterTypeSendItemMetadata.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSendItemMetadata_lower(_ value: SendItemMetadata) -> RustBuffer {
+    return FfiConverterTypeSendItemMetadata.lower(value)
+}
+
+
+/**
+ * Unencrypted metadata of an Item Send
+ */
+public struct SendItemMetadataView: Equatable, Hashable {
+    /**
+     * Id of the vault item being sent
+     */
+    public let itemId: CipherId
+    /**
+     * The name of the folder the vault item being sent belongs to
+     */
+    public let folderName: String?
+    /**
+     * The names of the collections the vault item being sent belongs to
+     */
+    public let collectionNames: [String]?
+    /**
+     * The name of the organization the vault item being sent belongs to
+     */
+    public let organizationName: String?
+    /**
+     * The date the vault item being sent was created
+     */
+    public let creationDate: DateTime?
+    /**
+     * The date the vault item being sent was last edited
+     */
+    public let revisionDate: DateTime?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Id of the vault item being sent
+         */itemId: CipherId, 
+        /**
+         * The name of the folder the vault item being sent belongs to
+         */folderName: String?, 
+        /**
+         * The names of the collections the vault item being sent belongs to
+         */collectionNames: [String]?, 
+        /**
+         * The name of the organization the vault item being sent belongs to
+         */organizationName: String?, 
+        /**
+         * The date the vault item being sent was created
+         */creationDate: DateTime?, 
+        /**
+         * The date the vault item being sent was last edited
+         */revisionDate: DateTime?) {
+        self.itemId = itemId
+        self.folderName = folderName
+        self.collectionNames = collectionNames
+        self.organizationName = organizationName
+        self.creationDate = creationDate
+        self.revisionDate = revisionDate
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension SendItemMetadataView: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSendItemMetadataView: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SendItemMetadataView {
+        return
+            try SendItemMetadataView(
+                itemId: FfiConverterTypeCipherId.read(from: &buf), 
+                folderName: FfiConverterOptionString.read(from: &buf), 
+                collectionNames: FfiConverterOptionSequenceString.read(from: &buf), 
+                organizationName: FfiConverterOptionString.read(from: &buf), 
+                creationDate: FfiConverterOptionTypeDateTime.read(from: &buf), 
+                revisionDate: FfiConverterOptionTypeDateTime.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: SendItemMetadataView, into buf: inout [UInt8]) {
+        FfiConverterTypeCipherId.write(value.itemId, into: &buf)
+        FfiConverterOptionString.write(value.folderName, into: &buf)
+        FfiConverterOptionSequenceString.write(value.collectionNames, into: &buf)
+        FfiConverterOptionString.write(value.organizationName, into: &buf)
+        FfiConverterOptionTypeDateTime.write(value.creationDate, into: &buf)
+        FfiConverterOptionTypeDateTime.write(value.revisionDate, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSendItemMetadataView_lift(_ buf: RustBuffer) throws -> SendItemMetadataView {
+    return try FfiConverterTypeSendItemMetadataView.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSendItemMetadataView_lower(_ value: SendItemMetadataView) -> RustBuffer {
+    return FfiConverterTypeSendItemMetadataView.lower(value)
+}
+
+
+/**
+ * View model for decrypted SendItem
+ */
+public struct SendItemView: Equatable, Hashable {
+    /**
+     * The item content of the send
+     */
+    public let data: CipherView
+    /**
+     * Unencrypted metadata used to display item information that is not
+     * stored directly on the CipherView (e.g. folder/collection names)
+     */
+    public let metadata: SendItemMetadataView
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * The item content of the send
+         */data: CipherView, 
+        /**
+         * Unencrypted metadata used to display item information that is not
+         * stored directly on the CipherView (e.g. folder/collection names)
+         */metadata: SendItemMetadataView) {
+        self.data = data
+        self.metadata = metadata
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension SendItemView: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSendItemView: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SendItemView {
+        return
+            try SendItemView(
+                data: FfiConverterTypeCipherView.read(from: &buf), 
+                metadata: FfiConverterTypeSendItemMetadataView.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: SendItemView, into buf: inout [UInt8]) {
+        FfiConverterTypeCipherView.write(value.data, into: &buf)
+        FfiConverterTypeSendItemMetadataView.write(value.metadata, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSendItemView_lift(_ buf: RustBuffer) throws -> SendItemView {
+    return try FfiConverterTypeSendItemView.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSendItemView_lower(_ value: SendItemView) -> RustBuffer {
+    return FfiConverterTypeSendItemView.lower(value)
 }
 
 
@@ -1075,6 +1637,7 @@ public struct SendView: Equatable, Hashable {
     public let type: SendType
     public let file: SendFileView?
     public let text: SendTextView?
+    public let data: SendItemView?
     public let maxAccessCount: UInt32?
     public let accessCount: UInt32
     public let disabled: Bool
@@ -1105,7 +1668,7 @@ public struct SendView: Equatable, Hashable {
         /**
          * Denote if an existing send has a password. The SDK will ignore this value when creating or
          * updating sends.
-         */hasPassword: Bool, type: SendType, file: SendFileView?, text: SendTextView?, maxAccessCount: UInt32?, accessCount: UInt32, disabled: Bool, hideEmail: Bool, revisionDate: DateTime, deletionDate: DateTime, expirationDate: DateTime?, 
+         */hasPassword: Bool, type: SendType, file: SendFileView?, text: SendTextView?, data: SendItemView?, maxAccessCount: UInt32?, accessCount: UInt32, disabled: Bool, hideEmail: Bool, revisionDate: DateTime, deletionDate: DateTime, expirationDate: DateTime?, 
         /**
          * Email addresses for OTP authentication.
          * **Note**: Mutually exclusive with `new_password`. If both are set, only password
@@ -1122,6 +1685,7 @@ public struct SendView: Equatable, Hashable {
         self.type = type
         self.file = file
         self.text = text
+        self.data = data
         self.maxAccessCount = maxAccessCount
         self.accessCount = accessCount
         self.disabled = disabled
@@ -1159,6 +1723,7 @@ public struct FfiConverterTypeSendView: FfiConverterRustBuffer {
                 type: FfiConverterTypeSendType.read(from: &buf), 
                 file: FfiConverterOptionTypeSendFileView.read(from: &buf), 
                 text: FfiConverterOptionTypeSendTextView.read(from: &buf), 
+                data: FfiConverterOptionTypeSendItemView.read(from: &buf), 
                 maxAccessCount: FfiConverterOptionUInt32.read(from: &buf), 
                 accessCount: FfiConverterUInt32.read(from: &buf), 
                 disabled: FfiConverterBool.read(from: &buf), 
@@ -1182,6 +1747,7 @@ public struct FfiConverterTypeSendView: FfiConverterRustBuffer {
         FfiConverterTypeSendType.write(value.type, into: &buf)
         FfiConverterOptionTypeSendFileView.write(value.file, into: &buf)
         FfiConverterOptionTypeSendTextView.write(value.text, into: &buf)
+        FfiConverterOptionTypeSendItemView.write(value.data, into: &buf)
         FfiConverterOptionUInt32.write(value.maxAccessCount, into: &buf)
         FfiConverterUInt32.write(value.accessCount, into: &buf)
         FfiConverterBool.write(value.disabled, into: &buf)
@@ -1213,9 +1779,15 @@ public func FfiConverterTypeSendView_lower(_ value: SendView) -> RustBuffer {
 /**
  * Error returned when accessing a send fails.
  */
-public enum AccessSendError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum AccessSendError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
+    
+    /**
+     * The send does not exist, has expired, or has been deleted (the server answered 404).
+     */
+    case NotFound(message: String)
     
     /**
      * An API or network error occurred.
@@ -1258,11 +1830,15 @@ public struct FfiConverterTypeAccessSendError: FfiConverterRustBuffer {
         
 
         
-        case 1: return .Api(
+        case 1: return .NotFound(
             message: try FfiConverterString.read(from: &buf)
         )
         
-        case 2: return .Parse(
+        case 2: return .Api(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 3: return .Parse(
             message: try FfiConverterString.read(from: &buf)
         )
         
@@ -1277,10 +1853,12 @@ public struct FfiConverterTypeAccessSendError: FfiConverterRustBuffer {
         
 
         
-        case .Api(_ /* message is ignored*/):
+        case .NotFound(_ /* message is ignored*/):
             writeInt(&buf, Int32(1))
-        case .Parse(_ /* message is ignored*/):
+        case .Api(_ /* message is ignored*/):
             writeInt(&buf, Int32(2))
+        case .Parse(_ /* message is ignored*/):
+            writeInt(&buf, Int32(3))
 
         
         }
@@ -1302,8 +1880,7 @@ public func FfiConverterTypeAccessSendError_lower(_ value: AccessSendError) -> R
     return FfiConverterTypeAccessSendError.lower(value)
 }
 
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
 /**
  * Controls how `bw send edit` updates the auth on an existing Send.
  */
@@ -1384,8 +1961,7 @@ public func FfiConverterTypeAuthEdit_lower(_ value: AuthEdit) -> RustBuffer {
 }
 
 
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
 /**
  * Indicates the authentication strategy to use when accessing a Send
  */
@@ -1471,7 +2047,8 @@ public func FfiConverterTypeAuthType_lower(_ value: AuthType) -> RustBuffer {
 
 
 
-public enum CreateFileSendError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum CreateFileSendError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -1603,7 +2180,8 @@ public func FfiConverterTypeCreateFileSendError_lower(_ value: CreateFileSendErr
 }
 
 
-public enum CreateSendError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum CreateSendError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -1717,13 +2295,16 @@ public func FfiConverterTypeCreateSendError_lower(_ value: CreateSendError) -> R
 }
 
 
-public enum DeleteSendError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum DeleteSendError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
     case Api(message: String)
     
     case Repository(message: String)
+    
+    case State(message: String)
     
 
     
@@ -1762,6 +2343,10 @@ public struct FfiConverterTypeDeleteSendError: FfiConverterRustBuffer {
             message: try FfiConverterString.read(from: &buf)
         )
         
+        case 3: return .State(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
 
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -1777,6 +2362,8 @@ public struct FfiConverterTypeDeleteSendError: FfiConverterRustBuffer {
             writeInt(&buf, Int32(1))
         case .Repository(_ /* message is ignored*/):
             writeInt(&buf, Int32(2))
+        case .State(_ /* message is ignored*/):
+            writeInt(&buf, Int32(3))
 
         
         }
@@ -1799,7 +2386,8 @@ public func FfiConverterTypeDeleteSendError_lower(_ value: DeleteSendError) -> R
 }
 
 
-public enum EditSendError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum EditSendError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -1936,8 +2524,106 @@ public func FfiConverterTypeEditSendError_lower(_ value: EditSendError) -> RustB
     return FfiConverterTypeEditSendError.lower(value)
 }
 
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
+public 
+enum FetchSendError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+
+    
+    
+    case Api(message: String)
+    
+    case MissingField(message: String)
+    
+    case Repository(message: String)
+    
+    case SendParse(message: String)
+    
+
+    
+
+    
+
+    
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+    
+}
+
+#if compiler(>=6)
+extension FetchSendError: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFetchSendError: FfiConverterRustBuffer {
+    typealias SwiftType = FetchSendError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FetchSendError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .Api(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 2: return .MissingField(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 3: return .Repository(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 4: return .SendParse(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: FetchSendError, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        case .Api(_ /* message is ignored*/):
+            writeInt(&buf, Int32(1))
+        case .MissingField(_ /* message is ignored*/):
+            writeInt(&buf, Int32(2))
+        case .Repository(_ /* message is ignored*/):
+            writeInt(&buf, Int32(3))
+        case .SendParse(_ /* message is ignored*/):
+            writeInt(&buf, Int32(4))
+
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFetchSendError_lift(_ buf: RustBuffer) throws -> FetchSendError {
+    return try FfiConverterTypeFetchSendError.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFetchSendError_lower(_ value: FetchSendError) -> RustBuffer {
+    return FfiConverterTypeFetchSendError.lower(value)
+}
+
+
 /**
  * Where the client should upload the encrypted file bytes after [`SendClient::create_file_send`].
  */
@@ -2016,9 +2702,16 @@ public func FfiConverterTypeFileUploadType_lower(_ value: FileUploadType) -> Rus
 /**
  * Error returned when getting send file download data fails.
  */
-public enum GetFileDownloadDataError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum GetFileDownloadDataError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
+    
+    /**
+     * The send or its file does not exist, has expired, or has been deleted (the server
+     * answered 404).
+     */
+    case NotFound(message: String)
     
     /**
      * An API or network error occurred.
@@ -2054,7 +2747,11 @@ public struct FfiConverterTypeGetFileDownloadDataError: FfiConverterRustBuffer {
         
 
         
-        case 1: return .Api(
+        case 1: return .NotFound(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 2: return .Api(
             message: try FfiConverterString.read(from: &buf)
         )
         
@@ -2069,8 +2766,10 @@ public struct FfiConverterTypeGetFileDownloadDataError: FfiConverterRustBuffer {
         
 
         
-        case .Api(_ /* message is ignored*/):
+        case .NotFound(_ /* message is ignored*/):
             writeInt(&buf, Int32(1))
+        case .Api(_ /* message is ignored*/):
+            writeInt(&buf, Int32(2))
 
         
         }
@@ -2093,7 +2792,8 @@ public func FfiConverterTypeGetFileDownloadDataError_lower(_ value: GetFileDownl
 }
 
 
-public enum GetSendError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum GetSendError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -2191,7 +2891,8 @@ public func FfiConverterTypeGetSendError_lower(_ value: GetSendError) -> RustBuf
 }
 
 
-public enum RemoveSendPasswordError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum RemoveSendPasswordError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -2297,7 +2998,8 @@ public func FfiConverterTypeRemoveSendPasswordError_lower(_ value: RemoveSendPas
 }
 
 
-public enum RenewFileUploadUrlError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum RenewFileUploadUrlError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -2389,7 +3091,8 @@ public func FfiConverterTypeRenewFileUploadUrlError_lower(_ value: RenewFileUplo
  * Error returned when decrypting an anonymous send access response or file blob fails.
  * Wraps [`CryptoError`], which never embeds plaintext or key material in its messages.
  */
-public enum SendAccessDecryptError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum SendAccessDecryptError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -2398,6 +3101,11 @@ public enum SendAccessDecryptError: Swift.Error, Equatable, Hashable, Foundation
      * decrypt it (wrong key, or a tampered response).
      */
     case Crypto(message: String)
+    
+    /**
+     * The key could not be derived from the URL fragment
+     */
+    case Key(message: String)
     
 
     
@@ -2432,6 +3140,10 @@ public struct FfiConverterTypeSendAccessDecryptError: FfiConverterRustBuffer {
             message: try FfiConverterString.read(from: &buf)
         )
         
+        case 2: return .Key(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
 
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -2445,6 +3157,8 @@ public struct FfiConverterTypeSendAccessDecryptError: FfiConverterRustBuffer {
         
         case .Crypto(_ /* message is ignored*/):
             writeInt(&buf, Int32(1))
+        case .Key(_ /* message is ignored*/):
+            writeInt(&buf, Int32(2))
 
         
         }
@@ -2471,7 +3185,8 @@ public func FfiConverterTypeSendAccessDecryptError_lower(_ value: SendAccessDecr
  * Error returned when the key from a send URL fragment cannot be turned into a
  * [`SendAccessKey`]. Deliberately carries no key material.
  */
-public enum SendAccessKeyError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum SendAccessKeyError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -2558,8 +3273,7 @@ public func FfiConverterTypeSendAccessKeyError_lower(_ value: SendAccessKeyError
     return FfiConverterTypeSendAccessKeyError.lower(value)
 }
 
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
 /**
  * Type-safe authentication method for a Send, including the authentication data.
  * This ensures that password and email authentication are mutually exclusive.
@@ -2682,7 +3396,8 @@ public func FfiConverterTypeSendAuthType_lower(_ value: SendAuthType) -> RustBuf
 /**
  * Generic error type for send decryption errors
  */
-public enum SendDecryptError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum SendDecryptError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -2759,7 +3474,8 @@ public func FfiConverterTypeSendDecryptError_lower(_ value: SendDecryptError) ->
 /**
  * Generic error type for send decryption errors
  */
-public enum SendDecryptFileError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum SendDecryptFileError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -2844,7 +3560,8 @@ public func FfiConverterTypeSendDecryptFileError_lower(_ value: SendDecryptFileE
 /**
  * Generic error type for send encryption errors.
  */
-public enum SendEncryptError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum SendEncryptError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -2921,7 +3638,8 @@ public func FfiConverterTypeSendEncryptError_lower(_ value: SendEncryptError) ->
 /**
  * Generic error type for send encryption errors.
  */
-public enum SendEncryptFileError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum SendEncryptFileError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -3002,10 +3720,152 @@ public func FfiConverterTypeSendEncryptFileError_lower(_ value: SendEncryptFileE
     return FfiConverterTypeSendEncryptFileError.lower(value)
 }
 
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
 /**
- * The type of Send, either text or file
+ * Indicates the version of Send data encryption that is being used
+ */
+
+public enum SendEncryptionType: UInt8, Equatable, Hashable {
+    
+    /**
+     * V1 encryption (field by field)
+     */
+    case v1 = 1
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension SendEncryptionType: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSendEncryptionType: FfiConverterRustBuffer {
+    typealias SwiftType = SendEncryptionType
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SendEncryptionType {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .v1
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: SendEncryptionType, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .v1:
+            writeInt(&buf, Int32(1))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSendEncryptionType_lift(_ buf: RustBuffer) throws -> SendEncryptionType {
+    return try FfiConverterTypeSendEncryptionType.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSendEncryptionType_lower(_ value: SendEncryptionType) -> RustBuffer {
+    return FfiConverterTypeSendEncryptionType.lower(value)
+}
+
+
+
+/**
+ * Errors returned by [`SendSyncHandlerClient::on_sync`].
+ */
+public 
+enum SendSyncError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+
+    
+    
+    case Repository(message: String)
+    
+
+    
+
+    
+
+    
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+    
+}
+
+#if compiler(>=6)
+extension SendSyncError: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSendSyncError: FfiConverterRustBuffer {
+    typealias SwiftType = SendSyncError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SendSyncError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .Repository(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: SendSyncError, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        case .Repository(_ /* message is ignored*/):
+            writeInt(&buf, Int32(1))
+
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSendSyncError_lift(_ buf: RustBuffer) throws -> SendSyncError {
+    return try FfiConverterTypeSendSyncError.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSendSyncError_lower(_ value: SendSyncError) -> RustBuffer {
+    return FfiConverterTypeSendSyncError.lower(value)
+}
+
+
+/**
+ * The type of Send, either text, file, or item
  */
 
 public enum SendType: UInt8, Equatable, Hashable {
@@ -3089,7 +3949,8 @@ public func FfiConverterTypeSendType_lower(_ value: SendType) -> RustBuffer {
 
 
 
-public enum UploadSendFileError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+public 
+enum UploadSendFileError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -3286,6 +4147,54 @@ fileprivate struct FfiConverterOptionTypeSendFileView: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeSendItem: FfiConverterRustBuffer {
+    typealias SwiftType = SendItem?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeSendItem.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeSendItem.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeSendItemView: FfiConverterRustBuffer {
+    typealias SwiftType = SendItemView?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeSendItemView.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeSendItemView.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeSendText: FfiConverterRustBuffer {
     typealias SwiftType = SendText?
 
@@ -3326,6 +4235,54 @@ fileprivate struct FfiConverterOptionTypeSendTextView: FfiConverterRustBuffer {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypeSendTextView.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionSequenceString: FfiConverterRustBuffer {
+    typealias SwiftType = [String]?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterSequenceString.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterSequenceString.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionSequenceTypeEncString: FfiConverterRustBuffer {
+    typealias SwiftType = [EncString]?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterSequenceTypeEncString.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterSequenceTypeEncString.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -3428,11 +4385,57 @@ fileprivate struct FfiConverterSequenceString: FfiConverterRustBuffer {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeSend: FfiConverterRustBuffer {
+    typealias SwiftType = [Send]
 
-/**
- * Typealias from the type name used in the UDL file to the builtin type.  This
- * is needed because the UDL type name is used in function/method signatures.
- */
+    public static func write(_ value: [Send], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeSend.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Send] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [Send]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeSend.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeEncString: FfiConverterRustBuffer {
+    typealias SwiftType = [EncString]
+
+    public static func write(_ value: [EncString], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeEncString.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [EncString] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [EncString]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeEncString.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+
 public typealias SendId = Uuid
 
 #if swift(>=5.8)
@@ -3471,6 +4474,54 @@ public func FfiConverterTypeSendId_lower(_ value: SendId) -> RustBuffer {
     return FfiConverterTypeSendId.lower(value)
 }
 
+private let UNIFFI_RUST_FUTURE_POLL_READY: Int8 = 0
+private let UNIFFI_RUST_FUTURE_POLL_WAKE: Int8 = 1
+
+fileprivate let uniffiContinuationHandleMap = UniffiHandleMap<UnsafeContinuation<Int8, Never>>()
+
+fileprivate func uniffiRustCallAsync<F, T>(
+    rustFutureFunc: () -> UInt64,
+    pollFunc: (UInt64, @escaping UniffiRustFutureContinuationCallback, UInt64) -> (),
+    completeFunc: (UInt64, UnsafeMutablePointer<RustCallStatus>) -> F,
+    freeFunc: (UInt64) -> (),
+    liftFunc: (F) throws -> T,
+    errorHandler: ((RustBuffer) throws -> Swift.Error)?
+) async throws -> T {
+    // Make sure to call the ensure init function since future creation doesn't have a
+    // RustCallStatus param, so doesn't use makeRustCall()
+    uniffiEnsureBitwardenSendInitialized()
+    let rustFuture = rustFutureFunc()
+    defer {
+        freeFunc(rustFuture)
+    }
+    var pollResult: Int8;
+    repeat {
+        pollResult = await withUnsafeContinuation {
+            pollFunc(
+                rustFuture,
+                { handle, pollResult in
+                    uniffiFutureContinuationCallback(handle: handle, pollResult: pollResult)
+                },
+                uniffiContinuationHandleMap.insert(obj: $0)
+            )
+        }
+    } while pollResult != UNIFFI_RUST_FUTURE_POLL_READY
+
+    return try liftFunc(makeRustCall(
+        { completeFunc(rustFuture, $0) },
+        errorHandler: errorHandler
+    ))
+}
+
+// Callback handlers for an async calls.  These are invoked by Rust when the future is ready.  They
+// lift the return value or error and resume the suspended function.
+fileprivate func uniffiFutureContinuationCallback(handle: UInt64, pollResult: Int8) {
+    if let continuation = try? uniffiContinuationHandleMap.remove(handle: handle) {
+        continuation.resume(returning: pollResult)
+    } else {
+        print("uniffiFutureContinuationCallback invalid handle")
+    }
+}
 
 private enum InitializationResult {
     case ok
@@ -3487,9 +4538,13 @@ private let initializationResult: InitializationResult = {
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
     }
+    if (uniffi_bitwarden_send_checksum_method_sendsynchandlerclient_on_sync() != 54989) {
+        return InitializationResult.apiChecksumMismatch
+    }
 
     uniffiEnsureBitwardenCoreInitialized()
     uniffiEnsureBitwardenCryptoInitialized()
+    uniffiEnsureBitwardenVaultInitialized()
     return InitializationResult.ok
 }()
 

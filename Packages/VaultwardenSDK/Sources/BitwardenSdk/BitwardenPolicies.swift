@@ -39,6 +39,52 @@ fileprivate extension ForeignBytes {
     init(bufferPointer: UnsafeBufferPointer<UInt8>) {
         self.init(len: Int32(bufferPointer.count), data: bufferPointer.baseAddress)
     }
+
+    init(rawBufferPointer: UnsafeRawBufferPointer) {
+        self.init(
+            len: Int32(rawBufferPointer.count),
+            data: rawBufferPointer.baseAddress?.assumingMemoryBound(to: UInt8.self)
+        )
+    }
+}
+
+// Converter for `&[u8]` / `[ByRef] bytes` arguments.
+//
+// Conforms to `FfiConverter` so the compiler enforces the full converter
+// method set. Only the scope-bound `lower(_:_body:)` overload is sound —
+// zero-copy byte buffers only flow foreign -> Rust, and only in argument
+// position. The four protocol-witness methods (`lift`, `lower`, `read`,
+// `write`) `fatalError` at runtime if anyone reaches them.
+//
+// The scope-bound `lower` takes a closure because the `ForeignBytes`
+// pointer is only guaranteed valid for the duration of
+// `Data.withUnsafeBytes`. Callers must run the full FFI call inside
+// the closure body.
+fileprivate enum FfiConverterByRefBytes: FfiConverter {
+    typealias SwiftType = Data
+    typealias FfiType = ForeignBytes
+
+    static func lower<R>(_ value: Data, _ body: (ForeignBytes) throws -> R) rethrows -> R {
+        return try value.withUnsafeBytes { rawBuf in
+            try body(ForeignBytes(rawBufferPointer: rawBuf))
+        }
+    }
+
+    static func lower(_ value: Data) -> ForeignBytes {
+        fatalError("ByRef bytes cannot use the plain lower: returning ForeignBytes escapes the Data.withUnsafeBytes scope. Use the scope-bound lower(_:_body:) overload instead.")
+    }
+
+    static func lift(_ value: ForeignBytes) throws -> Data {
+        fatalError("ByRef bytes cannot be lifted: zero-copy &[u8] only flows foreign->Rust")
+    }
+
+    static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Data {
+        fatalError("ByRef bytes cannot be read from a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+    }
+
+    static func write(_ value: Data, into buf: inout [UInt8]) {
+        fatalError("ByRef bytes cannot be written to a buffer: zero-copy &[u8] is only supported in argument position, not nested in records/options/etc.")
+    }
 }
 
 // For every type used in the interface, we provide helper methods for conveniently
@@ -471,7 +517,11 @@ fileprivate struct FfiConverterString: FfiConverter {
             return String()
         }
         let bytes = UnsafeBufferPointer<UInt8>(start: value.data!, count: Int(value.len))
-        return String(bytes: bytes, encoding: String.Encoding.utf8)!
+        // Use Swift's native UTF-8 decoder; `String(bytes:encoding:.utf8)` goes
+        // through Foundation's NSString and silently strips a leading U+FEFF BOM.
+        // Invalid UTF-8 substitutes U+FFFD instead of trapping (unreachable
+        // given Rust's `String` invariant).
+        return String(decoding: bytes, as: UTF8.self)
     }
 
     public static func lower(_ value: String) -> RustBuffer {
@@ -487,7 +537,8 @@ fileprivate struct FfiConverterString: FfiConverter {
 
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> String {
         let len: Int32 = try readInt(&buf)
-        return String(bytes: try readBytes(&buf, count: Int(len)), encoding: String.Encoding.utf8)!
+        // See `lift` above for why we avoid Foundation's NSString-backed decoder here.
+        return String(decoding: try readBytes(&buf, count: Int(len)), as: UTF8.self)
     }
 
     public static func write(_ value: String, into buf: inout [UInt8]) {
@@ -506,12 +557,17 @@ fileprivate struct FfiConverterTimestamp: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Date {
         let seconds: Int64 = try readInt(&buf)
         let nanoseconds: UInt32 = try readInt(&buf)
+        // Build the Date from whole seconds first, then add the nanoseconds as a
+        // separate TimeInterval.  Date stores CFAbsoluteTime (seconds since 2001),
+        // so adding a small fraction to the ~7.8e8 base is twice as precise as
+        // adding it to the ~1.76e9 Unix-epoch value, because the smaller magnitude
+        // leaves more mantissa bits for the sub-second part.
         if seconds >= 0 {
-            let delta = Double(seconds) + (Double(nanoseconds) / 1.0e9)
-            return Date.init(timeIntervalSince1970: delta)
+            return Date(timeIntervalSince1970: Double(seconds))
+                .addingTimeInterval(Double(nanoseconds) / 1.0e9)
         } else {
-            let delta = Double(seconds) - (Double(nanoseconds) / 1.0e9)
-            return Date.init(timeIntervalSince1970: delta)
+            return Date(timeIntervalSince1970: Double(seconds))
+                .addingTimeInterval(-Double(nanoseconds) / 1.0e9)
         }
     }
 
@@ -537,11 +593,137 @@ fileprivate struct FfiConverterTimestamp: FfiConverterRustBuffer {
 
 
 /**
- * SDK domain model for master password policy requirements.
- * Defines the complexity requirements for a user's master password
- * when enforced by an organization policy.
+ * Configuration data for the Automatic App Log-in policy.
  */
-public struct MasterPasswordPolicyResponse: Equatable, Hashable {
+public struct AutomaticAppLogInPolicyData: Equatable, Hashable {
+    /**
+     * The identity provider host used for automatic single sign-on into apps.
+     */
+    public let idpHost: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * The identity provider host used for automatic single sign-on into apps.
+         */idpHost: String?) {
+        self.idpHost = idpHost
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension AutomaticAppLogInPolicyData: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeAutomaticAppLogInPolicyData: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AutomaticAppLogInPolicyData {
+        return
+            try AutomaticAppLogInPolicyData(
+                idpHost: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: AutomaticAppLogInPolicyData, into buf: inout [UInt8]) {
+        FfiConverterOptionString.write(value.idpHost, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAutomaticAppLogInPolicyData_lift(_ buf: RustBuffer) throws -> AutomaticAppLogInPolicyData {
+    return try FfiConverterTypeAutomaticAppLogInPolicyData.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAutomaticAppLogInPolicyData_lower(_ value: AutomaticAppLogInPolicyData) -> RustBuffer {
+    return FfiConverterTypeAutomaticAppLogInPolicyData.lower(value)
+}
+
+
+/**
+ * Configuration data for the Fill Assist policy.
+ */
+public struct FillAssistPolicyData: Equatable, Hashable {
+    /**
+     * Overrides the default Fill Assist rules feed URL. Absent when the organization has
+     * not configured a custom URL, in which case clients fall back to their server
+     * configuration or the built-in default.
+     */
+    public let rulesUrl: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Overrides the default Fill Assist rules feed URL. Absent when the organization has
+         * not configured a custom URL, in which case clients fall back to their server
+         * configuration or the built-in default.
+         */rulesUrl: String?) {
+        self.rulesUrl = rulesUrl
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension FillAssistPolicyData: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFillAssistPolicyData: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FillAssistPolicyData {
+        return
+            try FillAssistPolicyData(
+                rulesUrl: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: FillAssistPolicyData, into buf: inout [UInt8]) {
+        FfiConverterOptionString.write(value.rulesUrl, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFillAssistPolicyData_lift(_ buf: RustBuffer) throws -> FillAssistPolicyData {
+    return try FfiConverterTypeFillAssistPolicyData.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFillAssistPolicyData_lower(_ value: FillAssistPolicyData) -> RustBuffer {
+    return FfiConverterTypeFillAssistPolicyData.lower(value)
+}
+
+
+/**
+ * The complexity requirements an organization enforces on members' master
+ * passwords.
+ *
+ * This models the same information the server delivers two ways: as the
+ * policy's saved JSON `data` blob (parsed for enforcement) and as the typed
+ * [`MasterPasswordPolicyResponseModel`] returned at login (bridged via
+ * [`From`]).
+ */
+public struct MasterPasswordPolicyData: Equatable, Hashable {
     /**
      * The minimum complexity score required for the master password.
      * Complexity is calculated based on password strength metrics.
@@ -616,16 +798,16 @@ public struct MasterPasswordPolicyResponse: Equatable, Hashable {
 }
 
 #if compiler(>=6)
-extension MasterPasswordPolicyResponse: Sendable {}
+extension MasterPasswordPolicyData: Sendable {}
 #endif
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeMasterPasswordPolicyResponse: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> MasterPasswordPolicyResponse {
+public struct FfiConverterTypeMasterPasswordPolicyData: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> MasterPasswordPolicyData {
         return
-            try MasterPasswordPolicyResponse(
+            try MasterPasswordPolicyData(
                 minComplexity: FfiConverterOptionInt32.read(from: &buf), 
                 minLength: FfiConverterOptionInt32.read(from: &buf), 
                 requireLower: FfiConverterOptionBool.read(from: &buf), 
@@ -636,7 +818,7 @@ public struct FfiConverterTypeMasterPasswordPolicyResponse: FfiConverterRustBuff
         )
     }
 
-    public static func write(_ value: MasterPasswordPolicyResponse, into buf: inout [UInt8]) {
+    public static func write(_ value: MasterPasswordPolicyData, into buf: inout [UInt8]) {
         FfiConverterOptionInt32.write(value.minComplexity, into: &buf)
         FfiConverterOptionInt32.write(value.minLength, into: &buf)
         FfiConverterOptionBool.write(value.requireLower, into: &buf)
@@ -651,28 +833,260 @@ public struct FfiConverterTypeMasterPasswordPolicyResponse: FfiConverterRustBuff
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeMasterPasswordPolicyResponse_lift(_ buf: RustBuffer) throws -> MasterPasswordPolicyResponse {
-    return try FfiConverterTypeMasterPasswordPolicyResponse.lift(buf)
+public func FfiConverterTypeMasterPasswordPolicyData_lift(_ buf: RustBuffer) throws -> MasterPasswordPolicyData {
+    return try FfiConverterTypeMasterPasswordPolicyData.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeMasterPasswordPolicyResponse_lower(_ value: MasterPasswordPolicyResponse) -> RustBuffer {
-    return FfiConverterTypeMasterPasswordPolicyResponse.lower(value)
+public func FfiConverterTypeMasterPasswordPolicyData_lower(_ value: MasterPasswordPolicyData) -> RustBuffer {
+    return FfiConverterTypeMasterPasswordPolicyData.lower(value)
+}
+
+
+/**
+ * Configuration data for the Maximum Vault Timeout policy.
+ */
+public struct MaximumVaultTimeoutPolicyData: Equatable, Hashable {
+    /**
+     * The kind of vault timeout enforced. Serialized as `type` on the wire.
+     */
+    public let timeoutType: VaultTimeoutType?
+    /**
+     * The maximum allowed vault timeout, in minutes.
+     */
+    public let minutes: Int32?
+    /**
+     * The action taken when the vault times out.
+     */
+    public let action: VaultTimeoutAction?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * The kind of vault timeout enforced. Serialized as `type` on the wire.
+         */timeoutType: VaultTimeoutType?, 
+        /**
+         * The maximum allowed vault timeout, in minutes.
+         */minutes: Int32?, 
+        /**
+         * The action taken when the vault times out.
+         */action: VaultTimeoutAction?) {
+        self.timeoutType = timeoutType
+        self.minutes = minutes
+        self.action = action
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension MaximumVaultTimeoutPolicyData: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeMaximumVaultTimeoutPolicyData: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> MaximumVaultTimeoutPolicyData {
+        return
+            try MaximumVaultTimeoutPolicyData(
+                timeoutType: FfiConverterOptionTypeVaultTimeoutType.read(from: &buf), 
+                minutes: FfiConverterOptionInt32.read(from: &buf), 
+                action: FfiConverterOptionTypeVaultTimeoutAction.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: MaximumVaultTimeoutPolicyData, into buf: inout [UInt8]) {
+        FfiConverterOptionTypeVaultTimeoutType.write(value.timeoutType, into: &buf)
+        FfiConverterOptionInt32.write(value.minutes, into: &buf)
+        FfiConverterOptionTypeVaultTimeoutAction.write(value.action, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeMaximumVaultTimeoutPolicyData_lift(_ buf: RustBuffer) throws -> MaximumVaultTimeoutPolicyData {
+    return try FfiConverterTypeMaximumVaultTimeoutPolicyData.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeMaximumVaultTimeoutPolicyData_lower(_ value: MaximumVaultTimeoutPolicyData) -> RustBuffer {
+    return FfiConverterTypeMaximumVaultTimeoutPolicyData.lower(value)
+}
+
+
+/**
+ * Configuration data for the Organization Data Ownership policy.
+ *
+ * Note: the client also sends a `defaultUserCollectionName` in the request
+ * metadata (not in the policy `data` blob), so it is intentionally not
+ * modeled here.
+ */
+public struct OrganizationDataOwnershipPolicyData: Equatable, Hashable {
+    /**
+     * Whether members may transfer individual items into their personal vault.
+     */
+    public let enableIndividualItemsTransfer: Bool?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Whether members may transfer individual items into their personal vault.
+         */enableIndividualItemsTransfer: Bool?) {
+        self.enableIndividualItemsTransfer = enableIndividualItemsTransfer
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension OrganizationDataOwnershipPolicyData: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeOrganizationDataOwnershipPolicyData: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OrganizationDataOwnershipPolicyData {
+        return
+            try OrganizationDataOwnershipPolicyData(
+                enableIndividualItemsTransfer: FfiConverterOptionBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: OrganizationDataOwnershipPolicyData, into buf: inout [UInt8]) {
+        FfiConverterOptionBool.write(value.enableIndividualItemsTransfer, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOrganizationDataOwnershipPolicyData_lift(_ buf: RustBuffer) throws -> OrganizationDataOwnershipPolicyData {
+    return try FfiConverterTypeOrganizationDataOwnershipPolicyData.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOrganizationDataOwnershipPolicyData_lower(_ value: OrganizationDataOwnershipPolicyData) -> RustBuffer {
+    return FfiConverterTypeOrganizationDataOwnershipPolicyData.lower(value)
+}
+
+
+/**
+ * Configuration data for the Organization User Notification policy: an
+ * organization-configured banner shown to members in their vault.
+ */
+public struct OrganizationUserNotificationPolicyData: Equatable, Hashable {
+    /**
+     * The banner header text.
+     */
+    public let header: String?
+    /**
+     * The banner description text.
+     */
+    public let description: String?
+    /**
+     * The label for the banner's call-to-action button.
+     */
+    public let buttonText: String?
+    /**
+     * Whether the banner is shown after every login rather than once.
+     */
+    public let showAfterEveryLogin: Bool?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * The banner header text.
+         */header: String?, 
+        /**
+         * The banner description text.
+         */description: String?, 
+        /**
+         * The label for the banner's call-to-action button.
+         */buttonText: String?, 
+        /**
+         * Whether the banner is shown after every login rather than once.
+         */showAfterEveryLogin: Bool?) {
+        self.header = header
+        self.description = description
+        self.buttonText = buttonText
+        self.showAfterEveryLogin = showAfterEveryLogin
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension OrganizationUserNotificationPolicyData: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeOrganizationUserNotificationPolicyData: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OrganizationUserNotificationPolicyData {
+        return
+            try OrganizationUserNotificationPolicyData(
+                header: FfiConverterOptionString.read(from: &buf), 
+                description: FfiConverterOptionString.read(from: &buf), 
+                buttonText: FfiConverterOptionString.read(from: &buf), 
+                showAfterEveryLogin: FfiConverterOptionBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: OrganizationUserNotificationPolicyData, into buf: inout [UInt8]) {
+        FfiConverterOptionString.write(value.header, into: &buf)
+        FfiConverterOptionString.write(value.description, into: &buf)
+        FfiConverterOptionString.write(value.buttonText, into: &buf)
+        FfiConverterOptionBool.write(value.showAfterEveryLogin, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOrganizationUserNotificationPolicyData_lift(_ buf: RustBuffer) throws -> OrganizationUserNotificationPolicyData {
+    return try FfiConverterTypeOrganizationUserNotificationPolicyData.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOrganizationUserNotificationPolicyData_lower(_ value: OrganizationUserNotificationPolicyData) -> RustBuffer {
+    return FfiConverterTypeOrganizationUserNotificationPolicyData.lower(value)
 }
 
 
 /**
  * A minimal set of data for a user in an organization. This provides
  * the context needed to evaluate the policies that are applied to the
- * user by the organization.
+ * user.
  */
 public struct OrganizationUserPolicyContext: Equatable, Hashable {
     /**
      * The organization's unique ID.
      */
-    public let id: Uuid
+    public let id: OrganizationId
     /**
      * The user's membership status in the organization.
      */
@@ -700,7 +1114,7 @@ public struct OrganizationUserPolicyContext: Equatable, Hashable {
     public init(
         /**
          * The organization's unique ID.
-         */id: Uuid, 
+         */id: OrganizationId, 
         /**
          * The user's membership status in the organization.
          */status: OrganizationUserStatusType, 
@@ -741,7 +1155,7 @@ public struct FfiConverterTypeOrganizationUserPolicyContext: FfiConverterRustBuf
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OrganizationUserPolicyContext {
         return
             try OrganizationUserPolicyContext(
-                id: FfiConverterTypeUuid.read(from: &buf), 
+                id: FfiConverterTypeOrganizationId.read(from: &buf), 
                 status: FfiConverterTypeOrganizationUserStatusType.read(from: &buf), 
                 role: FfiConverterTypeOrganizationUserType.read(from: &buf), 
                 enabled: FfiConverterBool.read(from: &buf), 
@@ -751,7 +1165,7 @@ public struct FfiConverterTypeOrganizationUserPolicyContext: FfiConverterRustBuf
     }
 
     public static func write(_ value: OrganizationUserPolicyContext, into buf: inout [UInt8]) {
-        FfiConverterTypeUuid.write(value.id, into: &buf)
+        FfiConverterTypeOrganizationId.write(value.id, into: &buf)
         FfiConverterTypeOrganizationUserStatusType.write(value.status, into: &buf)
         FfiConverterTypeOrganizationUserType.write(value.role, into: &buf)
         FfiConverterBool.write(value.enabled, into: &buf)
@@ -777,17 +1191,180 @@ public func FfiConverterTypeOrganizationUserPolicyContext_lower(_ value: Organiz
 
 
 /**
- * An organization policy.
+ * Configuration data for the Password Generator policy. Each field, when set,
+ * enforces a minimum or a required option on the member's generator.
  */
-public struct PolicyView: Equatable, Hashable {
+public struct PasswordGeneratorPolicyData: Equatable, Hashable {
+    /**
+     * Forces the generator type; `None` leaves the choice to the member.
+     */
+    public let overridePasswordType: PasswordGeneratorType?
+    /**
+     * Minimum password length.
+     */
+    public let minLength: Int32?
+    /**
+     * Require uppercase letters.
+     */
+    public let useUpper: Bool?
+    /**
+     * Require lowercase letters.
+     */
+    public let useLower: Bool?
+    /**
+     * Require numbers.
+     */
+    public let useNumbers: Bool?
+    /**
+     * Require special characters.
+     */
+    public let useSpecial: Bool?
+    /**
+     * Minimum number of numeric digits.
+     */
+    public let minNumbers: Int32?
+    /**
+     * Minimum number of special characters.
+     */
+    public let minSpecial: Int32?
+    /**
+     * Minimum number of words (passphrase).
+     */
+    public let minNumberWords: Int32?
+    /**
+     * Require the passphrase to capitalize each word.
+     */
+    public let capitalize: Bool?
+    /**
+     * Require the passphrase to include a number.
+     */
+    public let includeNumber: Bool?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Forces the generator type; `None` leaves the choice to the member.
+         */overridePasswordType: PasswordGeneratorType?, 
+        /**
+         * Minimum password length.
+         */minLength: Int32?, 
+        /**
+         * Require uppercase letters.
+         */useUpper: Bool?, 
+        /**
+         * Require lowercase letters.
+         */useLower: Bool?, 
+        /**
+         * Require numbers.
+         */useNumbers: Bool?, 
+        /**
+         * Require special characters.
+         */useSpecial: Bool?, 
+        /**
+         * Minimum number of numeric digits.
+         */minNumbers: Int32?, 
+        /**
+         * Minimum number of special characters.
+         */minSpecial: Int32?, 
+        /**
+         * Minimum number of words (passphrase).
+         */minNumberWords: Int32?, 
+        /**
+         * Require the passphrase to capitalize each word.
+         */capitalize: Bool?, 
+        /**
+         * Require the passphrase to include a number.
+         */includeNumber: Bool?) {
+        self.overridePasswordType = overridePasswordType
+        self.minLength = minLength
+        self.useUpper = useUpper
+        self.useLower = useLower
+        self.useNumbers = useNumbers
+        self.useSpecial = useSpecial
+        self.minNumbers = minNumbers
+        self.minSpecial = minSpecial
+        self.minNumberWords = minNumberWords
+        self.capitalize = capitalize
+        self.includeNumber = includeNumber
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension PasswordGeneratorPolicyData: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePasswordGeneratorPolicyData: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PasswordGeneratorPolicyData {
+        return
+            try PasswordGeneratorPolicyData(
+                overridePasswordType: FfiConverterOptionTypePasswordGeneratorType.read(from: &buf), 
+                minLength: FfiConverterOptionInt32.read(from: &buf), 
+                useUpper: FfiConverterOptionBool.read(from: &buf), 
+                useLower: FfiConverterOptionBool.read(from: &buf), 
+                useNumbers: FfiConverterOptionBool.read(from: &buf), 
+                useSpecial: FfiConverterOptionBool.read(from: &buf), 
+                minNumbers: FfiConverterOptionInt32.read(from: &buf), 
+                minSpecial: FfiConverterOptionInt32.read(from: &buf), 
+                minNumberWords: FfiConverterOptionInt32.read(from: &buf), 
+                capitalize: FfiConverterOptionBool.read(from: &buf), 
+                includeNumber: FfiConverterOptionBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: PasswordGeneratorPolicyData, into buf: inout [UInt8]) {
+        FfiConverterOptionTypePasswordGeneratorType.write(value.overridePasswordType, into: &buf)
+        FfiConverterOptionInt32.write(value.minLength, into: &buf)
+        FfiConverterOptionBool.write(value.useUpper, into: &buf)
+        FfiConverterOptionBool.write(value.useLower, into: &buf)
+        FfiConverterOptionBool.write(value.useNumbers, into: &buf)
+        FfiConverterOptionBool.write(value.useSpecial, into: &buf)
+        FfiConverterOptionInt32.write(value.minNumbers, into: &buf)
+        FfiConverterOptionInt32.write(value.minSpecial, into: &buf)
+        FfiConverterOptionInt32.write(value.minNumberWords, into: &buf)
+        FfiConverterOptionBool.write(value.capitalize, into: &buf)
+        FfiConverterOptionBool.write(value.includeNumber, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePasswordGeneratorPolicyData_lift(_ buf: RustBuffer) throws -> PasswordGeneratorPolicyData {
+    return try FfiConverterTypePasswordGeneratorPolicyData.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePasswordGeneratorPolicyData_lower(_ value: PasswordGeneratorPolicyData) -> RustBuffer {
+    return FfiConverterTypePasswordGeneratorPolicyData.lower(value)
+}
+
+
+/**
+ * An organization policy in the raw data format that is sent over the FFI.
+ *
+ * This is the storage-layer record. It is resolved into a strongly-typed,
+ * per-policy projection at the enforcement boundary.
+ */
+public struct Policy: Equatable, Hashable {
     /**
      * The policy's unique ID.
      */
-    public let id: Uuid
+    public let id: PolicyId
     /**
      * The organization this policy belongs to.
      */
-    public let organizationId: Uuid
+    public let organizationId: OrganizationId
     /**
      * The type of policy.
      */
@@ -810,10 +1387,10 @@ public struct PolicyView: Equatable, Hashable {
     public init(
         /**
          * The policy's unique ID.
-         */id: Uuid, 
+         */id: PolicyId, 
         /**
          * The organization this policy belongs to.
-         */organizationId: Uuid, 
+         */organizationId: OrganizationId, 
         /**
          * The type of policy.
          */type: PolicyType, 
@@ -840,18 +1417,18 @@ public struct PolicyView: Equatable, Hashable {
 }
 
 #if compiler(>=6)
-extension PolicyView: Sendable {}
+extension Policy: Sendable {}
 #endif
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypePolicyView: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PolicyView {
+public struct FfiConverterTypePolicy: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Policy {
         return
-            try PolicyView(
-                id: FfiConverterTypeUuid.read(from: &buf), 
-                organizationId: FfiConverterTypeUuid.read(from: &buf), 
+            try Policy(
+                id: FfiConverterTypePolicyId.read(from: &buf), 
+                organizationId: FfiConverterTypeOrganizationId.read(from: &buf), 
                 type: FfiConverterTypePolicyType.read(from: &buf), 
                 data: FfiConverterOptionString.read(from: &buf), 
                 enabled: FfiConverterBool.read(from: &buf), 
@@ -859,9 +1436,9 @@ public struct FfiConverterTypePolicyView: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: PolicyView, into buf: inout [UInt8]) {
-        FfiConverterTypeUuid.write(value.id, into: &buf)
-        FfiConverterTypeUuid.write(value.organizationId, into: &buf)
+    public static func write(_ value: Policy, into buf: inout [UInt8]) {
+        FfiConverterTypePolicyId.write(value.id, into: &buf)
+        FfiConverterTypeOrganizationId.write(value.organizationId, into: &buf)
         FfiConverterTypePolicyType.write(value.type, into: &buf)
         FfiConverterOptionString.write(value.data, into: &buf)
         FfiConverterBool.write(value.enabled, into: &buf)
@@ -873,19 +1450,558 @@ public struct FfiConverterTypePolicyView: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypePolicyView_lift(_ buf: RustBuffer) throws -> PolicyView {
-    return try FfiConverterTypePolicyView.lift(buf)
+public func FfiConverterTypePolicy_lift(_ buf: RustBuffer) throws -> Policy {
+    return try FfiConverterTypePolicy.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypePolicyView_lower(_ value: PolicyView) -> RustBuffer {
-    return FfiConverterTypePolicyView.lower(value)
+public func FfiConverterTypePolicy_lower(_ value: Policy) -> RustBuffer {
+    return FfiConverterTypePolicy.lower(value)
 }
 
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
+/**
+ * The FFI-facing counterpart of the native `PolicyDecision`, with its
+ * strongly-typed `data` erased to [`PolicyDataType`] so it can cross the
+ * binding boundary.
+ */
+public struct PolicyDecisionErased: Equatable, Hashable {
+    /**
+     * The organization this enforcement decision is for.
+     */
+    public let organizationId: OrganizationId
+    /**
+     * The policy data, if any.
+     */
+    public let data: PolicyDataType
+    /**
+     * Whether the policy is being enforced against the current user for this
+     * organization.
+     */
+    public let enforced: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * The organization this enforcement decision is for.
+         */organizationId: OrganizationId, 
+        /**
+         * The policy data, if any.
+         */data: PolicyDataType, 
+        /**
+         * Whether the policy is being enforced against the current user for this
+         * organization.
+         */enforced: Bool) {
+        self.organizationId = organizationId
+        self.data = data
+        self.enforced = enforced
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension PolicyDecisionErased: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePolicyDecisionErased: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PolicyDecisionErased {
+        return
+            try PolicyDecisionErased(
+                organizationId: FfiConverterTypeOrganizationId.read(from: &buf), 
+                data: FfiConverterTypePolicyDataType.read(from: &buf), 
+                enforced: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: PolicyDecisionErased, into buf: inout [UInt8]) {
+        FfiConverterTypeOrganizationId.write(value.organizationId, into: &buf)
+        FfiConverterTypePolicyDataType.write(value.data, into: &buf)
+        FfiConverterBool.write(value.enforced, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePolicyDecisionErased_lift(_ buf: RustBuffer) throws -> PolicyDecisionErased {
+    return try FfiConverterTypePolicyDecisionErased.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePolicyDecisionErased_lower(_ value: PolicyDecisionErased) -> RustBuffer {
+    return FfiConverterTypePolicyDecisionErased.lower(value)
+}
+
+
+/**
+ * Configuration data for the Account Recovery Administration policy.
+ */
+public struct ResetPasswordPolicyData: Equatable, Hashable {
+    /**
+     * Whether members are automatically enrolled in account recovery when
+     * they join the organization.
+     */
+    public let autoEnrollEnabled: Bool?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Whether members are automatically enrolled in account recovery when
+         * they join the organization.
+         */autoEnrollEnabled: Bool?) {
+        self.autoEnrollEnabled = autoEnrollEnabled
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension ResetPasswordPolicyData: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeResetPasswordPolicyData: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ResetPasswordPolicyData {
+        return
+            try ResetPasswordPolicyData(
+                autoEnrollEnabled: FfiConverterOptionBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ResetPasswordPolicyData, into buf: inout [UInt8]) {
+        FfiConverterOptionBool.write(value.autoEnrollEnabled, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeResetPasswordPolicyData_lift(_ buf: RustBuffer) throws -> ResetPasswordPolicyData {
+    return try FfiConverterTypeResetPasswordPolicyData.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeResetPasswordPolicyData_lower(_ value: ResetPasswordPolicyData) -> RustBuffer {
+    return FfiConverterTypeResetPasswordPolicyData.lower(value)
+}
+
+
+/**
+ * Configuration data for the Send Options policy.
+ */
+public struct SendOptionsPolicyData: Equatable, Hashable {
+    /**
+     * Whether members are prevented from hiding their email address from
+     * Send recipients.
+     */
+    public let disableHideEmail: Bool?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Whether members are prevented from hiding their email address from
+         * Send recipients.
+         */disableHideEmail: Bool?) {
+        self.disableHideEmail = disableHideEmail
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension SendOptionsPolicyData: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSendOptionsPolicyData: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SendOptionsPolicyData {
+        return
+            try SendOptionsPolicyData(
+                disableHideEmail: FfiConverterOptionBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: SendOptionsPolicyData, into buf: inout [UInt8]) {
+        FfiConverterOptionBool.write(value.disableHideEmail, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSendOptionsPolicyData_lift(_ buf: RustBuffer) throws -> SendOptionsPolicyData {
+    return try FfiConverterTypeSendOptionsPolicyData.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSendOptionsPolicyData_lower(_ value: SendOptionsPolicyData) -> RustBuffer {
+    return FfiConverterTypeSendOptionsPolicyData.lower(value)
+}
+
+
+/**
+ * The generator type the policy forces members to use, overriding their own
+ * preference.
+ */
+
+public enum PasswordGeneratorType: Equatable, Hashable {
+    
+    /**
+     * Force the password generator.
+     */
+    case password
+    /**
+     * Force the passphrase generator.
+     */
+    case passphrase
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension PasswordGeneratorType: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePasswordGeneratorType: FfiConverterRustBuffer {
+    typealias SwiftType = PasswordGeneratorType
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PasswordGeneratorType {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .password
+        
+        case 2: return .passphrase
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: PasswordGeneratorType, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .password:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .passphrase:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePasswordGeneratorType_lift(_ buf: RustBuffer) throws -> PasswordGeneratorType {
+    return try FfiConverterTypePasswordGeneratorType.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePasswordGeneratorType_lower(_ value: PasswordGeneratorType) -> RustBuffer {
+    return FfiConverterTypePasswordGeneratorType.lower(value)
+}
+
+
+
+/**
+ * Type-erased policy type + data for crossing the FFI boundary.
+ *
+ * Each variant carries the strongly-typed data for one policy, mirroring the
+ * generic `Policy::Data` used on the native side. Variants are
+ * named identically to (and documented by) the matching [`PolicyType`] variant.
+ *
+ * The discriminator is serialized under `_policyType` rather than `type` so it
+ * cannot collide with a policy data field named `type` (e.g.
+ * [`MaximumVaultTimeoutPolicyData`]), which the internally-tagged
+ * representation flattens alongside the discriminator.
+ */
+
+public enum PolicyDataType: Equatable, Hashable {
+    
+    case twoFactorAuthentication
+    case masterPassword(MasterPasswordPolicyData
+    )
+    case passwordGenerator(PasswordGeneratorPolicyData
+    )
+    case singleOrg
+    case requireSso
+    case organizationDataOwnership(OrganizationDataOwnershipPolicyData
+    )
+    case disableSend
+    case sendOptions(SendOptionsPolicyData
+    )
+    case resetPassword(ResetPasswordPolicyData
+    )
+    case maximumVaultTimeout(MaximumVaultTimeoutPolicyData
+    )
+    case disablePersonalVaultExport
+    case activateAutofill
+    case automaticAppLogIn(AutomaticAppLogInPolicyData
+    )
+    case freeFamiliesSponsorship
+    case removeUnlockWithPin
+    case restrictedItemTypes
+    case uriMatchDefaults
+    case autotypeDefaultSetting
+    case automaticUserConfirmation
+    case blockClaimedDomainAccountCreation
+    case organizationUserNotification(OrganizationUserNotificationPolicyData
+    )
+    case sendControls
+    case fillAssist(FillAssistPolicyData
+    )
+    case autotypeGaPolicy
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension PolicyDataType: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePolicyDataType: FfiConverterRustBuffer {
+    typealias SwiftType = PolicyDataType
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PolicyDataType {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .twoFactorAuthentication
+        
+        case 2: return .masterPassword(try FfiConverterTypeMasterPasswordPolicyData.read(from: &buf)
+        )
+        
+        case 3: return .passwordGenerator(try FfiConverterTypePasswordGeneratorPolicyData.read(from: &buf)
+        )
+        
+        case 4: return .singleOrg
+        
+        case 5: return .requireSso
+        
+        case 6: return .organizationDataOwnership(try FfiConverterTypeOrganizationDataOwnershipPolicyData.read(from: &buf)
+        )
+        
+        case 7: return .disableSend
+        
+        case 8: return .sendOptions(try FfiConverterTypeSendOptionsPolicyData.read(from: &buf)
+        )
+        
+        case 9: return .resetPassword(try FfiConverterTypeResetPasswordPolicyData.read(from: &buf)
+        )
+        
+        case 10: return .maximumVaultTimeout(try FfiConverterTypeMaximumVaultTimeoutPolicyData.read(from: &buf)
+        )
+        
+        case 11: return .disablePersonalVaultExport
+        
+        case 12: return .activateAutofill
+        
+        case 13: return .automaticAppLogIn(try FfiConverterTypeAutomaticAppLogInPolicyData.read(from: &buf)
+        )
+        
+        case 14: return .freeFamiliesSponsorship
+        
+        case 15: return .removeUnlockWithPin
+        
+        case 16: return .restrictedItemTypes
+        
+        case 17: return .uriMatchDefaults
+        
+        case 18: return .autotypeDefaultSetting
+        
+        case 19: return .automaticUserConfirmation
+        
+        case 20: return .blockClaimedDomainAccountCreation
+        
+        case 21: return .organizationUserNotification(try FfiConverterTypeOrganizationUserNotificationPolicyData.read(from: &buf)
+        )
+        
+        case 22: return .sendControls
+        
+        case 23: return .fillAssist(try FfiConverterTypeFillAssistPolicyData.read(from: &buf)
+        )
+        
+        case 24: return .autotypeGaPolicy
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: PolicyDataType, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .twoFactorAuthentication:
+            writeInt(&buf, Int32(1))
+        
+        
+        case let .masterPassword(v1):
+            writeInt(&buf, Int32(2))
+            FfiConverterTypeMasterPasswordPolicyData.write(v1, into: &buf)
+            
+        
+        case let .passwordGenerator(v1):
+            writeInt(&buf, Int32(3))
+            FfiConverterTypePasswordGeneratorPolicyData.write(v1, into: &buf)
+            
+        
+        case .singleOrg:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .requireSso:
+            writeInt(&buf, Int32(5))
+        
+        
+        case let .organizationDataOwnership(v1):
+            writeInt(&buf, Int32(6))
+            FfiConverterTypeOrganizationDataOwnershipPolicyData.write(v1, into: &buf)
+            
+        
+        case .disableSend:
+            writeInt(&buf, Int32(7))
+        
+        
+        case let .sendOptions(v1):
+            writeInt(&buf, Int32(8))
+            FfiConverterTypeSendOptionsPolicyData.write(v1, into: &buf)
+            
+        
+        case let .resetPassword(v1):
+            writeInt(&buf, Int32(9))
+            FfiConverterTypeResetPasswordPolicyData.write(v1, into: &buf)
+            
+        
+        case let .maximumVaultTimeout(v1):
+            writeInt(&buf, Int32(10))
+            FfiConverterTypeMaximumVaultTimeoutPolicyData.write(v1, into: &buf)
+            
+        
+        case .disablePersonalVaultExport:
+            writeInt(&buf, Int32(11))
+        
+        
+        case .activateAutofill:
+            writeInt(&buf, Int32(12))
+        
+        
+        case let .automaticAppLogIn(v1):
+            writeInt(&buf, Int32(13))
+            FfiConverterTypeAutomaticAppLogInPolicyData.write(v1, into: &buf)
+            
+        
+        case .freeFamiliesSponsorship:
+            writeInt(&buf, Int32(14))
+        
+        
+        case .removeUnlockWithPin:
+            writeInt(&buf, Int32(15))
+        
+        
+        case .restrictedItemTypes:
+            writeInt(&buf, Int32(16))
+        
+        
+        case .uriMatchDefaults:
+            writeInt(&buf, Int32(17))
+        
+        
+        case .autotypeDefaultSetting:
+            writeInt(&buf, Int32(18))
+        
+        
+        case .automaticUserConfirmation:
+            writeInt(&buf, Int32(19))
+        
+        
+        case .blockClaimedDomainAccountCreation:
+            writeInt(&buf, Int32(20))
+        
+        
+        case let .organizationUserNotification(v1):
+            writeInt(&buf, Int32(21))
+            FfiConverterTypeOrganizationUserNotificationPolicyData.write(v1, into: &buf)
+            
+        
+        case .sendControls:
+            writeInt(&buf, Int32(22))
+        
+        
+        case let .fillAssist(v1):
+            writeInt(&buf, Int32(23))
+            FfiConverterTypeFillAssistPolicyData.write(v1, into: &buf)
+            
+        
+        case .autotypeGaPolicy:
+            writeInt(&buf, Int32(24))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePolicyDataType_lift(_ buf: RustBuffer) throws -> PolicyDataType {
+    return try FfiConverterTypePolicyDataType.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePolicyDataType_lower(_ value: PolicyDataType) -> RustBuffer {
+    return FfiConverterTypePolicyDataType.lower(value)
+}
+
+
+
 /**
  * The type of an organization policy.
  *
@@ -999,6 +2115,11 @@ public enum PolicyType: UInt8, Equatable, Hashable {
      * rules feed URL.
      */
     case fillAssist = 22
+    /**
+     * Enables AutoType GA policy for members who have not explicitly set their AutoType GA
+     * preference.
+     */
+    case autotypeGaPolicy = 23
 
 
 
@@ -1065,6 +2186,8 @@ public struct FfiConverterTypePolicyType: FfiConverterRustBuffer {
         case 22: return .sendControls
         
         case 23: return .fillAssist
+        
+        case 24: return .autotypeGaPolicy
         
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -1165,6 +2288,10 @@ public struct FfiConverterTypePolicyType: FfiConverterRustBuffer {
         case .fillAssist:
             writeInt(&buf, Int32(23))
         
+        
+        case .autotypeGaPolicy:
+            writeInt(&buf, Int32(24))
+        
         }
     }
 }
@@ -1182,6 +2309,187 @@ public func FfiConverterTypePolicyType_lift(_ buf: RustBuffer) throws -> PolicyT
 #endif
 public func FfiConverterTypePolicyType_lower(_ value: PolicyType) -> RustBuffer {
     return FfiConverterTypePolicyType.lower(value)
+}
+
+
+
+/**
+ * The action taken when the vault times out.
+ */
+
+public enum VaultTimeoutAction: Equatable, Hashable {
+    
+    /**
+     * Lock the vault, requiring the member to unlock it again.
+     */
+    case lock
+    /**
+     * Log the member out entirely.
+     */
+    case logOut
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension VaultTimeoutAction: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeVaultTimeoutAction: FfiConverterRustBuffer {
+    typealias SwiftType = VaultTimeoutAction
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> VaultTimeoutAction {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .lock
+        
+        case 2: return .logOut
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: VaultTimeoutAction, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .lock:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .logOut:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeVaultTimeoutAction_lift(_ buf: RustBuffer) throws -> VaultTimeoutAction {
+    return try FfiConverterTypeVaultTimeoutAction.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeVaultTimeoutAction_lower(_ value: VaultTimeoutAction) -> RustBuffer {
+    return FfiConverterTypeVaultTimeoutAction.lower(value)
+}
+
+
+
+/**
+ * The kind of vault timeout the policy enforces.
+ */
+
+public enum VaultTimeoutType: Equatable, Hashable {
+    
+    /**
+     * The vault never times out.
+     */
+    case never
+    /**
+     * The vault times out when the app restarts.
+     */
+    case onAppRestart
+    /**
+     * The vault times out when the system locks.
+     */
+    case onSystemLock
+    /**
+     * The vault times out immediately.
+     */
+    case immediately
+    /**
+     * The vault times out after a custom duration (see
+     * [`MaximumVaultTimeoutPolicyData::minutes`]).
+     */
+    case custom
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension VaultTimeoutType: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeVaultTimeoutType: FfiConverterRustBuffer {
+    typealias SwiftType = VaultTimeoutType
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> VaultTimeoutType {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .never
+        
+        case 2: return .onAppRestart
+        
+        case 3: return .onSystemLock
+        
+        case 4: return .immediately
+        
+        case 5: return .custom
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: VaultTimeoutType, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .never:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .onAppRestart:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .onSystemLock:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .immediately:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .custom:
+            writeInt(&buf, Int32(5))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeVaultTimeoutType_lift(_ buf: RustBuffer) throws -> VaultTimeoutType {
+    return try FfiConverterTypeVaultTimeoutType.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeVaultTimeoutType_lower(_ value: VaultTimeoutType) -> RustBuffer {
+    return FfiConverterTypeVaultTimeoutType.lower(value)
 }
 
 
@@ -1260,6 +2568,78 @@ fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypePasswordGeneratorType: FfiConverterRustBuffer {
+    typealias SwiftType = PasswordGeneratorType?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypePasswordGeneratorType.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypePasswordGeneratorType.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeVaultTimeoutAction: FfiConverterRustBuffer {
+    typealias SwiftType = VaultTimeoutAction?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeVaultTimeoutAction.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeVaultTimeoutAction.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeVaultTimeoutType: FfiConverterRustBuffer {
+    typealias SwiftType = VaultTimeoutType?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeVaultTimeoutType.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeVaultTimeoutType.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeDateTime: FfiConverterRustBuffer {
     typealias SwiftType = DateTime?
 
@@ -1280,6 +2660,46 @@ fileprivate struct FfiConverterOptionTypeDateTime: FfiConverterRustBuffer {
         }
     }
 }
+
+
+public typealias PolicyId = Uuid
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePolicyId: FfiConverter {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PolicyId {
+        return try FfiConverterTypeUuid.read(from: &buf)
+    }
+
+    public static func write(_ value: PolicyId, into buf: inout [UInt8]) {
+        return FfiConverterTypeUuid.write(value, into: &buf)
+    }
+
+    public static func lift(_ value: RustBuffer) throws -> PolicyId {
+        return try FfiConverterTypeUuid_lift(value)
+    }
+
+    public static func lower(_ value: PolicyId) -> RustBuffer {
+        return FfiConverterTypeUuid_lower(value)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePolicyId_lift(_ value: RustBuffer) throws -> PolicyId {
+    return try FfiConverterTypePolicyId.lift(value)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePolicyId_lower(_ value: PolicyId) -> RustBuffer {
+    return FfiConverterTypePolicyId.lower(value)
+}
+
 
 private enum InitializationResult {
     case ok

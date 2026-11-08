@@ -1,386 +1,401 @@
 {
-  "contentSHA256": "59b08eb9c96478e868ccab6cf4b995a572c862428500b52e36d4e7612cfda2ee",
-  "files": [
+  "contentSHA256" : "e34a917c9260dc6a12f944fdb9e83a2d8309ddd70d551e9893a23b1a6c4b8401",
+  "files" : [
     {
-      "bytes": 1744,
-      "path": "Info.plist",
-      "sha256": "135af6b919a06eac8c340a54036b23e3133ee38dabcf8243dc7827a77a7aa21c"
+      "bytes" : 1744,
+      "path" : "Info.plist",
+      "sha256" : "835a0630c4d2b10d2e8b9f6a7a6aa94a095ae8be890daf27e652f36b8814767a"
     },
     {
-      "bytes": 20843,
-      "path": "ios-arm64/Headers/BitwardenApiBaseFFI.h",
-      "sha256": "e35ec39058dd254423522f4257aa1016fc5e212c427a484b733104eb591092dc"
+      "bytes" : 20843,
+      "path" : "ios-arm64/Headers/BitwardenApiBaseFFI.h",
+      "sha256" : "e35ec39058dd254423522f4257aa1016fc5e212c427a484b733104eb591092dc"
     },
     {
-      "bytes": 20207,
-      "path": "ios-arm64/Headers/BitwardenAuthFFI.h",
-      "sha256": "06422baf19db2b817703d0c1c050975a881a27d5cf2b35fd9c40a0ed89244f37"
+      "bytes" : 20207,
+      "path" : "ios-arm64/Headers/BitwardenAuthFFI.h",
+      "sha256" : "06422baf19db2b817703d0c1c050975a881a27d5cf2b35fd9c40a0ed89244f37"
     },
     {
-      "bytes": 21320,
-      "path": "ios-arm64/Headers/BitwardenCollectionsFFI.h",
-      "sha256": "839b78e60f7936c0242ee0dd4d6fc9a57f7b118ec75c8916d754ffd4fc9f82f9"
+      "bytes" : 21320,
+      "path" : "ios-arm64/Headers/BitwardenCollectionsFFI.h",
+      "sha256" : "839b78e60f7936c0242ee0dd4d6fc9a57f7b118ec75c8916d754ffd4fc9f82f9"
     },
     {
-      "bytes": 54426,
-      "path": "ios-arm64/Headers/BitwardenCoreFFI.h",
-      "sha256": "ac9be4d4472703526e335948ced12ec60b9d33a22e619a753eacad9a4cacc479"
+      "bytes" : 64412,
+      "path" : "ios-arm64/Headers/BitwardenCoreFFI.h",
+      "sha256" : "df5a34e389bcd1c8f88aa53e6eeda375b09586ba2a9ee8c69882b4095eb20ff8"
     },
     {
-      "bytes": 20525,
-      "path": "ios-arm64/Headers/BitwardenCryptoFFI.h",
-      "sha256": "e13775bd73498c7e01ba25230cc061e2cab0c8ee722603bc541a229a8bb91ec9"
+      "bytes" : 20525,
+      "path" : "ios-arm64/Headers/BitwardenCryptoFFI.h",
+      "sha256" : "e13775bd73498c7e01ba25230cc061e2cab0c8ee722603bc541a229a8bb91ec9"
     },
     {
-      "bytes": 23895,
-      "path": "ios-arm64/Headers/BitwardenCryptoSyncHandlerFFI.h",
-      "sha256": "ed98664092a0cb2041b276a65e8c9662aa02d9a46ce43e6474c27000b979dc1c"
+      "bytes" : 23895,
+      "path" : "ios-arm64/Headers/BitwardenCryptoSyncHandlerFFI.h",
+      "sha256" : "ed98664092a0cb2041b276a65e8c9662aa02d9a46ce43e6474c27000b979dc1c"
     },
     {
-      "bytes": 20843,
-      "path": "ios-arm64/Headers/BitwardenEncodingFFI.h",
-      "sha256": "4ddee7f00c825b8494d14c5dc821a109823d02cfd88feb69c4b2f4ad9be2adcd"
+      "bytes" : 20843,
+      "path" : "ios-arm64/Headers/BitwardenEncodingFFI.h",
+      "sha256" : "4ddee7f00c825b8494d14c5dc821a109823d02cfd88feb69c4b2f4ad9be2adcd"
     },
     {
-      "bytes": 21002,
-      "path": "ios-arm64/Headers/BitwardenExportersFFI.h",
-      "sha256": "ce3f4d1238953c6f2e4a44707d129e2d63a5ca44aa77227a0c8964e5d9697890"
+      "bytes" : 21002,
+      "path" : "ios-arm64/Headers/BitwardenExportersFFI.h",
+      "sha256" : "ce3f4d1238953c6f2e4a44707d129e2d63a5ca44aa77227a0c8964e5d9697890"
     },
     {
-      "bytes": 202610,
-      "path": "ios-arm64/Headers/BitwardenFFI.h",
-      "sha256": "c6b2776e5fcf26ef31fe0cb2d7fd56ae718b9546a29029aa5193386fbc484b6b"
+      "bytes" : 228864,
+      "path" : "ios-arm64/Headers/BitwardenFFI.h",
+      "sha256" : "f4c01061990c8a1c123b408aed099b18951c8abfadea30ebc3c41c10507ef4c2"
     },
     {
-      "bytes": 20207,
-      "path": "ios-arm64/Headers/BitwardenFidoFFI.h",
-      "sha256": "f103a678b84fb8d76a4df6ddc9deefed4ab2d1bb2b34a2c1a39bd0f3b51f7743"
+      "bytes" : 20207,
+      "path" : "ios-arm64/Headers/BitwardenFidoFFI.h",
+      "sha256" : "f103a678b84fb8d76a4df6ddc9deefed4ab2d1bb2b34a2c1a39bd0f3b51f7743"
     },
     {
-      "bytes": 21161,
-      "path": "ios-arm64/Headers/BitwardenGeneratorsFFI.h",
-      "sha256": "0fc02aabff478adc12a1b34a7555c7dc6ede62b7f17ce81c71560c64cfca690e"
+      "bytes" : 21161,
+      "path" : "ios-arm64/Headers/BitwardenGeneratorsFFI.h",
+      "sha256" : "0fc02aabff478adc12a1b34a7555c7dc6ede62b7f17ce81c71560c64cfca690e"
     },
     {
-      "bytes": 21638,
-      "path": "ios-arm64/Headers/BitwardenOrganizationsFFI.h",
-      "sha256": "33b76b2029cb58531764fbfe0252ed83bcb202f2e6f45dd0d0722b5cdf4982ff"
+      "bytes" : 21002,
+      "path" : "ios-arm64/Headers/BitwardenImportersFFI.h",
+      "sha256" : "2e6e7b860fc89cf2cb5c35f9776ef6879d0358bec79f0efa06128314079ad0b0"
     },
     {
-      "bytes": 19889,
-      "path": "ios-arm64/Headers/BitwardenPMFFI.h",
-      "sha256": "79b5c21b437113bbe0a48bc6f6f3e2b13851d28282c97a44c018b1c02aba6c53"
+      "bytes" : 23069,
+      "path" : "ios-arm64/Headers/BitwardenManagedSettingsFFI.h",
+      "sha256" : "9e81f3ab1a17aa2f7efb22a040ae45d55943b0631b31d9424633ce557aa8efc5"
     },
     {
-      "bytes": 20843,
-      "path": "ios-arm64/Headers/BitwardenPoliciesFFI.h",
-      "sha256": "29c29508ff0e0fd733ff1afa1a622f8a3f0b90cb622cb73841bf18a83e97aac2"
+      "bytes" : 21638,
+      "path" : "ios-arm64/Headers/BitwardenOrganizationsFFI.h",
+      "sha256" : "33b76b2029cb58531764fbfe0252ed83bcb202f2e6f45dd0d0722b5cdf4982ff"
     },
     {
-      "bytes": 23505,
-      "path": "ios-arm64/Headers/BitwardenRandomFFI.h",
-      "sha256": "e499f79b189e330574d3e3196fa2f68ff3e31bebb1278273b8972c44ba5e4e06"
+      "bytes" : 19889,
+      "path" : "ios-arm64/Headers/BitwardenPMFFI.h",
+      "sha256" : "79b5c21b437113bbe0a48bc6f6f3e2b13851d28282c97a44c018b1c02aba6c53"
     },
     {
-      "bytes": 20207,
-      "path": "ios-arm64/Headers/BitwardenSendFFI.h",
-      "sha256": "58103c3ab9a9a129214e7b50d0dc977167f0fb4d1a828173e17bedf602c722ac"
+      "bytes" : 20843,
+      "path" : "ios-arm64/Headers/BitwardenPoliciesFFI.h",
+      "sha256" : "29c29508ff0e0fd733ff1afa1a622f8a3f0b90cb622cb73841bf18a83e97aac2"
     },
     {
-      "bytes": 26891,
-      "path": "ios-arm64/Headers/BitwardenServerCommunicationConfigFFI.h",
-      "sha256": "9068acdafb95a0862d4672d0ae7bdfa3bc52fed31d0a9712e41c406d12e4c563"
+      "bytes" : 23505,
+      "path" : "ios-arm64/Headers/BitwardenRandomFFI.h",
+      "sha256" : "e499f79b189e330574d3e3196fa2f68ff3e31bebb1278273b8972c44ba5e4e06"
     },
     {
-      "bytes": 20048,
-      "path": "ios-arm64/Headers/BitwardenSshFFI.h",
-      "sha256": "c0bb03f102422fc56c1ff13bd1a3486aabff16a626e7f086d4049d6e3e739497"
+      "bytes" : 21307,
+      "path" : "ios-arm64/Headers/BitwardenSendFFI.h",
+      "sha256" : "4ef1ad7f4390283a9838aee0497151daf49b8ff4a420a582f4062f3cf025a998"
     },
     {
-      "bytes": 20366,
-      "path": "ios-arm64/Headers/BitwardenStateFFI.h",
-      "sha256": "70187490ed1a8f506ae038aca742fbb36598feb651d993e5f8e7378be3c6dd82"
+      "bytes" : 26891,
+      "path" : "ios-arm64/Headers/BitwardenServerCommunicationConfigFFI.h",
+      "sha256" : "9068acdafb95a0862d4672d0ae7bdfa3bc52fed31d0a9712e41c406d12e4c563"
     },
     {
-      "bytes": 20525,
-      "path": "ios-arm64/Headers/BitwardenUnlockFFI.h",
-      "sha256": "ce4317af7b55f4f836d977f973f732f541b57058f92b9dbedfcc5a73b00fa274"
+      "bytes" : 20048,
+      "path" : "ios-arm64/Headers/BitwardenSshFFI.h",
+      "sha256" : "c0bb03f102422fc56c1ff13bd1a3486aabff16a626e7f086d4049d6e3e739497"
     },
     {
-      "bytes": 29745,
-      "path": "ios-arm64/Headers/BitwardenUserCryptoManagementFFI.h",
-      "sha256": "f202fdfb32b0485302fec20dbd1942a58440c2d00600f96ef2555d72a8a2755d"
+      "bytes" : 20366,
+      "path" : "ios-arm64/Headers/BitwardenStateFFI.h",
+      "sha256" : "70187490ed1a8f506ae038aca742fbb36598feb651d993e5f8e7378be3c6dd82"
     },
     {
-      "bytes": 20366,
-      "path": "ios-arm64/Headers/BitwardenVaultFFI.h",
-      "sha256": "fb54edc475199d4a8a34c2a3ccc98fce5c3a8f0cfaba1fca270d7bccaab0d591"
+      "bytes" : 22015,
+      "path" : "ios-arm64/Headers/BitwardenUnlockFFI.h",
+      "sha256" : "6a09addff247961ce899833600e113f50d90ed29e419bf313747c69edde43e36"
     },
     {
-      "bytes": 21002,
-      "path": "ios-arm64/Headers/bitwarden_importersFFI.h",
-      "sha256": "2e6e7b860fc89cf2cb5c35f9776ef6879d0358bec79f0efa06128314079ad0b0"
+      "bytes" : 32801,
+      "path" : "ios-arm64/Headers/BitwardenUserCryptoManagementFFI.h",
+      "sha256" : "d3c657bd8d58c0aca29b3825fcd5a9feefba222dbefa74b2a3c3d2708fc2c3ca"
     },
     {
-      "bytes": 3456,
-      "path": "ios-arm64/Headers/module.modulemap",
-      "sha256": "5ea0e1ff221f375ee46edbd903cd3cf7b060e3779dcaca3b428ec20072fbe5e1"
+      "bytes" : 20366,
+      "path" : "ios-arm64/Headers/BitwardenVaultFFI.h",
+      "sha256" : "fb54edc475199d4a8a34c2a3ccc98fce5c3a8f0cfaba1fca270d7bccaab0d591"
     },
     {
-      "bytes": 181627056,
-      "path": "ios-arm64/libbitwarden_uniffi.a",
-      "sha256": "fd471332c986b5c46a2b7c317a1b76be0074afbfe2ba78627d9c246a30842811"
+      "bytes" : 3618,
+      "path" : "ios-arm64/Headers/module.modulemap",
+      "sha256" : "ea7bf433fb6959d5a2b85636713334ece8951510181cf2bd2fcd547eab7c2feb"
     },
     {
-      "bytes": 20843,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenApiBaseFFI.h",
-      "sha256": "e35ec39058dd254423522f4257aa1016fc5e212c427a484b733104eb591092dc"
+      "bytes" : 264746536,
+      "path" : "ios-arm64/libbitwarden_uniffi.a",
+      "sha256" : "5ed7f661b4e52e572dd101361f7a61a4d529825ecfabcaa76b9762a547830b70"
     },
     {
-      "bytes": 20207,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenAuthFFI.h",
-      "sha256": "06422baf19db2b817703d0c1c050975a881a27d5cf2b35fd9c40a0ed89244f37"
+      "bytes" : 20843,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenApiBaseFFI.h",
+      "sha256" : "e35ec39058dd254423522f4257aa1016fc5e212c427a484b733104eb591092dc"
     },
     {
-      "bytes": 21320,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenCollectionsFFI.h",
-      "sha256": "839b78e60f7936c0242ee0dd4d6fc9a57f7b118ec75c8916d754ffd4fc9f82f9"
+      "bytes" : 20207,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenAuthFFI.h",
+      "sha256" : "06422baf19db2b817703d0c1c050975a881a27d5cf2b35fd9c40a0ed89244f37"
     },
     {
-      "bytes": 54426,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenCoreFFI.h",
-      "sha256": "ac9be4d4472703526e335948ced12ec60b9d33a22e619a753eacad9a4cacc479"
+      "bytes" : 21320,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenCollectionsFFI.h",
+      "sha256" : "839b78e60f7936c0242ee0dd4d6fc9a57f7b118ec75c8916d754ffd4fc9f82f9"
     },
     {
-      "bytes": 20525,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenCryptoFFI.h",
-      "sha256": "e13775bd73498c7e01ba25230cc061e2cab0c8ee722603bc541a229a8bb91ec9"
+      "bytes" : 64412,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenCoreFFI.h",
+      "sha256" : "df5a34e389bcd1c8f88aa53e6eeda375b09586ba2a9ee8c69882b4095eb20ff8"
     },
     {
-      "bytes": 23895,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenCryptoSyncHandlerFFI.h",
-      "sha256": "ed98664092a0cb2041b276a65e8c9662aa02d9a46ce43e6474c27000b979dc1c"
+      "bytes" : 20525,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenCryptoFFI.h",
+      "sha256" : "e13775bd73498c7e01ba25230cc061e2cab0c8ee722603bc541a229a8bb91ec9"
     },
     {
-      "bytes": 20843,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenEncodingFFI.h",
-      "sha256": "4ddee7f00c825b8494d14c5dc821a109823d02cfd88feb69c4b2f4ad9be2adcd"
+      "bytes" : 23895,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenCryptoSyncHandlerFFI.h",
+      "sha256" : "ed98664092a0cb2041b276a65e8c9662aa02d9a46ce43e6474c27000b979dc1c"
     },
     {
-      "bytes": 21002,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenExportersFFI.h",
-      "sha256": "ce3f4d1238953c6f2e4a44707d129e2d63a5ca44aa77227a0c8964e5d9697890"
+      "bytes" : 20843,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenEncodingFFI.h",
+      "sha256" : "4ddee7f00c825b8494d14c5dc821a109823d02cfd88feb69c4b2f4ad9be2adcd"
     },
     {
-      "bytes": 202610,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenFFI.h",
-      "sha256": "c6b2776e5fcf26ef31fe0cb2d7fd56ae718b9546a29029aa5193386fbc484b6b"
+      "bytes" : 21002,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenExportersFFI.h",
+      "sha256" : "ce3f4d1238953c6f2e4a44707d129e2d63a5ca44aa77227a0c8964e5d9697890"
     },
     {
-      "bytes": 20207,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenFidoFFI.h",
-      "sha256": "f103a678b84fb8d76a4df6ddc9deefed4ab2d1bb2b34a2c1a39bd0f3b51f7743"
+      "bytes" : 228864,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenFFI.h",
+      "sha256" : "f4c01061990c8a1c123b408aed099b18951c8abfadea30ebc3c41c10507ef4c2"
     },
     {
-      "bytes": 21161,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenGeneratorsFFI.h",
-      "sha256": "0fc02aabff478adc12a1b34a7555c7dc6ede62b7f17ce81c71560c64cfca690e"
+      "bytes" : 20207,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenFidoFFI.h",
+      "sha256" : "f103a678b84fb8d76a4df6ddc9deefed4ab2d1bb2b34a2c1a39bd0f3b51f7743"
     },
     {
-      "bytes": 21638,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenOrganizationsFFI.h",
-      "sha256": "33b76b2029cb58531764fbfe0252ed83bcb202f2e6f45dd0d0722b5cdf4982ff"
+      "bytes" : 21161,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenGeneratorsFFI.h",
+      "sha256" : "0fc02aabff478adc12a1b34a7555c7dc6ede62b7f17ce81c71560c64cfca690e"
     },
     {
-      "bytes": 19889,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenPMFFI.h",
-      "sha256": "79b5c21b437113bbe0a48bc6f6f3e2b13851d28282c97a44c018b1c02aba6c53"
+      "bytes" : 21002,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenImportersFFI.h",
+      "sha256" : "2e6e7b860fc89cf2cb5c35f9776ef6879d0358bec79f0efa06128314079ad0b0"
     },
     {
-      "bytes": 20843,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenPoliciesFFI.h",
-      "sha256": "29c29508ff0e0fd733ff1afa1a622f8a3f0b90cb622cb73841bf18a83e97aac2"
+      "bytes" : 23069,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenManagedSettingsFFI.h",
+      "sha256" : "9e81f3ab1a17aa2f7efb22a040ae45d55943b0631b31d9424633ce557aa8efc5"
     },
     {
-      "bytes": 23505,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenRandomFFI.h",
-      "sha256": "e499f79b189e330574d3e3196fa2f68ff3e31bebb1278273b8972c44ba5e4e06"
+      "bytes" : 21638,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenOrganizationsFFI.h",
+      "sha256" : "33b76b2029cb58531764fbfe0252ed83bcb202f2e6f45dd0d0722b5cdf4982ff"
     },
     {
-      "bytes": 20207,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenSendFFI.h",
-      "sha256": "58103c3ab9a9a129214e7b50d0dc977167f0fb4d1a828173e17bedf602c722ac"
+      "bytes" : 19889,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenPMFFI.h",
+      "sha256" : "79b5c21b437113bbe0a48bc6f6f3e2b13851d28282c97a44c018b1c02aba6c53"
     },
     {
-      "bytes": 26891,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenServerCommunicationConfigFFI.h",
-      "sha256": "9068acdafb95a0862d4672d0ae7bdfa3bc52fed31d0a9712e41c406d12e4c563"
+      "bytes" : 20843,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenPoliciesFFI.h",
+      "sha256" : "29c29508ff0e0fd733ff1afa1a622f8a3f0b90cb622cb73841bf18a83e97aac2"
     },
     {
-      "bytes": 20048,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenSshFFI.h",
-      "sha256": "c0bb03f102422fc56c1ff13bd1a3486aabff16a626e7f086d4049d6e3e739497"
+      "bytes" : 23505,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenRandomFFI.h",
+      "sha256" : "e499f79b189e330574d3e3196fa2f68ff3e31bebb1278273b8972c44ba5e4e06"
     },
     {
-      "bytes": 20366,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenStateFFI.h",
-      "sha256": "70187490ed1a8f506ae038aca742fbb36598feb651d993e5f8e7378be3c6dd82"
+      "bytes" : 21307,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenSendFFI.h",
+      "sha256" : "4ef1ad7f4390283a9838aee0497151daf49b8ff4a420a582f4062f3cf025a998"
     },
     {
-      "bytes": 20525,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenUnlockFFI.h",
-      "sha256": "ce4317af7b55f4f836d977f973f732f541b57058f92b9dbedfcc5a73b00fa274"
+      "bytes" : 26891,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenServerCommunicationConfigFFI.h",
+      "sha256" : "9068acdafb95a0862d4672d0ae7bdfa3bc52fed31d0a9712e41c406d12e4c563"
     },
     {
-      "bytes": 29745,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenUserCryptoManagementFFI.h",
-      "sha256": "f202fdfb32b0485302fec20dbd1942a58440c2d00600f96ef2555d72a8a2755d"
+      "bytes" : 20048,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenSshFFI.h",
+      "sha256" : "c0bb03f102422fc56c1ff13bd1a3486aabff16a626e7f086d4049d6e3e739497"
     },
     {
-      "bytes": 20366,
-      "path": "ios-arm64_x86_64-simulator/Headers/BitwardenVaultFFI.h",
-      "sha256": "fb54edc475199d4a8a34c2a3ccc98fce5c3a8f0cfaba1fca270d7bccaab0d591"
+      "bytes" : 20366,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenStateFFI.h",
+      "sha256" : "70187490ed1a8f506ae038aca742fbb36598feb651d993e5f8e7378be3c6dd82"
     },
     {
-      "bytes": 21002,
-      "path": "ios-arm64_x86_64-simulator/Headers/bitwarden_importersFFI.h",
-      "sha256": "2e6e7b860fc89cf2cb5c35f9776ef6879d0358bec79f0efa06128314079ad0b0"
+      "bytes" : 22015,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenUnlockFFI.h",
+      "sha256" : "6a09addff247961ce899833600e113f50d90ed29e419bf313747c69edde43e36"
     },
     {
-      "bytes": 3456,
-      "path": "ios-arm64_x86_64-simulator/Headers/module.modulemap",
-      "sha256": "5ea0e1ff221f375ee46edbd903cd3cf7b060e3779dcaca3b428ec20072fbe5e1"
+      "bytes" : 32801,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenUserCryptoManagementFFI.h",
+      "sha256" : "d3c657bd8d58c0aca29b3825fcd5a9feefba222dbefa74b2a3c3d2708fc2c3ca"
     },
     {
-      "bytes": 358304864,
-      "path": "ios-arm64_x86_64-simulator/libbitwarden_uniffi.a",
-      "sha256": "8c4311c11c29f78ad48f68cab09415c3f6977be825ea1f4b9e5009eda06f6554"
+      "bytes" : 20366,
+      "path" : "ios-arm64_x86_64-simulator/Headers/BitwardenVaultFFI.h",
+      "sha256" : "fb54edc475199d4a8a34c2a3ccc98fce5c3a8f0cfaba1fca270d7bccaab0d591"
     },
     {
-      "bytes": 20843,
-      "path": "macos-arm64_x86_64/Headers/BitwardenApiBaseFFI.h",
-      "sha256": "e35ec39058dd254423522f4257aa1016fc5e212c427a484b733104eb591092dc"
+      "bytes" : 3618,
+      "path" : "ios-arm64_x86_64-simulator/Headers/module.modulemap",
+      "sha256" : "ea7bf433fb6959d5a2b85636713334ece8951510181cf2bd2fcd547eab7c2feb"
     },
     {
-      "bytes": 20207,
-      "path": "macos-arm64_x86_64/Headers/BitwardenAuthFFI.h",
-      "sha256": "06422baf19db2b817703d0c1c050975a881a27d5cf2b35fd9c40a0ed89244f37"
+      "bytes" : 524731032,
+      "path" : "ios-arm64_x86_64-simulator/libbitwarden_uniffi.a",
+      "sha256" : "4c122f8439461de50b1792d7458d873f58e5bdd25c4c3c8d852cf68c6df48841"
     },
     {
-      "bytes": 21320,
-      "path": "macos-arm64_x86_64/Headers/BitwardenCollectionsFFI.h",
-      "sha256": "839b78e60f7936c0242ee0dd4d6fc9a57f7b118ec75c8916d754ffd4fc9f82f9"
+      "bytes" : 20843,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenApiBaseFFI.h",
+      "sha256" : "e35ec39058dd254423522f4257aa1016fc5e212c427a484b733104eb591092dc"
     },
     {
-      "bytes": 54426,
-      "path": "macos-arm64_x86_64/Headers/BitwardenCoreFFI.h",
-      "sha256": "ac9be4d4472703526e335948ced12ec60b9d33a22e619a753eacad9a4cacc479"
+      "bytes" : 20207,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenAuthFFI.h",
+      "sha256" : "06422baf19db2b817703d0c1c050975a881a27d5cf2b35fd9c40a0ed89244f37"
     },
     {
-      "bytes": 20525,
-      "path": "macos-arm64_x86_64/Headers/BitwardenCryptoFFI.h",
-      "sha256": "e13775bd73498c7e01ba25230cc061e2cab0c8ee722603bc541a229a8bb91ec9"
+      "bytes" : 21320,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenCollectionsFFI.h",
+      "sha256" : "839b78e60f7936c0242ee0dd4d6fc9a57f7b118ec75c8916d754ffd4fc9f82f9"
     },
     {
-      "bytes": 23895,
-      "path": "macos-arm64_x86_64/Headers/BitwardenCryptoSyncHandlerFFI.h",
-      "sha256": "ed98664092a0cb2041b276a65e8c9662aa02d9a46ce43e6474c27000b979dc1c"
+      "bytes" : 64412,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenCoreFFI.h",
+      "sha256" : "df5a34e389bcd1c8f88aa53e6eeda375b09586ba2a9ee8c69882b4095eb20ff8"
     },
     {
-      "bytes": 20843,
-      "path": "macos-arm64_x86_64/Headers/BitwardenEncodingFFI.h",
-      "sha256": "4ddee7f00c825b8494d14c5dc821a109823d02cfd88feb69c4b2f4ad9be2adcd"
+      "bytes" : 20525,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenCryptoFFI.h",
+      "sha256" : "e13775bd73498c7e01ba25230cc061e2cab0c8ee722603bc541a229a8bb91ec9"
     },
     {
-      "bytes": 21002,
-      "path": "macos-arm64_x86_64/Headers/BitwardenExportersFFI.h",
-      "sha256": "ce3f4d1238953c6f2e4a44707d129e2d63a5ca44aa77227a0c8964e5d9697890"
+      "bytes" : 23895,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenCryptoSyncHandlerFFI.h",
+      "sha256" : "ed98664092a0cb2041b276a65e8c9662aa02d9a46ce43e6474c27000b979dc1c"
     },
     {
-      "bytes": 202610,
-      "path": "macos-arm64_x86_64/Headers/BitwardenFFI.h",
-      "sha256": "c6b2776e5fcf26ef31fe0cb2d7fd56ae718b9546a29029aa5193386fbc484b6b"
+      "bytes" : 20843,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenEncodingFFI.h",
+      "sha256" : "4ddee7f00c825b8494d14c5dc821a109823d02cfd88feb69c4b2f4ad9be2adcd"
     },
     {
-      "bytes": 20207,
-      "path": "macos-arm64_x86_64/Headers/BitwardenFidoFFI.h",
-      "sha256": "f103a678b84fb8d76a4df6ddc9deefed4ab2d1bb2b34a2c1a39bd0f3b51f7743"
+      "bytes" : 21002,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenExportersFFI.h",
+      "sha256" : "ce3f4d1238953c6f2e4a44707d129e2d63a5ca44aa77227a0c8964e5d9697890"
     },
     {
-      "bytes": 21161,
-      "path": "macos-arm64_x86_64/Headers/BitwardenGeneratorsFFI.h",
-      "sha256": "0fc02aabff478adc12a1b34a7555c7dc6ede62b7f17ce81c71560c64cfca690e"
+      "bytes" : 228864,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenFFI.h",
+      "sha256" : "f4c01061990c8a1c123b408aed099b18951c8abfadea30ebc3c41c10507ef4c2"
     },
     {
-      "bytes": 21638,
-      "path": "macos-arm64_x86_64/Headers/BitwardenOrganizationsFFI.h",
-      "sha256": "33b76b2029cb58531764fbfe0252ed83bcb202f2e6f45dd0d0722b5cdf4982ff"
+      "bytes" : 20207,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenFidoFFI.h",
+      "sha256" : "f103a678b84fb8d76a4df6ddc9deefed4ab2d1bb2b34a2c1a39bd0f3b51f7743"
     },
     {
-      "bytes": 19889,
-      "path": "macos-arm64_x86_64/Headers/BitwardenPMFFI.h",
-      "sha256": "79b5c21b437113bbe0a48bc6f6f3e2b13851d28282c97a44c018b1c02aba6c53"
+      "bytes" : 21161,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenGeneratorsFFI.h",
+      "sha256" : "0fc02aabff478adc12a1b34a7555c7dc6ede62b7f17ce81c71560c64cfca690e"
     },
     {
-      "bytes": 20843,
-      "path": "macos-arm64_x86_64/Headers/BitwardenPoliciesFFI.h",
-      "sha256": "29c29508ff0e0fd733ff1afa1a622f8a3f0b90cb622cb73841bf18a83e97aac2"
+      "bytes" : 21002,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenImportersFFI.h",
+      "sha256" : "2e6e7b860fc89cf2cb5c35f9776ef6879d0358bec79f0efa06128314079ad0b0"
     },
     {
-      "bytes": 23505,
-      "path": "macos-arm64_x86_64/Headers/BitwardenRandomFFI.h",
-      "sha256": "e499f79b189e330574d3e3196fa2f68ff3e31bebb1278273b8972c44ba5e4e06"
+      "bytes" : 23069,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenManagedSettingsFFI.h",
+      "sha256" : "9e81f3ab1a17aa2f7efb22a040ae45d55943b0631b31d9424633ce557aa8efc5"
     },
     {
-      "bytes": 20207,
-      "path": "macos-arm64_x86_64/Headers/BitwardenSendFFI.h",
-      "sha256": "58103c3ab9a9a129214e7b50d0dc977167f0fb4d1a828173e17bedf602c722ac"
+      "bytes" : 21638,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenOrganizationsFFI.h",
+      "sha256" : "33b76b2029cb58531764fbfe0252ed83bcb202f2e6f45dd0d0722b5cdf4982ff"
     },
     {
-      "bytes": 26891,
-      "path": "macos-arm64_x86_64/Headers/BitwardenServerCommunicationConfigFFI.h",
-      "sha256": "9068acdafb95a0862d4672d0ae7bdfa3bc52fed31d0a9712e41c406d12e4c563"
+      "bytes" : 19889,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenPMFFI.h",
+      "sha256" : "79b5c21b437113bbe0a48bc6f6f3e2b13851d28282c97a44c018b1c02aba6c53"
     },
     {
-      "bytes": 20048,
-      "path": "macos-arm64_x86_64/Headers/BitwardenSshFFI.h",
-      "sha256": "c0bb03f102422fc56c1ff13bd1a3486aabff16a626e7f086d4049d6e3e739497"
+      "bytes" : 20843,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenPoliciesFFI.h",
+      "sha256" : "29c29508ff0e0fd733ff1afa1a622f8a3f0b90cb622cb73841bf18a83e97aac2"
     },
     {
-      "bytes": 20366,
-      "path": "macos-arm64_x86_64/Headers/BitwardenStateFFI.h",
-      "sha256": "70187490ed1a8f506ae038aca742fbb36598feb651d993e5f8e7378be3c6dd82"
+      "bytes" : 23505,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenRandomFFI.h",
+      "sha256" : "e499f79b189e330574d3e3196fa2f68ff3e31bebb1278273b8972c44ba5e4e06"
     },
     {
-      "bytes": 20525,
-      "path": "macos-arm64_x86_64/Headers/BitwardenUnlockFFI.h",
-      "sha256": "ce4317af7b55f4f836d977f973f732f541b57058f92b9dbedfcc5a73b00fa274"
+      "bytes" : 21307,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenSendFFI.h",
+      "sha256" : "4ef1ad7f4390283a9838aee0497151daf49b8ff4a420a582f4062f3cf025a998"
     },
     {
-      "bytes": 29745,
-      "path": "macos-arm64_x86_64/Headers/BitwardenUserCryptoManagementFFI.h",
-      "sha256": "f202fdfb32b0485302fec20dbd1942a58440c2d00600f96ef2555d72a8a2755d"
+      "bytes" : 26891,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenServerCommunicationConfigFFI.h",
+      "sha256" : "9068acdafb95a0862d4672d0ae7bdfa3bc52fed31d0a9712e41c406d12e4c563"
     },
     {
-      "bytes": 20366,
-      "path": "macos-arm64_x86_64/Headers/BitwardenVaultFFI.h",
-      "sha256": "fb54edc475199d4a8a34c2a3ccc98fce5c3a8f0cfaba1fca270d7bccaab0d591"
+      "bytes" : 20048,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenSshFFI.h",
+      "sha256" : "c0bb03f102422fc56c1ff13bd1a3486aabff16a626e7f086d4049d6e3e739497"
     },
     {
-      "bytes": 21002,
-      "path": "macos-arm64_x86_64/Headers/bitwarden_importersFFI.h",
-      "sha256": "2e6e7b860fc89cf2cb5c35f9776ef6879d0358bec79f0efa06128314079ad0b0"
+      "bytes" : 20366,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenStateFFI.h",
+      "sha256" : "70187490ed1a8f506ae038aca742fbb36598feb651d993e5f8e7378be3c6dd82"
     },
     {
-      "bytes": 3456,
-      "path": "macos-arm64_x86_64/Headers/module.modulemap",
-      "sha256": "5ea0e1ff221f375ee46edbd903cd3cf7b060e3779dcaca3b428ec20072fbe5e1"
+      "bytes" : 22015,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenUnlockFFI.h",
+      "sha256" : "6a09addff247961ce899833600e113f50d90ed29e419bf313747c69edde43e36"
     },
     {
-      "bytes": 361329840,
-      "path": "macos-arm64_x86_64/libbitwarden_uniffi.a",
-      "sha256": "52b7ab446f2f2f17337acddf3ec106bd462e05493f3f33fe70dd83e87ab56442"
+      "bytes" : 32801,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenUserCryptoManagementFFI.h",
+      "sha256" : "d3c657bd8d58c0aca29b3825fcd5a9feefba222dbefa74b2a3c3d2708fc2c3ca"
+    },
+    {
+      "bytes" : 20366,
+      "path" : "macos-arm64_x86_64/Headers/BitwardenVaultFFI.h",
+      "sha256" : "fb54edc475199d4a8a34c2a3ccc98fce5c3a8f0cfaba1fca270d7bccaab0d591"
+    },
+    {
+      "bytes" : 3618,
+      "path" : "macos-arm64_x86_64/Headers/module.modulemap",
+      "sha256" : "ea7bf433fb6959d5a2b85636713334ece8951510181cf2bd2fcd547eab7c2feb"
+    },
+    {
+      "bytes" : 528003704,
+      "path" : "macos-arm64_x86_64/libbitwarden_uniffi.a",
+      "sha256" : "ee4a9ee47a79f6838c41cc192aae9b2f5f96258653ca3d6b1c36a77c608e9f22"
     }
   ],
-  "schemaVersion": 1
+  "schemaVersion" : 1
 }

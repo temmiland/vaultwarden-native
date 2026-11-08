@@ -6,7 +6,7 @@ import BitwardenSdk
 /// Collection permissions and session revocation must still be checked by the owning runtime.
 public enum SDKVaultAccessPolicy {
     public static func allowsUnpromptedSecretAccess(_ cipher: CipherView) -> Bool {
-        cipher.reprompt == .none && cipher.viewPassword
+        !cipher.partial && cipher.reprompt == .none && cipher.viewPassword
             && cipher.deletedDate == nil && cipher.archivedDate == nil
     }
 

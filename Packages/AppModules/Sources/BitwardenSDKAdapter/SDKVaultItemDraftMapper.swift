@@ -108,7 +108,8 @@ public enum SDKVaultItemDraftMapper {
             creationDate: existing?.creationDate ?? now,
             deletedDate: existing?.deletedDate,
             revisionDate: now,
-            archivedDate: existing?.archivedDate
+            archivedDate: existing?.archivedDate,
+            partial: existing?.partial ?? false
         )
     }
 
@@ -159,6 +160,7 @@ public enum SDKVaultItemDraftMapper {
             uris: uris,
             totp: merged(draft.totpSeed, original: original?.totp),
             autofillOnPageLoad: original?.autofillOnPageLoad,
+            httpAuthenticationEnabled: original?.httpAuthenticationEnabled,
             fido2Credentials: original?.fido2Credentials
         )
     }

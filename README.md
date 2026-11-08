@@ -20,9 +20,9 @@ See [feature status and known limits](Docs/FeatureStatus.md),
   in Swift 5 language mode. Deployment floors: macOS 14 / iOS 17; older toolchains are not proven here.
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen): the shared `Scripts/xcodegen.sh` downloads
   and verifies the pinned 2.46.0 release automatically during project generation.
-- [rustup](https://rustup.rs) and Cargo for the first SDK build (pinned Rust 1.96.0).
+- [rustup](https://rustup.rs) and Cargo for the first SDK build (pinned Rust 1.99.0).
 
-The ignored `BitwardenFFI.xcframework` (~860 MB) is not included in git. A fresh clone builds it:
+The ignored `BitwardenFFI.xcframework` is not included in git. A fresh clone builds it:
 
 ```sh
 bash Scripts/build-sdk.sh --install
@@ -30,9 +30,14 @@ bash Scripts/generate-xcodeproj.sh
 open Vaultwarden.xcodeproj
 ```
 
-The SDK script verifies revision, patch SHA-256, toolchain and unchanged Cargo.lock. It uses its
-own `.build/sdk-isolated` scratch clone, compares regenerated bindings, and never patches an
-existing official checkout or rewrites committed generated sources. `--install` refuses an
+For an existing checkout after an SDK pin/dependency update, `bash Scripts/build-sdk.sh --upgrade`
+rebuilds the pinned SDK, refreshes its generated bindings and replaces the local framework. It
+retains the previous sources and framework in the ignored isolated build directory for rollback.
+Ordinary `--build`/`--install` runs continue to verify the committed bindings without rewriting them.
+
+Ordinary SDK builds verify revision, both patch hashes, toolchain and the reviewed Cargo.lock.
+They use their own `.build/sdk-isolated` scratch clone, compare regenerated bindings, and never
+patch an existing official checkout or rewrite committed generated sources. `--install` refuses an
 existing artifact; `--build` builds for comparison without installing; `--check` inventories
 local bytes read-only. `--verify-build PATH` rechecks an explicit previous scratch build;
 `bash Scripts/test-rebuilt-sdk.sh PATH` runs the real FFI smoke against it. Scratch outputs remain

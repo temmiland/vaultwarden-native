@@ -136,7 +136,7 @@ final class AutoFillQuerySourceFixture: AutoFillCredentialSource, @unchecked Sen
                 uris: [LoginUriView(uri: "https://example.com", match: uriMatchType, uriChecksum: nil)],
                 totp: seed,
                 autofillOnPageLoad: nil,
-                fido2Credentials: hasPasskeys ? [Fido2Credential(
+                fido2Credentials: hasPasskeys ? [Fido2CredentialView(
                     credentialId: "encrypted-id",
                     keyType: "public-key",
                     keyAlgorithm: "ECDSA",

@@ -16,7 +16,7 @@ struct SDKSendCryptographyTests {
         let email = "synthetic@example.invalid"
         let password = "synthetic-test-only-password"
         let kdf = Kdf.pbkdf2(iterations: 600_000)
-        let client = Client(tokenProvider: SendNoTokenProvider(), settings: ClientSettings(
+        let client = SDKClientFactory.makeClient(tokenProvider: SendNoTokenProvider(), settings: ClientSettings(
             identityUrl: "https://example.invalid/identity", apiUrl: "https://example.invalid/api",
             userAgent: "synthetic-test", deviceType: .macOsDesktop,
             deviceIdentifier: "synthetic-test", bitwardenClientVersion: "0.0.1", bitwardenPackageType: nil
@@ -329,6 +329,7 @@ struct SDKSendCryptographyTests {
             type: type,
             file: type == .file ? SendFile(id: "file-id", fileName: "encrypted-file-name", size: nil, sizeName: nil) : nil,
             text: type == .text ? SendText(text: "encrypted-text", hidden: false) : nil,
+            data: nil,
             maxAccessCount: nil, accessCount: 0, disabled: false, hideEmail: false,
             revisionDate: Date(timeIntervalSince1970: 1_700_000_000),
             deletionDate: Date(timeIntervalSince1970: 1_800_000_000), expirationDate: nil,
@@ -342,7 +343,7 @@ struct SDKSendCryptographyTests {
         SendView(
             id: id, accessId: accessID, name: name, notes: nil, key: key, newPassword: nil,
             hasPassword: false, type: .text, file: nil,
-            text: SendTextView(text: "plaintext", hidden: false), maxAccessCount: nil,
+            text: SendTextView(text: "plaintext", hidden: false), data: nil, maxAccessCount: nil,
             accessCount: 0, disabled: false, hideEmail: false,
             revisionDate: Date(timeIntervalSince1970: 1_700_000_000),
             deletionDate: Date(timeIntervalSince1970: 1_800_000_000), expirationDate: nil,
@@ -357,6 +358,7 @@ private struct TestSendCrypto: SendCryptoServicing {
     var encryptedSend: Send = Send(
         id: "encrypted", accessId: "access", name: "cipher-name", notes: nil, key: "cipher-key",
         password: nil, type: .text, file: nil, text: SendText(text: "encrypted-text", hidden: false),
+        data: nil,
         maxAccessCount: nil, accessCount: 0, disabled: false, hideEmail: false,
         revisionDate: Date(timeIntervalSince1970: 1_700_000_000),
         deletionDate: Date(timeIntervalSince1970: 1_800_000_000), expirationDate: nil,
@@ -373,6 +375,7 @@ private struct TestSendCrypto: SendCryptoServicing {
             id: send.id, accessId: send.accessId, name: send.name, notes: nil, key: send.key,
             newPassword: nil, hasPassword: send.password != nil, type: send.type, file: nil,
             text: send.text.map { SendTextView(text: $0.text, hidden: $0.hidden) },
+            data: nil,
             maxAccessCount: send.maxAccessCount, accessCount: send.accessCount,
             disabled: send.disabled, hideEmail: send.hideEmail, revisionDate: send.revisionDate,
             deletionDate: send.deletionDate, expirationDate: send.expirationDate,
@@ -385,6 +388,7 @@ private struct TestSendCrypto: SendCryptoServicing {
             id: encryptedSend.id, accessId: encryptedSend.accessId, name: encryptedSend.name,
             notes: encryptedSend.notes, key: encryptedSend.key, password: encryptedSend.password,
             type: encryptedSend.type, file: encryptedSend.file, text: encryptedSend.text,
+            data: encryptedSend.data,
             maxAccessCount: sendView.maxAccessCount, accessCount: encryptedSend.accessCount,
             disabled: encryptedSend.disabled, hideEmail: encryptedSend.hideEmail,
             revisionDate: encryptedSend.revisionDate, deletionDate: encryptedSend.deletionDate,

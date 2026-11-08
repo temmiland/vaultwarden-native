@@ -181,7 +181,7 @@ public struct SDKAutoFillService: Sendable {
     }
 
     private func passkeys(in cipher: CipherView) throws -> [Fido2CredentialAutofillView] {
-        try session.withClient { try $0.platform().fido2().decryptFido2AutofillCredentials(cipherView: cipher) }
+        try session.withClient { try $0.platform().fido2().getFido2AutofillCredentials(cipherView: cipher) }
     }
 
     private func authenticate(
