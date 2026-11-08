@@ -220,3 +220,60 @@ Nachweis. Kein automatischer Live-Testpass schließt diese OS-Pfade.
 
 Bei jedem Lauf Code-Commit, Xcode/OS/Simulator, Deployment-Version und PASS/FAIL/NOT RUN festhalten.
 Keine Secrets oder unredigierten `xcresult`-/SDK-Logs hochladen. Der Ablauf ist kein Security-Audit.
+
+
+## Signierter Installationslauf — 2026-11-08
+
+Release-App und AutoFill-Extension (Build 3) wurden mit lokaler, ignorierter Team-Konfiguration für
+macOS und echte iOS-Geräte gebaut. Die Installation und der Prozessstart auf iPhone (iOS 27.2),
+iPad (iPadOS 27.0.1) und Mac wurden mit den Plattformwerkzeugen bestätigt. Vom Owner gezeigte
+App-Ansichten belegen Login und Vault-Sync auf iPhone und Mac; daraus folgt noch keine vollständige
+AutoFill-/Passkey-/Biometrie-/Lifecycle-Abnahme. Signierungsprofile und Gerätekennungen bleiben lokal.
+
+Auf dem Mac verweigerte der geschützte App-Group-Container den Dateizugriff mit EPERM: Die
+Signierungsprofile enthielten die App-Group-Freigabe nicht. `REGISTER_APP_GROUPS = YES` lässt
+Xcode die Gruppe für App und Extension provisionieren, wie in
+[Apples Anleitung](https://developer.apple.com/documentation/xcode/accessing-app-group-containers)
+beschrieben. Neu erzeugte Bundles bestanden die tiefe, strenge Signaturprüfung; beide Profile
+enthielten anschließend die konfigurierte Gruppe. Die installierte App konnte die gemeinsame
+Lockdatei erstellen und der Startfehler trat nicht mehr auf. Die Speicherkennungen wurden nicht
+geändert. Ein neuer negativer Konfigurationsfall verhindert das Abschalten der Registrierung.
+
+Ein deaktivierter Systemanbieter wird als `suggestionsDisabled` bei weiterhin aktuellem Dateicache
+getrennt von einem Cache-/Sync-Fehler geführt. Dieser Zustand erzeugt keine falsche Vault-Warnung,
+bleibt aber für die Auflösung ungewisser Credential-Writes ausdrücklich nicht vollständig repariert.
+Tests prüfen den Wechsel zu aktivierten Vorschlägen, den Erhalt offener Recovery-Vorgänge sowie
+sichtbare Fehler bei veraltetem oder fehlendem Cache. 867 AppModules-Tests in 102 Suites bestehen;
+Konfigurationsprüfungen einschließlich vier Ablehnungsfixtures bestehen ebenfalls.
+
+Die iPad-Orientierungen werden nun als echte Info.plist-Eigenschaft erzeugt; Xcode übernahm den
+vorherigen variantspezifischen Build-Setting-Schlüssel nicht. Produkttexte verwenden „client“
+statt „learning client“. Der erfolgreiche SDK-CI-Nachweis für `4897c20` ist
+[Lauf 42466566238](https://github.com/temmiland/vaultwarden-native/actions/runs/42466566238);
+die Änderungen aus diesem Installationslauf benötigen einen neuen CI-Lauf. Der lokale native
+Integrationslauf mit der neuen Clock-Session besteht mit 18 macOS- und 19 iOS-Simulatortests.
+Build 3 ist auf Mac und iPad installiert und gestartet; die iPhone-Installation benötigt aktuell
+eine wiederhergestellte Geräteverbindung.
+
+
+### Gerätebefund: iOS-Freigabe und monotone Zeit
+
+Die erste Gerätefassung verwendete für persistierte AutoFill-Freigaben `kern.bootsessionuuid`.
+[Apple dokumentiert die Sperre dieses Sysctls seit iOS/iPadOS 18](https://developer.apple.com/documentation/ios-ipados-release-notes/ios-ipados-18-release-notes).
+Ein Simulatornachweis reichte hier nicht aus: Auf echten iOS-Geräten ließ sich damit die
+Freigabe nicht publizieren; der nachfolgende Cache blieb gesperrt.
+
+Build 3 ersetzt den Boot-Identifier durch einen ausdrücklich anders benannten, lebenden
+Clock-Session-Nachweis im App Group Container. App und Extension können einen gemeinsamen
+Kernel-Dateilock weitertragen. Ohne lebenden Teilnehmer wird immer eine neue zufällige ID erzeugt;
+persistierte Dateien allein beleben die alte ID nicht wieder. Ein Geräteneustart beendet alle
+Teilnehmer und ihre Locks. Die Änderung verwendet weder einen Wall-Clock-/Uptime-Schätzwert noch
+einen privaten Systemaufruf. Auch ein vollständiges Beenden aller beteiligten Prozesse kann nun
+erneutes Entsperren in der Haupt-App erforderlich machen; „never“ überlebt diesen Verlust nicht.
+
+Grant-Schema 5 trennt diesen Nachweis vom alten Boot-UUID-Schema 4. Alte Freigaben werden unter
+dem bestehenden Token-Store-Lock widerrufen; private Kontodaten werden nicht gelöscht. Derselbe
+Container-/Lock-Kontext wird an Token-Transaktionen weitergereicht. Tests prüfen mehrere
+Teilnehmer, einen separaten Prozess, das Ende des letzten Teilnehmers, persistierte Restdateien,
+Symlinks und die Migration alter Freigaben. Der echte Geräte-Neustart und die anschließende
+manuelle AutoFill-Abnahme bleiben ausdrücklich noch zu prüfen.

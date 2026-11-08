@@ -10,13 +10,15 @@ DEVELOPMENT_TEAM =
 // Keep the trailing dot. Entitlements and runtime Info.plist use this same value.
 VW_KEYCHAIN_PREFIX = $(DEVELOPMENT_TEAM).
 CODE_SIGN_STYLE = Automatic
+// Provision group.-prefixed App Groups on macOS so container access is authorized.
+REGISTER_APP_GROUPS = YES
 SWIFT_VERSION = 5.10
 SWIFT_STRICT_CONCURRENCY = complete
 SWIFT_TREAT_WARNINGS_AS_ERRORS = YES
 OTHER_SWIFT_FLAGS = $(inherited) -warnings-as-errors
 GCC_TREAT_WARNINGS_AS_ERRORS = YES
 MARKETING_VERSION = 0.1.0
-CURRENT_PROJECT_VERSION = 1
+CURRENT_PROJECT_VERSION = 3
 
 // Optional and gitignored; command-line build settings still take precedence.
 #include? "Local.xcconfig"

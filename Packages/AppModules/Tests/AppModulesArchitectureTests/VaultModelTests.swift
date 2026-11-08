@@ -11,6 +11,28 @@ import Testing
 @Suite
 struct VaultModelTests {
     @Test
+    func disabledSuggestionsDoNotWarnAboutAHealthyVaultButStaleCachesStillDo() {
+        var state = VaultState()
+        let cases: [(VaultProjectionStatus, Bool)] = [
+            (.current(revision: 7), false), (.suggestionsDisabled(revision: 7), false),
+            (.current(revision: 6), true), (.suggestionsDisabled(revision: 6), true),
+            (.stale, true), (.unavailable, true),
+        ]
+        for (status, attention) in cases {
+            state.snapshot = VaultSnapshot(
+                revision: 7, items: [], lastSuccessfulSync: .distantPast,
+                isStale: false, projectionStatus: status
+            )
+            #expect(state.needsSyncAttention == attention)
+        }
+        state.snapshot = VaultSnapshot(
+            revision: 7, items: [], lastSuccessfulSync: .distantPast,
+            isStale: true, projectionStatus: .suggestionsDisabled(revision: 7)
+        )
+        #expect(state.needsSyncAttention)
+    }
+
+    @Test
     func refreshRecoveryShowsSignInGuidanceInsteadOfAnEndlessSyncRetry() async {
         let (model, repository) = make(VaultSnapshot(revision: 1, items: [], lastSuccessfulSync: nil, isStale: true))
         repository.syncError = SessionAuthorizationError.refreshRecoveryRequired

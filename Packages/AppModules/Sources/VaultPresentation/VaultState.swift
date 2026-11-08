@@ -9,6 +9,17 @@ public struct VaultState {
     public internal(set) var snapshot = VaultSnapshot(revision: 0, items: [], lastSuccessfulSync: nil, isStale: false)
     public var loadWarnings: [VaultLoadWarning] { snapshot.warnings }
 
+    public var needsSyncAttention: Bool {
+        if snapshot.isStale { return true }
+        guard snapshot.lastSuccessfulSync != nil else { return false }
+        switch snapshot.projectionStatus {
+        case let .current(revision), let .suggestionsDisabled(revision):
+            return revision != snapshot.revision
+        case .stale, .unavailable:
+            return true
+        }
+    }
+
     public var unavailableItemCount: Int {
         loadWarnings.reduce(0) { total, warning in
             switch warning {

@@ -21,4 +21,5 @@ reject_fixture() {
 reject_fixture VW_KEYCHAIN_PREFIX=invalid
 reject_fixture VW_APP_GROUP_IDENTIFIER=invalid
 reject_fixture VW_SHARED_KEYCHAIN_SERVICE=fixture.same VW_PRIVATE_KEYCHAIN_SERVICE=fixture.same
-echo "Three invalid configuration fixtures rejected; no signed-entitlement assertion."
+reject_fixture REGISTER_APP_GROUPS=NO
+echo "Four invalid configuration fixtures rejected; no signed-entitlement assertion."

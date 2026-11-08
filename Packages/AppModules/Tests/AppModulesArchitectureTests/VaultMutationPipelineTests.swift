@@ -7,6 +7,35 @@ import Testing
 @Suite
 struct VaultMutationPipelineTests {
     @Test
+    func disabledProviderKeepsTheCurrentCacheWithoutFalselyCompletingRegistrationRecovery() async throws {
+        let source = MutationSource(), files = MutationFiles(), identities = MutationIdentities()
+        await identities.setEnabled(false)
+        let recovery = PipelineRecoveryFixture(files: files, identities: identities)
+        let repository = DefaultVaultRepository(
+            source: source,
+            projectionWriter: AutoFillProjectionWriter(accountID: "user", fileStore: files),
+            identityPublisher: CredentialIdentityPublisher(
+                store: identities, identityMutations: IdentityMutationTestCoordinator(),
+                checkProjection: { _ in }, checkClearAccess: {}
+            ),
+            registrationRecovery: recovery
+        )
+        try await repository.sync()
+        let disabled = await repository.currentSnapshot()
+        #expect(disabled.projectionStatus == .suggestionsDisabled(revision: disabled.revision))
+        #expect(!disabled.isStale)
+        #expect(disabled.lastSuccessfulSync != nil)
+        #expect(files.bytes != nil)
+        #expect(await recovery.canResolveCalls == [false])
+        await identities.setEnabled(true)
+        try await repository.sync()
+        let enabled = await repository.currentSnapshot()
+        #expect(enabled.projectionStatus == .current(revision: enabled.revision))
+        #expect(await recovery.canResolveCalls == [false, true])
+        #expect(await source.writeCount == 0)
+    }
+
+    @Test
     func alreadyCancelledAcknowledgmentCannotRemoveTracking() async throws {
         let fixture = try PasskeyRecoveryReviewFixture(); defer { fixture.cleanup() }
         let repository = DefaultVaultRepository(
@@ -434,13 +463,19 @@ private final class MutationFiles: AutoFillProjectionFileStore, @unchecked Senda
 private actor MutationIdentities: CredentialIdentityPublishing {
     private(set) var lastRevision: UInt64?
     private var failReplacement = false
+    private var isEnabled = true
+    func setEnabled(_ value: Bool) { isEnabled = value }
     func failNextReplacement() { failReplacement = true }
     func replaceCredentialIdentities(_ identities: [CredentialIdentityDescriptor], revision: UInt64) throws {
+        guard isEnabled else { throw CredentialIdentityPublishingError.disabled }
         if failReplacement { failReplacement = false; throw MutationFixtureError.write }
         lastRevision = revision
     }
 
-    func removeAllCredentialIdentities() { lastRevision = nil }
+    func removeAllCredentialIdentities() throws {
+        guard isEnabled else { throw CredentialIdentityPublishingError.disabled }
+        lastRevision = nil
+    }
 }
 
 private actor MutationSource: VaultSessionSource {

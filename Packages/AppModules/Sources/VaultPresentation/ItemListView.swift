@@ -23,14 +23,13 @@ struct ItemListView: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
-            if model.state.snapshot.isStale || (model.state.snapshot.lastSuccessfulSync != nil &&
-                model.state.snapshot.projectionStatus != .current(revision: model.state.snapshot.revision)) {
+            if model.state.needsSyncAttention {
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
                         Label("Vault needs attention", systemImage: "exclamationmark.triangle")
                         Text(model.state.snapshot.isStale
                             ? "The displayed vault may be outdated. Sync before making further changes."
-                            : "AutoFill cache or system suggestions couldn't be updated. Enable AutoFill and retry sync.")
+                            : "AutoFill couldn't be updated. Retry sync. If this continues, check AutoFill access in system settings.")
                             .font(.caption)
                         Button("Retry Sync") { Task { await model.perform(.loadVault) } }
                             .disabled(model.state.isLoading)

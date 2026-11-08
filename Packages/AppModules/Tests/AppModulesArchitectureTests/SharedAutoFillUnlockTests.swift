@@ -91,8 +91,15 @@ struct SharedAutoFillUnlockTests {
     }
 
     @Test
-    func systemBootIdentityIsStableAcrossIndependentReads() throws {
-        #expect(try SystemBootSession.currentID() == SystemBootSession.currentID())
+    func liveClockSessionIsStableAcrossIndependentReads() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        #expect(
+            try SharedClockSession.currentID(containerURL: directory) == SharedClockSession.currentID(
+                containerURL: directory
+            )
+        )
     }
 
     @Test(arguments: [UInt64(1), 20_000_000_000, 80_000_000_000])
@@ -101,7 +108,7 @@ struct SharedAutoFillUnlockTests {
         let oldBoot = UUID(), newBoot = UUID()
         let original = SharedAutoFillUnlockStore(
             keychain: keychain, lockPolicy: .processOnly,
-            nowNanoseconds: { 10_000_000_000 }, bootSessionID: { oldBoot }
+            nowNanoseconds: { 10_000_000_000 }, clockSessionID: { oldBoot }
         )
         try original.save(
             userKey: "fake-test-key",
@@ -113,7 +120,7 @@ struct SharedAutoFillUnlockTests {
         let recorded = try keychain.read(AutoFillStorageKeys.sharedUserKeyAccount)
         let restarted = SharedAutoFillUnlockStore(
             keychain: keychain, lockPolicy: .processOnly,
-            nowNanoseconds: { now }, bootSessionID: { newBoot }
+            nowNanoseconds: { now }, clockSessionID: { newBoot }
         )
         #expect(try restarted.load() == nil)
         #expect(try restarted.expiredTimeoutAction() == .logOut)
@@ -127,7 +134,7 @@ struct SharedAutoFillUnlockTests {
         let boot = UUID(), anotherBoot = UUID()
         let original = SharedAutoFillUnlockStore(
             keychain: keychain, lockPolicy: .processOnly,
-            nowNanoseconds: { 10_000_000_000 }, bootSessionID: { boot }
+            nowNanoseconds: { 10_000_000_000 }, clockSessionID: { boot }
         )
         try original.save(
             userKey: "fake-test-key",
@@ -138,14 +145,14 @@ struct SharedAutoFillUnlockTests {
         try original.setInactiveTimeout(.init(duration: .oneMinute))
         let restarted = SharedAutoFillUnlockStore(
             keychain: keychain, lockPolicy: .processOnly,
-            nowNanoseconds: { 20_000_000_000 }, bootSessionID: { boot }
+            nowNanoseconds: { 20_000_000_000 }, clockSessionID: { boot }
         )
         #expect(try restarted.load() != nil)
         try restarted.setInactiveTimeout(.init(duration: .never))
         #expect(try restarted.expiredTimeoutAction() == nil)
         let afterReboot = SharedAutoFillUnlockStore(
             keychain: keychain, lockPolicy: .processOnly,
-            nowNanoseconds: { 20_000_000_000 }, bootSessionID: { anotherBoot }
+            nowNanoseconds: { 20_000_000_000 }, clockSessionID: { anotherBoot }
         )
         #expect(try afterReboot.load() == nil)
         #expect(try afterReboot.expiredTimeoutAction() == .lock)
@@ -165,12 +172,12 @@ struct SharedAutoFillUnlockTests {
         let recorded = try keychain.read(AutoFillStorageKeys.sharedUserKeyAccount)
         let unavailable = SharedAutoFillUnlockStore(
             keychain: keychain, lockPolicy: .processOnly,
-            bootSessionID: { throw SystemBootSessionError.unavailable }
+            clockSessionID: { throw SharedClockSessionError.unavailable }
         )
-        #expect(throws: SystemBootSessionError.unavailable) { try unavailable.load() }
-        #expect(throws: SystemBootSessionError.unavailable) { try unavailable.setInactiveTimeout(nil) }
-        #expect(throws: SystemBootSessionError.unavailable) { try unavailable.expiredTimeoutAction() }
-        #expect(throws: SystemBootSessionError.unavailable) {
+        #expect(throws: SharedClockSessionError.unavailable) { try unavailable.load() }
+        #expect(throws: SharedClockSessionError.unavailable) { try unavailable.setInactiveTimeout(nil) }
+        #expect(throws: SharedClockSessionError.unavailable) { try unavailable.expiredTimeoutAction() }
+        #expect(throws: SharedClockSessionError.unavailable) {
             try unavailable.save(
                 userKey: "replacement-fake-key",
                 accountInfo: account(),
@@ -179,6 +186,38 @@ struct SharedAutoFillUnlockTests {
             )
         }
         #expect(try keychain.read(AutoFillStorageKeys.sharedUserKeyAccount) == recorded)
+    }
+
+    @Test
+    func anOldBootUUIDGrantIsRevokedInsteadOfBeingReinterpretedAsALiveClockSession() throws {
+        let keychain = UnlockKeychain()
+        let store = SharedAutoFillUnlockStore(keychain: keychain, lockPolicy: .processOnly)
+        let epoch = try store.publicationEpoch()
+        try store.save(
+            userKey: "fake-test-key",
+            accountInfo: account(),
+            authenticationID: UUID(),
+            ifRevocationEpochIs: epoch
+        )
+        var legacy = try #require(
+            try JSONSerialization.jsonObject(with: keychain.read(AutoFillStorageKeys.sharedUserKeyAccount)) as? [
+                String: Any
+            ]
+        )
+        legacy["schemaVersion"] = 4
+        legacy["bootSessionID"] = UUID().uuidString
+        legacy.removeValue(forKey: "clockSessionID")
+        try keychain.write(JSONSerialization.data(withJSONObject: legacy), for: AutoFillStorageKeys.sharedUserKeyAccount)
+        #expect(try store.load() == nil)
+        #expect(try store.publicationEpoch() != epoch)
+        #expect(throws: KeychainStoreError.notFound) { try keychain.read(AutoFillStorageKeys.sharedUserKeyAccount) }
+        try store.save(
+            userKey: "fake-new-key",
+            accountInfo: account(),
+            authenticationID: UUID(),
+            ifRevocationEpochIs: store.publicationEpoch()
+        )
+        #expect(try store.load()?.userKey == "fake-new-key")
     }
 
     @Test
@@ -195,7 +234,7 @@ struct SharedAutoFillUnlockTests {
             AutoFillStorageKeys.sharedUserKeyAccount
         )) as? [String: Any])
         old["schemaVersion"] = 3
-        old.removeValue(forKey: "bootSessionID")
+        old.removeValue(forKey: "clockSessionID")
         let data = try JSONSerialization.data(withJSONObject: old)
         try keychain.write(data, for: AutoFillStorageKeys.sharedUserKeyAccount)
         #expect(throws: KeychainStoreError.decodeFailed) { try store.load() }
@@ -392,7 +431,10 @@ struct SharedAutoFillUnlockTests {
         let lockURL = directory.appendingPathComponent(".vaultwarden-token-store.lock")
         let attributes = try FileManager.default.attributesOfItem(atPath: lockURL.path)
         #expect((attributes[.posixPermissions] as? NSNumber)?.intValue == 0o600)
-        #expect(try FileManager.default.contentsOfDirectory(atPath: directory.path) == [lockURL.lastPathComponent])
+        let files = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+        #expect(files.contains(lockURL.lastPathComponent))
+        #expect(files.contains(".vaultwarden-clock-session.id"))
+        #expect(files.contains(where: { $0.hasPrefix(".vaultwarden-clock-") && $0.hasSuffix(".lease") }))
         let envelope = try #require(try JSONSerialization.jsonObject(with:
             keychain.read("auth.sharedAutofillUnlock.v2")) as? [String: Any])
         #expect(envelope["schemaVersion"] as? Int == SharedAutoFillUnlock.currentSchemaVersion)

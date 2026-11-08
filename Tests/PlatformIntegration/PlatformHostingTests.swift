@@ -23,9 +23,12 @@ import XCTest
 /// observable lifecycle effects (model start, composed sync request) plus real window layout.
 @MainActor
 final class PlatformHostingTests: XCTestCase {
-    func testBootSessionIdentityIsAvailableAndStableInTheNativeTestHost() throws {
-        let initial = try SystemBootSession.currentID()
-        XCTAssertEqual(try SystemBootSession.currentID(), initial)
+    func testSharedClockSessionIsAvailableAndStableInTheNativeTestHost() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let initial = try SharedClockSession.currentID(containerURL: directory)
+        XCTAssertEqual(try SharedClockSession.currentID(containerURL: directory), initial)
     }
 
     func testConfigurationRecoveryHostsOnNativePlatform() {

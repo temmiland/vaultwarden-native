@@ -28,3 +28,10 @@ Additional 2FA methods, new cipher editors, multi-account, a main-app offline va
 sync, extension unlock and new administration endpoints remain out of scope.
 See the [frozen specification](Planning/RESTRUCTURE_IMPLEMENTATION_PLAN.md),
 [architecture](Architecture.md) and [third-party notices](../THIRD_PARTY_NOTICES.md).
+
+
+Signed development Build 3 uses a live, shared clock-session anchor for AutoFill timeouts instead
+of the boot UUID blocked on physical iOS devices. When the last participating process ends,
+AutoFill requires another unlock in the main app; persisted files cannot restore the old grant.
+Disabled system suggestions are separate from a failed cache/sync, and genuine projection failures
+remain visible. See the [device installation evidence](IntegratedAcceptance.md#signierter-installationslauf--2026-11-08).

@@ -310,7 +310,7 @@ Signing, Store-Wahl und Geräteabnahmen bleiben separat.
 | Bereich / bestehende IDs | Fehlender Nachweis und konkrete nächste Prüfung |
 | --- | --- |
 | SDK-Sicherheit — F-16 | Vorhandenes Advisory-Inventar fachlich nach tatsächlicher Ziel-/Feature-Erreichbarkeit bewerten; kompatible Abhilfe prüfen und danach SDK neu bauen und App-Regressionen ausführen. Die alten Trefferzahlen werden in dieser Runde nicht als frisch online verifiziert ausgegeben. |
-| Lock, Logout, Refresh und Neustart — F-02/F-10/F-11/F-23 | Signierte App und Extension parallel ausführen; Lock/Logout während Refresh, Prozessende, Keychain-Fehler, Reboot und abgelaufene Unlock-Lease prüfen. `SystemBootSession.currentID()` muss auf echten Zielgeräten verfügbar sein; bei Fehler verweigert der Code persistierte Grants. Lokale Tests ersetzen diesen OS-Nachweis nicht. |
+| Lock, Logout, Refresh und Neustart — F-02/F-10/F-11/F-23 | Signierte App und Extension parallel ausführen; Lock/Logout während Refresh, Prozessende, Keychain-Fehler, Reboot und abgelaufene Unlock-Lease prüfen. Den lebenden `SharedClockSession`-Nachweis auf echten Geräten prüfen; ohne lebenden Teilnehmer werden alte Grants verweigert. Lokale Tests ersetzen diesen OS-Nachweis nicht. |
 | AutoFill/Passkeys — F-12 | Echte Credential-Provider-Anfragen in Safari/Apps, QuickType, Registrierung und Assertion einschließlich Abbruch, Credential-Wechsel und Re-Prompt-Sperren abnehmen. Der lokale Serverlauf hat nur einen vorbereiteten Passkey gelesen. |
 | Server-Datenintegrität — F-13 | Login mit tatsächlicher TOTP-Challenge und der begrenzte stale-write-Test sind auf synthetischem Vaultwarden 1.37.5 belegt. Einzelgeräte-Widerruf wird dort mit 404 abgelehnt; Organisations-/Collection-Daten, andere Serverversionen, die Ein-Sekunden-Race und UI-Recovery fehlen. Der Produktions-Smoke bleibt beim Owner. |
 | Dateien und Ressourcen — F-08 | Große Dateien, voller Datenträger, Abbruch/Lock und Crash-Cleanup auf Geräten prüfen. Der Transport begrenzt Downloads; die SDK-Dateikrypto verarbeitet weiterhin ganze Dateien im Speicher. Deshalb keine konstante Gesamtspeichernutzung versprechen. |
@@ -565,7 +565,9 @@ Vor der Änderung wurde `isInitialized = true` gesetzt, bevor `fileStore.readPro
 - [ ] F-02 im beschriebenen Umfang abschließen.
 
 **Status:** Codehärtung umgesetzt; signiertes Geräteverhalten und Schlaf-/Neustartsemantik bleiben offen.
-**Umsetzung:** Shared AutoFill-Unlock-Schema auf Version 4 mit Boot-Session-ID angehoben; unbekannte/alte Schemata fail-closed. Persistierte Timeout-Lease nutzt monotone Zeit statt Wall Clock und wird bei wiederholten Inactive-Events nicht verlängert. Abgelaufene Leases werden verweigert. In-App-Watchdog misst mit `ContinuousClock`; App-Treiber schreibt und löscht die Lease passend zu Active/Inactive. `SharedAutoFillUnlockTests` bestehen nach der Boot-Bindung mit 17 Methoden; die vorhandenen
+**Gerätekorrektur 2026-11-08:** Schema 5 verwendet einen gemeinsamen Kernel-Dateilock als lebenden Clock-Session-Nachweis. Die iOS-gesperrte Boot-UUID wird nicht mehr gelesen. Wenn alle Teilnehmer enden, auch bei einem Neustart, wird eine neue ID erzeugt; Restdateien reaktivieren keinen alten Grant. Das kann erneutes Entsperren nach vollständigem Beenden der Haupt-App erfordern. Alte Schema-4-Grants werden unter dem Token-Store-Lock widerrufen; private Kontodaten bleiben erhalten. Details und Tests: [signierter Lauf](IntegratedAcceptance.md#gerätebefund-ios-freigabe-und-monotone-zeit).
+
+**Historische Umsetzung vor der Geräteprüfung:** Shared AutoFill-Unlock-Schema auf Version 4 mit Boot-Session-ID angehoben; unbekannte/alte Schemata fail-closed. Persistierte Timeout-Lease nutzt monotone Zeit statt Wall Clock und wird bei wiederholten Inactive-Events nicht verlängert. Abgelaufene Leases werden verweigert. In-App-Watchdog misst mit `ContinuousClock`; App-Treiber schreibt und löscht die Lease passend zu Active/Inactive. `SharedAutoFillUnlockTests` bestehen nach der Boot-Bindung mit 17 Methoden; die vorhandenen
 Watchdog-Fälle bleiben erhalten. Auch `.never` bewahrt AutoFill nur innerhalb desselben Systemstarts.
 Frühere Shared-Unlock-Schemata werden nicht autorisiert oder still gelöscht; nach Upgrade ist eine
 neue App-Authentifizierung für einen aktuellen Grant nötig. Private Accounts werden nicht migriert.
@@ -961,7 +963,10 @@ nicht mitveröffentlicht.
 - [x] macOS- und iOS-App samt AutoFill-Extension unsigned in Debug und Release bauen.
 - [x] Produktstand `24dc262` aus unabhängigem Git-Checkout mit Xcode 26.3 in GitHub CI
   bauen: [Lauf 42416802473](https://github.com/temmiland/vaultwarden-native/actions/runs/42416802473) erfolgreich.
-- [ ] Die SDK-Aktualisierung vom 2026-11-08 erneut in Remote-CI abnehmen.
+- [x] SDK-Aktualisierung `4897c20` vom 2026-11-08 in Remote-CI abgenommen:
+  [Lauf 42466566238](https://github.com/temmiland/vaultwarden-native/actions/runs/42466566238) vollständig erfolgreich.
+  Signierte Installationsbefunde und nachfolgende Korrekturen stehen in
+  [IntegratedAcceptance.md](IntegratedAcceptance.md#signierter-installationslauf--2026-11-08).
 
 **Lokaler SDK-Stand 2026-11-08:** Pin `a13b4c4` mit verbindlichen kompatiblen
 Dependency-Updates: alle fünf Rust-Release-Slices, SDK-Smoke, 858 Architekturtests/101 Suites,
@@ -1098,9 +1103,11 @@ Zuordnung: A-204, S-306, F-701/F-703, T-1001; ergänzt F-08/F-11.
 
 ### F-23 — P1 — Persistierte Timeout-Lease verwechselt Uptime verschiedener Systemstarts
 
-- [x] Freigabe/Timeout zuverlässig an den Systemstart binden; Altdaten sicher behandeln.
+- [x] Neustartübergreifende Wiederverwendung persistierter Timeout-Grants verhindern; Altdaten sicher behandeln.
 
-**Umsetzung:** Schema 4 bindet jeden Grant an `SystemBootSession.currentID()` aus
+**Aktueller Stand 2026-11-08:** Der frühere Sysctl-Ansatz scheiterte auf echten iOS-Geräten. Schema 5 bindet den Grant nun an eine lebende, von App und Extension weitergetragene Clock-Session. Der Kernel-Dateilock endet spätestens beim Geräteneustart; ohne lebenden Teilnehmer wird der alte Identifier niemals neu belegt. Veraltete Schema-4-Freigaben werden widerrufen. Ein separater Prozess und das Ende aller Teilnehmer sind getestet; reale Geräte-Neustarts bleiben Teil der Abnahme.
+
+**Historische Umsetzung vor der Geräteprüfung:** Schema 4 bindet jeden Grant an `SystemBootSession.currentID()` aus
 `kern.bootsessionuuid`. Fehlende Boot-Identität wirft, fremde Boot-ID verweigert die Freigabe;
 keine Timestamp-/Prozess-UUID-Ersatzwerte. Auch `.never` gilt nur im selben Systemstart.
 Die publizierten alten Daten werden bei Verweigerung nicht gelöscht. 17 Shared-Unlock-Methoden

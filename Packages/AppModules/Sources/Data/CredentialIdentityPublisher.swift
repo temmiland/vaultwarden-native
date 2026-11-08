@@ -68,6 +68,7 @@ public enum CredentialIdentityMapper {
 /// repository as stale rather than being silently treated as current.
 public enum CredentialIdentityHealth: Sendable, Equatable {
     case current(revision: UInt64)
+    case disabled
     case stale(lastSuccessfulRevision: UInt64)
     case unavailable
 }
@@ -119,6 +120,8 @@ public actor CredentialIdentityPublisher {
             try await identityMutations.withExclusiveMutation {
                 try await self.replace(revision: revision, identities: identities)
             }
+        } catch CredentialIdentityPublishingError.disabled {
+            health = .disabled
         } catch {
             health = lastSuccessfulRevision.map(CredentialIdentityHealth.stale(lastSuccessfulRevision:)) ?? .unavailable
         }
@@ -134,12 +137,19 @@ public actor CredentialIdentityPublisher {
             guard !isClosed else { return } // this publisher's queued lock owns the final clear
             lastSuccessfulRevision = revision
             health = .current(revision: revision)
+        } catch CredentialIdentityPublishingError.disabled {
+            // No replacement was attempted while disabled. Keep this distinct from an
+            // uncertain OS mutation; enabling the provider requires another full publication.
+            try checkProjection(revision)
+            guard !isClosed else { throw CancellationError() }
+            throw CredentialIdentityPublishingError.disabled
         } catch {
             // An uncertain replacement/obsolete cache must not stay advertised as current.
             // Compensation is ordered before a newer OS batch, never after its publication.
             let failure = error
             try checkClearAccess()
-            try await store.removeAllCredentialIdentities()
+            do { try await store.removeAllCredentialIdentities() }
+            catch { throw failure }
             throw failure
         }
     }
@@ -164,6 +174,8 @@ public actor CredentialIdentityPublisher {
             }
             lastSuccessfulRevision = nil
             health = .unavailable
+        } catch CredentialIdentityPublishingError.disabled {
+            health = .disabled
         } catch {
             health = lastSuccessfulRevision.map(CredentialIdentityHealth.stale(lastSuccessfulRevision:)) ?? .unavailable
         }

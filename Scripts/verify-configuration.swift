@@ -72,7 +72,8 @@ func buildSettings(configuration: String, overrides: [String]) throws -> [[Strin
 do {
     let overrides = Array(CommandLine.arguments.dropFirst())
     let allowed = Set(["DEVELOPMENT_TEAM", "VW_BUNDLE_ID_PREFIX", "VW_APP_GROUP_IDENTIFIER",
-                       "VW_SHARED_KEYCHAIN_SERVICE", "VW_PRIVATE_KEYCHAIN_SERVICE", "VW_KEYCHAIN_PREFIX"])
+                       "VW_SHARED_KEYCHAIN_SERVICE", "VW_PRIVATE_KEYCHAIN_SERVICE", "VW_KEYCHAIN_PREFIX",
+                       "REGISTER_APP_GROUPS"])
     for argument in overrides {
         let pieces = argument.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
         try require(
@@ -108,6 +109,12 @@ do {
                 "\(configuration)/\(target): missing or invalid signing prefix. Set DEVELOPMENT_TEAM in Configuration/Local.xcconfig; an explicit VW_KEYCHAIN_PREFIX must end in a dot."
             )
             let context = "\(configuration)/\(target)"
+            if target == "VaultwardenMac" || target == "VaultwardenAutoFill" {
+                try require(
+                    settings["REGISTER_APP_GROUPS"] == "YES",
+                    "\(context): REGISTER_APP_GROUPS must be YES so macOS provisioning authorizes the shared container."
+                )
+            }
             for key in runtimeSettings.values { _ = try requiredSetting(key, in: settings, context: context) }
             let bundlePrefix = try requiredSetting("VW_BUNDLE_ID_PREFIX", in: settings, context: context)
             try require(

@@ -340,6 +340,11 @@ public protocol VaultRepository: Sendable {
     func lock() async
 }
 
+public enum CredentialIdentityPublishingError: Error, Sendable, Equatable {
+    /// The user has not enabled this provider in the operating system.
+    case disabled
+}
+
 /// Implemented by a platform adapter around `ASCredentialIdentityStore`. Its revision must match
 /// the AutoFill file projection revision supplied by Data, so identity suggestions never claim a
 /// newer vault than the extension can actually fulfil.

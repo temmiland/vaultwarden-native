@@ -30,7 +30,7 @@ struct ItemDetailView: View {
                         SshKeyDetailView(key: key)
                     case .unsupported:
                         Text(
-                            item.permissions.editRestriction?.message ?? "This item type is read-only in this learning client."
+                            item.permissions.editRestriction?.message ?? "This item type is read-only in this client."
                         )
                         .foregroundStyle(.secondary)
                     }

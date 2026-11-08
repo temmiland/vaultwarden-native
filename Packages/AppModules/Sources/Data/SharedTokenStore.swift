@@ -121,7 +121,11 @@ public struct SharedTokenStore: SharedTokenTransacting, AutoFillCacheMutationAut
     /// persistence participates here so adoption + revocation cannot lose an intervening refresh.
     public func withTransaction<T>(_ operation: (SharedTokenTransaction) throws -> T) throws -> T {
         try SharedTokenStoreLock.withExclusiveLock(containerURL: containerURL, policy: lockPolicy) {
-            let transaction = SharedTokenTransaction(keychain: keychain)
+            let transaction = SharedTokenTransaction(
+                keychain: keychain,
+                containerURL: containerURL,
+                lockPolicy: lockPolicy
+            )
             defer { transaction.invalidate() }
             return try operation(transaction)
         }
@@ -155,7 +159,22 @@ public struct SharedTokenStore: SharedTokenTransacting, AutoFillCacheMutationAut
 public final class SharedTokenTransaction: SharedTokenTransactionPort {
     private let keychain: any SecurityStorage.KeychainStoring
     private var isActive = true
-    fileprivate init(keychain: any SecurityStorage.KeychainStoring) { self.keychain = keychain }
+    private let containerURL: URL?
+    private let lockPolicy: SharedStoreLockPolicy
+    private var unlockStore: SharedAutoFillUnlockStore {
+        SharedAutoFillUnlockStore(keychain: keychain, containerURL: containerURL, lockPolicy: lockPolicy)
+    }
+
+    fileprivate init(
+        keychain: any SecurityStorage.KeychainStoring,
+        containerURL: URL?,
+        lockPolicy: SharedStoreLockPolicy
+    ) {
+        self.keychain = keychain
+        self.containerURL = containerURL
+        self.lockPolicy = lockPolicy
+    }
+
     fileprivate func invalidate() { isActive = false }
     private func checkActive() throws { guard isActive else { throw CancellationError() } }
 
@@ -196,14 +215,14 @@ public final class SharedTokenTransaction: SharedTokenTransactionPort {
 
     public func unlockProof() throws -> ExtensionUnlockProof? {
         try checkActive()
-        return try SharedAutoFillUnlockStore(keychain: keychain).loadUnderExistingLock()?.proof
+        return try unlockStore.loadUnderExistingLock()?.proof
     }
 
     /// Fresh sign-in compares its captured epoch inside this same transaction, not by recursively
     /// taking the process lock or checking a value before the commit's lock is held.
     public func publicationEpoch() throws -> UUID {
         try checkActive()
-        return try SharedAutoFillUnlockStore(keychain: keychain).publicationEpochUnderExistingLock()
+        return try unlockStore.publicationEpochUnderExistingLock()
     }
 
     public func beginRefresh(scope: TokenScope, generation: UInt64) throws -> TokenRefreshIntent {
@@ -359,7 +378,7 @@ public final class SharedTokenTransaction: SharedTokenTransactionPort {
         try checkActive()
         guard scope.account.userID == accountInfo.userId,
               scope.account.serverBaseURL == accountInfo.serverBaseURL else { throw CancellationError() }
-        try SharedAutoFillUnlockStore(keychain: keychain).saveUnderExistingLock(
+        try unlockStore.saveUnderExistingLock(
             userKey: userKey,
             accountInfo: accountInfo,
             authenticationID: scope.authenticationID,
@@ -380,7 +399,7 @@ public final class SharedTokenTransaction: SharedTokenTransactionPort {
     public func revokeCapabilities() throws {
         try checkActive()
         var firstError: Error?
-        do { try SharedAutoFillUnlockStore(keychain: keychain).revokeUnderExistingLock() }
+        do { try unlockStore.revokeUnderExistingLock() }
         catch { firstError = error }
         do { try clear() } catch { firstError = firstError ?? error }
         if let firstError { throw firstError }

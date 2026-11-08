@@ -84,7 +84,7 @@ public struct SystemCredentialIdentityStore: CredentialIdentityPublishing, Passk
         revision _: UInt64
     ) async throws {
         let store = ASCredentialIdentityStore.shared
-        guard await store.state().isEnabled else { throw SystemCredentialIdentityStoreError.disabled }
+        guard await store.state().isEnabled else { throw CredentialIdentityPublishingError.disabled }
 
         let systemIdentities = Self.makeSystemIdentities(from: identities)
         if systemIdentities.isEmpty {
@@ -96,7 +96,7 @@ public struct SystemCredentialIdentityStore: CredentialIdentityPublishing, Passk
 
     public func removeAllCredentialIdentities() async throws {
         let store = ASCredentialIdentityStore.shared
-        guard await store.state().isEnabled else { throw SystemCredentialIdentityStoreError.disabled }
+        guard await store.state().isEnabled else { throw CredentialIdentityPublishingError.disabled }
         try await store.removeAllCredentialIdentities()
     }
 

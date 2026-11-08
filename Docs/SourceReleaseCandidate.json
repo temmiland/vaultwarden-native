@@ -2,14 +2,14 @@
   "schemaVersion": 1,
   "purpose": "Public source-only CI candidate snapshot inventory; not the final release, tag, or app publication.",
   "generatedOn": "2026-11-08",
-  "baseCommit": "dfac71008cba3ab52d42c9a9de2a05418f35504d",
+  "baseCommit": "4897c207a037f2841bcc898eb49021b5eba4da34",
   "branch": "source-only-ci-2026-11-07",
   "snapshotIncludesGitHistory": false,
   "snapshotDefinition": "All present tracked files plus present unignored untracked files at generation time, excluding this manifest from its own hash list.",
   "worktreeStatusAtGeneration": {
-    "modifiedOrAddedTrackedEntries": 3,
-    "deletedTrackedEntries": 0,
-    "untrackedEntriesExcludingManifest": 0
+    "modifiedOrAddedTrackedEntries": 25,
+    "deletedTrackedEntries": 1,
+    "untrackedEntriesExcludingManifest": 2
   },
   "excludedPaths": [
     ".git/",
@@ -22,9 +22,11 @@
     "generated Xcode projects and user state",
     "other Git-ignored files"
   ],
-  "deletedFromBase": [],
+  "deletedFromBase": [
+    "Packages/AppModules/Sources/SecurityStorage/SystemBootSession.swift"
+  ],
   "selfHashOmitted": true,
-  "includedFileCountExcludingManifest": 500,
+  "includedFileCountExcludingManifest": 501,
   "files": [
     {
       "path": ".github/workflows/verify-source.yml",
@@ -179,8 +181,8 @@
     {
       "path": "App/VaultwardenIOS-Info.plist",
       "type": "file",
-      "bytes": 1143,
-      "sha256": "9359346a8cc64523367a611e473841b97c54fcdbe3fea39ef86412a83d9e79d7"
+      "bytes": 1433,
+      "sha256": "b4d8ced90738f908cda84de4426f89aa8211bed432d575c219d73eb38e3d5c96"
     },
     {
       "path": "App/VaultwardenIOS.entitlements",
@@ -299,8 +301,8 @@
     {
       "path": "Configuration/Base.xcconfig",
       "type": "file",
-      "bytes": 1023,
-      "sha256": "af29e7166919a68b3cc3dded89f84d3545cadb3164d8e79e80db0492c99e7365"
+      "bytes": 1133,
+      "sha256": "8929ff1655cb5c8ddc94d43431b7a87b0b307c0bcef5813f4590ceae96759e13"
     },
     {
       "path": "Configuration/Debug.xcconfig",
@@ -509,14 +511,14 @@
     {
       "path": "Docs/FeatureStatus.md",
       "type": "file",
-      "bytes": 2300,
-      "sha256": "29f69ce13ff0d04fca331b2f4c6b9eadb84a97ac162dea4ce9d7e877ad07bd48"
+      "bytes": 2809,
+      "sha256": "4ddd15070d5b6476eec95ab515e6f61d78e01f1fee545575f9fb6ff485f2e249"
     },
     {
       "path": "Docs/IntegratedAcceptance.md",
       "type": "file",
-      "bytes": 17244,
-      "sha256": "93faf84bc036e60ae8818f2b60005cbf3767a7197a79540e86109e0da3cc55e8"
+      "bytes": 21497,
+      "sha256": "dec9cdbef09e5f162d27b700c9127aca9c80dd7a25b13709727f972ee7a8b24e"
     },
     {
       "path": "Docs/Planning/RESTRUCTURE_IMPLEMENTATION_PLAN.md",
@@ -527,8 +529,8 @@
     {
       "path": "Docs/RemainingReleaseWork.md",
       "type": "file",
-      "bytes": 131869,
-      "sha256": "204d64a29495f9f9f7a8ce1a03424b48e1c6f63addf739a8fcbddcb039c8b428"
+      "bytes": 133341,
+      "sha256": "3e47e4861660a9c01e92689f9e879876fd6e4118d722b8b47abe65100f08b354"
     },
     {
       "path": "Docs/SDKLocalArtifactInventory.json",
@@ -617,8 +619,8 @@
     {
       "path": "Packages/AppModules/Sources/AppFeature/AppModel.swift",
       "type": "file",
-      "bytes": 13561,
-      "sha256": "dc0c5471e51568757eb7b9fe93dc59cefd3236f8aa34bc617b432988740a25b6"
+      "bytes": 14210,
+      "sha256": "3e619a41232bb0f90abb008651830035842f8fffba247d8aa091cbcc44ce7559"
     },
     {
       "path": "Packages/AppModules/Sources/AppFeature/VaultTimeoutWatchdog.swift",
@@ -1247,8 +1249,8 @@
     {
       "path": "Packages/AppModules/Sources/Data/CredentialIdentityPublisher.swift",
       "type": "file",
-      "bytes": 7984,
-      "sha256": "abf080295fc92055773405fe8ee002b66931a54851897866937b52952c6682b2"
+      "bytes": 8638,
+      "sha256": "4e1abec2f51f12c7a6c02e564678df63553dd9b3c1b3a4473ec0fdd7a1c1cb89"
     },
     {
       "path": "Packages/AppModules/Sources/Data/DataModule.swift",
@@ -1283,8 +1285,8 @@
     {
       "path": "Packages/AppModules/Sources/Data/DefaultVaultRepository.swift",
       "type": "file",
-      "bytes": 17459,
-      "sha256": "e699c1195efce2ead599f1254a4c22a00a5956f9063a40037f6bf523a2391afa"
+      "bytes": 17702,
+      "sha256": "7a374fc00f129686b8037d1b0fe3356f0ae123524ff2f29d34bbde9b1007ebb4"
     },
     {
       "path": "Packages/AppModules/Sources/Data/DefaultVaultTimeoutSettingsRepository.swift",
@@ -1409,8 +1411,8 @@
     {
       "path": "Packages/AppModules/Sources/Data/SharedAutoFillUnlock.swift",
       "type": "file",
-      "bytes": 13592,
-      "sha256": "54d4662eddd3dadbd9f9dd3b4e46af16da93f0a0895ec6f5c593424336ad0136"
+      "bytes": 14280,
+      "sha256": "253e13416cbc221e7a0208d3102cb10697c6d706fb15843e3355c9420ef46d18"
     },
     {
       "path": "Packages/AppModules/Sources/Data/SharedTokenPersistencePort.swift",
@@ -1421,8 +1423,8 @@
     {
       "path": "Packages/AppModules/Sources/Data/SharedTokenStore.swift",
       "type": "file",
-      "bytes": 19984,
-      "sha256": "662a353924fca15fd7516d40352038c2b8877bb8721aa59611e749e5ef51a42b"
+      "bytes": 20393,
+      "sha256": "9973f93ce570e11293006985a8613e8d9ce76daea1d7ed609c7dd51872e64e18"
     },
     {
       "path": "Packages/AppModules/Sources/Data/TokenCoordinator.swift",
@@ -1469,8 +1471,8 @@
     {
       "path": "Packages/AppModules/Sources/Domain/Domain.swift",
       "type": "file",
-      "bytes": 18426,
-      "sha256": "23ee9539a8bd4d3de50941677e13469f8e5a337fbe0864a69665b118a48960da"
+      "bytes": 18595,
+      "sha256": "e58aa141125c241e71c1c877344464f07d284de3ad1f57e829385d4ed2a7123b"
     },
     {
       "path": "Packages/AppModules/Sources/Domain/PasskeyRegistrationRecoveryReview.swift",
@@ -1553,8 +1555,8 @@
     {
       "path": "Packages/AppModules/Sources/Domain/VaultRepositoryOperations.swift",
       "type": "file",
-      "bytes": 2086,
-      "sha256": "0b5cede5f697fa7757e96fdfec832ca79bac1bf67c69711bcd5da734b027b9d1"
+      "bytes": 2311,
+      "sha256": "2a23b68dde2eb07e62c2fa72a69b074452d1e928a52f754b6baa44078d825ff3"
     },
     {
       "path": "Packages/AppModules/Sources/Domain/VaultTimeoutSettings.swift",
@@ -1619,8 +1621,8 @@
     {
       "path": "Packages/AppModules/Sources/PlatformServices/SystemCredentialIdentityStore.swift",
       "type": "file",
-      "bytes": 7093,
-      "sha256": "967ee0cca01d83700ecc4187e6558075227447f6b84f4f49ba2bbbf587bd82c7"
+      "bytes": 7091,
+      "sha256": "8071c9dc0bc60f788a0450930cd2d5bd1a0c2636ae9057ca2a0aa0d13107dee1"
     },
     {
       "path": "Packages/AppModules/Sources/PlatformServices/SystemDeviceNameClient.swift",
@@ -1683,10 +1685,10 @@
       "sha256": "ce438a4be1efae340249b9a164ea517e59d2397b78d3e6ed004778e3e39cb508"
     },
     {
-      "path": "Packages/AppModules/Sources/SecurityStorage/SystemBootSession.swift",
+      "path": "Packages/AppModules/Sources/SecurityStorage/SharedClockSession.swift",
       "type": "file",
-      "bytes": 761,
-      "sha256": "03c36748fa9c3afe27d282883ade1b1d3769307cf736f08b5336786805427645"
+      "bytes": 5679,
+      "sha256": "0274824ebbf1325e360abce22603ba86d9a97c6e6918bb110c89b9d9d6895d62"
     },
     {
       "path": "Packages/AppModules/Sources/SendPresentation/Models/SendModel.swift",
@@ -1763,8 +1765,8 @@
     {
       "path": "Packages/AppModules/Sources/SharedUI/VaultEditRestrictionDisplay.swift",
       "type": "file",
-      "bytes": 1066,
-      "sha256": "7ebeb304ca804264b3d854c4a2cb614d01541241b0657ddbfad97c4928adb183"
+      "bytes": 1048,
+      "sha256": "f06f16f81ed7a4aeca8af6badd41df7dd5741a3f54540b2fb263deb6303f5652"
     },
     {
       "path": "Packages/AppModules/Sources/SharedUI/VaultItemKindDisplay.swift",
@@ -1781,8 +1783,8 @@
     {
       "path": "Packages/AppModules/Sources/VaultPresentation/ItemDetailView.swift",
       "type": "file",
-      "bytes": 14101,
-      "sha256": "34eabc336d2fbcf451fd96b28070ded062e96f53bd09e4820184acf8f72e07ff"
+      "bytes": 14092,
+      "sha256": "c7a036ecb7961a2a7c11901ff4651cc1c5bedb2467e7eba9b531d78cdacbafc9"
     },
     {
       "path": "Packages/AppModules/Sources/VaultPresentation/ItemEditSheet.swift",
@@ -1793,8 +1795,8 @@
     {
       "path": "Packages/AppModules/Sources/VaultPresentation/ItemListView.swift",
       "type": "file",
-      "bytes": 7422,
-      "sha256": "e13af0caf743032217aee51a95ccbf4deaf8586a36d134b2916c972464a21458"
+      "bytes": 7275,
+      "sha256": "f69c12efa392e82273e0e4ebf4640ea2825141c0caaa31e7c6f31f97dd70d055"
     },
     {
       "path": "Packages/AppModules/Sources/VaultPresentation/PasskeyRecoveryReviewView.swift",
@@ -1853,8 +1855,8 @@
     {
       "path": "Packages/AppModules/Sources/VaultPresentation/VaultState.swift",
       "type": "file",
-      "bytes": 5348,
-      "sha256": "51eb657a9e85cf3b1f7b03e518772c1b30e3a523e64ec872786421ba5c33a8b9"
+      "bytes": 5746,
+      "sha256": "817788cfdf6e287333cdca237bb3ade658d70e87988fee6d9e900c7874973fee"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AppAuthTokenProviderTests.swift",
@@ -2045,8 +2047,8 @@
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/CredentialIdentityPublisherTests.swift",
       "type": "file",
-      "bytes": 9557,
-      "sha256": "366e58c753bca61700912d2229acb4b1a11542fb84852350b9de72f04427313a"
+      "bytes": 11284,
+      "sha256": "86615645e87bc43ab0c38d8b98543f80bc4456fd5fe643dbb24e75eecbbc204c"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/CredentialQueryTests.swift",
@@ -2453,8 +2455,14 @@
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SharedAutoFillUnlockTests.swift",
       "type": "file",
-      "bytes": 19400,
-      "sha256": "e27b5a5e007204df9b320acd9e9f9a49eba6fcae424c6652ebefa3bfa58d7a29"
+      "bytes": 21402,
+      "sha256": "b350c3e55c716339d037c75c79a422eb460ae5920861749be03bd56a08a6b04c"
+    },
+    {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SharedClockSessionTests.swift",
+      "type": "file",
+      "bytes": 4734,
+      "sha256": "f50d43fea9923d573a8a27fa759072284e6efd73184798c57c0ae68299a01c7c"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SharedKDFPublicationTests.swift",
@@ -2543,14 +2551,14 @@
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/VaultModelTests.swift",
       "type": "file",
-      "bytes": 29875,
-      "sha256": "021d5875f01f9dda53e1bd640c240f4f086dc35d7c7ccf4ecb191a45a2cceb84"
+      "bytes": 30837,
+      "sha256": "7e051ba628a17742319b3a66409d390b869431672fb17d71819c6544b6c6846e"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/VaultMutationPipelineTests.swift",
       "type": "file",
-      "bytes": 26073,
-      "sha256": "1879ddef3f840566d16da4a8c34d5bef08eb9737a5c7177a45e7e66228770e41"
+      "bytes": 27847,
+      "sha256": "bbe6a6562228d75755761779b4f0be34de7513b5ea8cb85f899a139212bf5b3b"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/VaultStateTests.swift",
@@ -2939,8 +2947,8 @@
     {
       "path": "Scripts/test-configuration.sh",
       "type": "file",
-      "bytes": 1221,
-      "sha256": "4beabbace285b328adaac168b4269bda7db858d77717eac141b24b5e9da04b95"
+      "bytes": 1258,
+      "sha256": "d78f7c2003cb24bebd9d19194bf2ab70f04abeb2bc083368c0e22ac114cb80ae"
     },
     {
       "path": "Scripts/test-disposable-server.sh",
@@ -2987,8 +2995,8 @@
     {
       "path": "Scripts/verify-configuration.swift",
       "type": "file",
-      "bytes": 9066,
-      "sha256": "d9cc9c29d67456e11c8e66942dabc3986dee569d415078334e98a903832e06e3"
+      "bytes": 9435,
+      "sha256": "ed35ff73623779c9ddc19ebc083f77a33a5e0e2a8822cce30e3aa6a262b96fd6"
     },
     {
       "path": "Scripts/xcodegen.sh",
@@ -3017,14 +3025,14 @@
     {
       "path": "Tests/PlatformIntegration/PlatformHostingTests.swift",
       "type": "file",
-      "bytes": 15917,
-      "sha256": "f4b6afdc498b7f4ea7995d8ea315cfe2640bd0c0fd484227dfa1fb9e63ff5a69"
+      "bytes": 16236,
+      "sha256": "009effc2516db89c2f8793d3a9f4a16a3680c18f030aea0e78a2140bb36af1d8"
     },
     {
       "path": "project.yml",
       "type": "file",
-      "bytes": 14304,
-      "sha256": "7373e80086e3ab8084aff5e8a6401d55f328357a54fe99142ccae1877b4c568e"
+      "bytes": 14336,
+      "sha256": "f200664600aa8f4825be9e6c9404f336cd5a4814de86d982f45f952a787b2bcd"
     }
   ]
 }

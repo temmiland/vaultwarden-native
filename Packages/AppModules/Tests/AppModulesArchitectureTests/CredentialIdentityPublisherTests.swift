@@ -6,6 +6,42 @@ import Testing
 @Suite
 struct CredentialIdentityPublisherTests {
     @Test
+    func disablingTheStoreDuringFailedReplacementCannotHideAnUncertainMutation() async {
+        let store = RecordingIdentityStore()
+        store.replaceError = TestIdentityStoreError.replaceFailed
+        store.removeAllError = CredentialIdentityPublishingError.disabled
+        let publisher = CredentialIdentityPublisher(
+            store: store, identityMutations: IdentityMutationTestCoordinator(),
+            checkProjection: { _ in }, checkClearAccess: {}
+        )
+        #expect(
+            await publisher.publish(revision: 5, identities: [], projectionHealth: .current(revision: 5)) == .unavailable
+        )
+        #expect(store.removeAllCalls == 1)
+    }
+
+    @Test
+    func disabledSuggestionsStayDistinctFromAStorageFailureAndCanBeEnabledAgain() async {
+        let store = RecordingIdentityStore()
+        store.replaceError = CredentialIdentityPublishingError.disabled
+        let publisher = CredentialIdentityPublisher(
+            store: store, identityMutations: IdentityMutationTestCoordinator(),
+            checkProjection: { _ in }, checkClearAccess: {}
+        )
+        #expect(
+            await publisher.publish(revision: 5, identities: [], projectionHealth: .current(revision: 5)) == .disabled
+        )
+        #expect(store.removeAllCalls == 0)
+        #expect(await publisher.publish(revision: 6, identities: [], projectionHealth: .unavailable) == .unavailable)
+        store.replaceError = nil
+        #expect(
+            await publisher.publish(revision: 7, identities: [], projectionHealth: .current(revision: 7)) == .current(
+                revision: 7
+            )
+        )
+    }
+
+    @Test
     func mapperPublishesDeduplicatedDomainIdentitiesOnlyForExplicitlyEligibleURIs() {
         let source = VaultLoginIdentitySource(
             cipherID: CipherID(rawValue: "login"), displayName: "Login", username: "alice",
@@ -230,6 +266,7 @@ private enum TestIdentityStoreError: Error {
 private final class RecordingIdentityStore: CredentialIdentityPublishing, @unchecked Sendable {
     var published: [([CredentialIdentityDescriptor], UInt64)] = []
     var replaceError: Error?
+    var removeAllError: Error?
     private(set) var removeAllCalls = 0
 
     func replaceCredentialIdentities(_ identities: [CredentialIdentityDescriptor], revision: UInt64) async throws {
@@ -239,5 +276,6 @@ private final class RecordingIdentityStore: CredentialIdentityPublishing, @unche
 
     func removeAllCredentialIdentities() async throws {
         removeAllCalls += 1
+        if let removeAllError { throw removeAllError }
     }
 }

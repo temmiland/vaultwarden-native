@@ -2,6 +2,9 @@ import Foundation
 
 public enum VaultProjectionStatus: Sendable, Equatable {
     case current(revision: UInt64)
+    /// The file cache is current, but the user has disabled system suggestions. This must not
+    /// count as a fully repaired projection for credential-registration recovery.
+    case suggestionsDisabled(revision: UInt64)
     case stale
     case unavailable
 }

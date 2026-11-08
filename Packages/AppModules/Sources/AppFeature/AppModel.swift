@@ -1,6 +1,16 @@
 import Domain
 import Foundation
 import Observation
+import os
+
+private let sessionSecurityLogger = Logger(subsystem: "Vaultwarden", category: "SessionSecurity")
+
+private func reportSecurityFailure(_ operation: String, error: Error) {
+    let failure = error as NSError
+    sessionSecurityLogger.error(
+        "\(operation, privacy: .public): domain=\(failure.domain, privacy: .public) code=\(failure.code, privacy: .public)"
+    )
+}
 
 public enum AppScenePhase: Sendable { case active, inactive, background }
 public enum AppTimeoutAction: Sendable, Equatable { case lock, logOut }
@@ -216,6 +226,7 @@ public final class AppModel<Session: AppSessionResource> {
                 case .logout: try await authRepository.logout()
                 }
             } catch {
+                reportSecurityFailure("Persistent session cleanup failed", error: error)
                 failures.append("Saved session or AutoFill access couldn't be securely cleared.")
             }
             let snapshot = await authRepository.currentSnapshot()
@@ -243,6 +254,7 @@ public final class AppModel<Session: AppSessionResource> {
             await applyPendingTimeoutAction()
             do { try timeoutDriver.noteBecameActive() }
             catch {
+                reportSecurityFailure("Shared timeout activation failed", error: error)
                 await lockNow()
                 let lockError = securityErrorMessage
                 securityErrorMessage = "Couldn't update the shared AutoFill timeout, so a safety lock was requested. "
@@ -251,6 +263,7 @@ public final class AppModel<Session: AppSessionResource> {
         case .inactive, .background:
             do { try timeoutDriver.noteBecameInactive() }
             catch {
+                reportSecurityFailure("Shared timeout deactivation failed", error: error)
                 await lockNow()
                 let lockError = securityErrorMessage
                 securityErrorMessage = "Couldn't persist the AutoFill timeout, so a safety lock was requested. "

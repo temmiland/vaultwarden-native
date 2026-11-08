@@ -4,6 +4,9 @@ import Domain
 import Foundation
 import SecurityStorage
 
+private let fixtureClockSessionID = UUID()
+private struct UnlockSchemaHeader: Decodable { let schemaVersion: Int }
+
 /// A system-wide monotonic clock shared by the app and AutoFill processes. Unlike wall time it
 /// cannot be extended by changing the device clock, and it advances while the system sleeps.
 public enum SharedSystemContinuousClock {
@@ -13,12 +16,12 @@ public enum SharedSystemContinuousClock {
 /// Key material, account metadata and an unlock epoch in ONE atomic Keychain value. Raw legacy
 /// user-key records are deliberately not accepted; opening the app and unlocking replaces them.
 public struct SharedAutoFillUnlock: Codable, Sendable, CustomStringConvertible, CustomDebugStringConvertible {
-    public static let currentSchemaVersion = 4
+    public static let currentSchemaVersion = 5
     public let schemaVersion: Int
     public let proof: ExtensionUnlockProof
     public let accountInfo: SharedAccountInfo
     public let userKey: String
-    fileprivate let bootSessionID: UUID
+    fileprivate let clockSessionID: UUID
     fileprivate let timeoutLease: SharedAutoFillTimeoutLease?
 
     public init(
@@ -26,7 +29,7 @@ public struct SharedAutoFillUnlock: Codable, Sendable, CustomStringConvertible, 
         accountInfo: SharedAccountInfo,
         revocationEpoch: UUID,
         authenticationID: UUID,
-        bootSessionID: UUID? = nil
+        clockSessionID: UUID
     ) throws {
         try Self.validate(accountInfo)
         guard !userKey.isEmpty, !accountInfo.userId.isEmpty, let base = accountInfo.serverBaseURL,
@@ -35,7 +38,7 @@ public struct SharedAutoFillUnlock: Codable, Sendable, CustomStringConvertible, 
         schemaVersion = Self.currentSchemaVersion
         self.accountInfo = accountInfo
         self.userKey = userKey
-        self.bootSessionID = try bootSessionID ?? SystemBootSession.currentID()
+        self.clockSessionID = clockSessionID
         timeoutLease = nil
         proof = ExtensionUnlockProof(revocationEpoch: revocationEpoch, account: AutoFillAccountIdentity(
             userID: accountInfo.userId, serverBaseURL: base
@@ -48,7 +51,7 @@ public struct SharedAutoFillUnlock: Codable, Sendable, CustomStringConvertible, 
         proof = try values.decode(ExtensionUnlockProof.self, forKey: .proof)
         accountInfo = try values.decode(SharedAccountInfo.self, forKey: .accountInfo)
         userKey = try values.decode(String.self, forKey: .userKey)
-        bootSessionID = try values.decode(UUID.self, forKey: .bootSessionID)
+        clockSessionID = try values.decode(UUID.self, forKey: .clockSessionID)
         timeoutLease = try values.decodeIfPresent(SharedAutoFillTimeoutLease.self, forKey: .timeoutLease)
         try Self.validate(accountInfo)
         guard schemaVersion == Self.currentSchemaVersion, proof.authenticationID != nil, !userKey.isEmpty,
@@ -75,7 +78,7 @@ public struct SharedAutoFillUnlock: Codable, Sendable, CustomStringConvertible, 
             proof: proof,
             accountInfo: accountInfo,
             userKey: userKey,
-            bootSessionID: bootSessionID,
+            clockSessionID: clockSessionID,
             timeoutLease: lease
         )
     }
@@ -84,14 +87,14 @@ public struct SharedAutoFillUnlock: Codable, Sendable, CustomStringConvertible, 
         proof: ExtensionUnlockProof,
         accountInfo: SharedAccountInfo,
         userKey: String,
-        bootSessionID: UUID,
+        clockSessionID: UUID,
         timeoutLease: SharedAutoFillTimeoutLease?
     ) {
         schemaVersion = Self.currentSchemaVersion
         self.proof = proof
         self.accountInfo = accountInfo
         self.userKey = userKey
-        self.bootSessionID = bootSessionID
+        self.clockSessionID = clockSessionID
         self.timeoutLease = timeoutLease
     }
 
@@ -144,20 +147,24 @@ public struct SharedAutoFillUnlockStore: Sendable {
     private let lockPolicy: SharedStoreLockPolicy
     private let containerURL: URL?
     private let nowNanoseconds: @Sendable () -> UInt64
-    private let bootSessionID: @Sendable () throws -> UUID
+    private let clockSessionID: @Sendable () throws -> UUID
 
     public init(
         keychain: any KeychainStoring,
         containerURL: URL? = nil,
         lockPolicy: SharedStoreLockPolicy = .appGroup,
         nowNanoseconds: @escaping @Sendable () -> UInt64 = { SharedSystemContinuousClock.nowNanoseconds },
-        bootSessionID: @escaping @Sendable () throws -> UUID = { try SystemBootSession.currentID() }
+        clockSessionID: (@Sendable () throws -> UUID)? = nil
     ) {
         self.keychain = keychain
         self.lockPolicy = lockPolicy
         self.containerURL = containerURL
         self.nowNanoseconds = nowNanoseconds
-        self.bootSessionID = bootSessionID
+        self.clockSessionID = clockSessionID ?? {
+            if case .processOnly = lockPolicy { return fixtureClockSessionID }
+            guard let containerURL else { throw SharedClockSessionError.unavailable }
+            return try SharedClockSession.currentID(containerURL: containerURL)
+        }
     }
 
     public func load() throws -> SharedAutoFillUnlock? {
@@ -168,7 +175,7 @@ public struct SharedAutoFillUnlockStore: Sendable {
     // Token compare-and-write uses this under the SAME process lock. Never recursively flock.
     func loadUnderExistingLock() throws -> SharedAutoFillUnlock? {
         guard let unlock = try loadCurrentUnlockUnderExistingLock() else { return nil }
-        guard try unlock.bootSessionID == bootSessionID() else { return nil }
+        guard try unlock.clockSessionID == clockSessionID() else { return nil }
         guard unlock.timeoutLease?.isExpired(at: nowNanoseconds()) != true else { return nil }
         return unlock
     }
@@ -178,6 +185,12 @@ public struct SharedAutoFillUnlockStore: Sendable {
         let data: Foundation.Data
         do { data = try keychain.read(AutoFillStorageKeys.sharedUserKeyAccount) }
         catch KeychainStoreError.notFound { return nil }
+        if (try? JSONDecoder().decode(UnlockSchemaHeader.self, from: data).schemaVersion) == 4 {
+            // An old sysctl-based grant cannot become a live-session grant. Rotate the deny epoch
+            // and remove its key before returning; the private account remains available locked.
+            try revokeUnderExistingLock()
+            return nil
+        }
         let unlock: SharedAutoFillUnlock
         do { unlock = try JSONDecoder().decode(SharedAutoFillUnlock.self, from: data) }
         catch { throw KeychainStoreError.decodeFailed }
@@ -190,7 +203,7 @@ public struct SharedAutoFillUnlockStore: Sendable {
     public func setInactiveTimeout(_ preference: VaultTimeoutPreference?) throws {
         try SharedTokenStoreLock.withExclusiveLock(containerURL: containerURL, policy: lockPolicy) {
             guard let current = try loadCurrentUnlockUnderExistingLock() else { return }
-            guard try current.bootSessionID == bootSessionID() else { return }
+            guard try current.clockSessionID == clockSessionID() else { return }
             let now = nowNanoseconds()
             guard current.timeoutLease?.isExpired(at: now) != true else { return }
             if let preference, preference.duration != .never, current.timeoutLease != nil { return }
@@ -204,9 +217,9 @@ public struct SharedAutoFillUnlockStore: Sendable {
     public func expiredTimeoutAction() throws -> VaultTimeoutPreference.Action? {
         try SharedTokenStoreLock.withExclusiveLock(containerURL: containerURL, policy: lockPolicy) {
             guard let unlock = try loadCurrentUnlockUnderExistingLock() else { return nil }
-            // Even "never" only preserves an unlock within this system boot. Reboot requires
+            // Even "never" requires a live clock-session anchor. Losing all participants requires
             // another app unlock; a configured logout action is retained when one was recorded.
-            guard try unlock.bootSessionID == bootSessionID() else { return unlock.timeoutLease?.action ?? .lock }
+            guard try unlock.clockSessionID == clockSessionID() else { return unlock.timeoutLease?.action ?? .lock }
             guard
                 let lease = unlock.timeoutLease, lease.isExpired(at: nowNanoseconds()) else { return nil }
             return lease.action
@@ -254,7 +267,7 @@ public struct SharedAutoFillUnlockStore: Sendable {
             accountInfo: accountInfo,
             revocationEpoch: expected,
             authenticationID: authenticationID,
-            bootSessionID: bootSessionID()
+            clockSessionID: clockSessionID()
         )
         try keychain.write(JSONEncoder().encode(unlock), for: AutoFillStorageKeys.sharedUserKeyAccount)
     }

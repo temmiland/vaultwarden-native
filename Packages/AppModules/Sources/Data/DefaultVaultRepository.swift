@@ -302,8 +302,14 @@ public actor DefaultVaultRepository: VaultRepository {
                     identities: identities,
                     projectionHealth: health
                 )
-                projection = identityHealth == .current(revision: output.snapshot.revision)
-                    ? .current(revision: output.snapshot.revision) : .stale
+                switch identityHealth {
+                case let .current(revision) where revision == output.snapshot.revision:
+                    projection = .current(revision: output.snapshot.revision)
+                case .disabled:
+                    projection = .suggestionsDisabled(revision: output.snapshot.revision)
+                default:
+                    projection = .stale
+                }
             } else {
                 await projectionWriter.invalidate()
                 _ = await identityPublisher?.clear()
