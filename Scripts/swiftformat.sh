@@ -6,9 +6,17 @@ ZIP_SHA256="28c7802e11fa5ae113d903066439c6bb1be20a8ac1ad9709c42616a7e273fb0f"
 TOOL_ROOT="$REPOSITORY_ROOT/.build/tools/swiftformat-$VERSION"
 mkdir -p "$TOOL_ROOT"
 if [[ ! -f "$TOOL_ROOT/swiftformat.zip" ]]; then
+  DOWNLOAD_PATH="$(mktemp "$TOOL_ROOT/download.XXXXXX")"
+  trap 'rm -f "$DOWNLOAD_PATH"' EXIT
   curl --fail --location --silent --show-error \
+    --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 20 --max-time 300 \
     "https://github.com/nicklockwood/SwiftFormat/releases/download/$VERSION/swiftformat.zip" \
-    --output "$TOOL_ROOT/swiftformat.zip"
+    --output "$DOWNLOAD_PATH"
+  [[ "$(shasum -a 256 "$DOWNLOAD_PATH" | awk '{print $1}')" == "$ZIP_SHA256" ]] || {
+    echo "Downloaded tool archive hash mismatch; refusing execution" >&2; exit 1;
+  }
+  mv "$DOWNLOAD_PATH" "$TOOL_ROOT/swiftformat.zip"
+  trap - EXIT
 fi
 [[ "$(shasum -a 256 "$TOOL_ROOT/swiftformat.zip" | awk '{print $1}')" == "$ZIP_SHA256" ]] || {
   echo "SwiftFormat archive hash mismatch; refusing execution" >&2; exit 1;

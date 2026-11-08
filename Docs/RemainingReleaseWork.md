@@ -963,6 +963,15 @@ nicht mitveröffentlicht.
   bauen: [Lauf 42416802473](https://github.com/temmiland/vaultwarden-native/actions/runs/42416802473) erfolgreich.
 - [ ] Die SDK-Aktualisierung vom 2026-11-08 erneut in Remote-CI abnehmen.
 
+**Lokaler SDK-Stand 2026-11-08:** Pin `a13b4c4` mit verbindlichen kompatiblen
+Dependency-Updates: alle fünf Rust-Release-Slices, SDK-Smoke, 858 Architekturtests/101 Suites,
+69 AuthPresentation-Tests sowie 18 macOS- und 19 iOS-Integrationstests bestanden. App und
+AutoFill-Extension bauen in Release auf beiden Plattformen unsigned; Quellen-, Architektur-,
+Format-, Konfigurations- und Preflight-Prüfungen bestehen. Der erste GitHub-Lauf für `b3ea723`
+scheiterte beim Tool-Download mit Transferfehler 56 vor dem SDK-Build; beide Downloader
+wiederholen nun begrenzt fehlgeschlagene Transfers und übernehmen nur vollständige,
+prüfsummengeprüfte Archive.
+
 **Neuester lokaler Nachweis 2026-11-06:** Eine frische Source-only-Kopie des vollständigen aktuellen
 Arbeitsstands wurde als frische lokale Source-only-Kopie außerhalb des Repositories erstellt. Sie
 übernahm weder `.git`,

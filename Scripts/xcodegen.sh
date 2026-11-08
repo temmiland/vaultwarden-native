@@ -7,9 +7,17 @@ ZIP_SHA256="4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806"
 TOOL_ROOT="$REPOSITORY_ROOT/.build/tools/xcodegen-$VERSION"
 mkdir -p "$TOOL_ROOT"
 if [[ ! -f "$TOOL_ROOT/xcodegen.zip" ]]; then
+  DOWNLOAD_PATH="$(mktemp "$TOOL_ROOT/download.XXXXXX")"
+  trap 'rm -f "$DOWNLOAD_PATH"' EXIT
   curl --fail --location --silent --show-error \
+    --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 20 --max-time 300 \
     "https://github.com/yonaskolb/XcodeGen/releases/download/$VERSION/xcodegen.zip" \
-    --output "$TOOL_ROOT/xcodegen.zip"
+    --output "$DOWNLOAD_PATH"
+  [[ "$(shasum -a 256 "$DOWNLOAD_PATH" | awk '{print $1}')" == "$ZIP_SHA256" ]] || {
+    echo "Downloaded tool archive hash mismatch; refusing execution" >&2; exit 1;
+  }
+  mv "$DOWNLOAD_PATH" "$TOOL_ROOT/xcodegen.zip"
+  trap - EXIT
 fi
 [[ "$(shasum -a 256 "$TOOL_ROOT/xcodegen.zip" | awk '{print $1}')" == "$ZIP_SHA256" ]] || {
   echo 'XcodeGen archive hash mismatch; refusing execution' >&2; exit 1;

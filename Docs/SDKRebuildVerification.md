@@ -21,6 +21,7 @@ SDK-Typ, prüft vollständige Entschlüsselung und exportiert nur ausgewählte M
 Ein echter SDK-Verschlüsselungs-/Entschlüsselungsroundtrip prüft den Erhalt von Passkeys beim Editieren.
 Die native Integration besteht mit 18 macOS- und 19 iOS-Simulatortests; Format-, Architektur-,
 Secret-/Material-, Simulator-Preflight- und Konfigurationsprüfungen bestehen ebenfalls.
+App und AutoFill-Extension bauen auf macOS und im iOS-Simulator auch in Release unsigned.
 Die bisherigen Bindings und das Framework bleiben im ignorierten Upgrade-Buildroot als Rollback erhalten.
 
 Das Audit meldet weiterhin RUSTSEC-2026-0387 (`crypto-bigint` 0.5.5) und RUSTSEC-2023-0071

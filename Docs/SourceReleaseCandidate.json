@@ -2,14 +2,14 @@
   "schemaVersion": 1,
   "purpose": "Public source-only CI candidate snapshot inventory; not the final release, tag, or app publication.",
   "generatedOn": "2026-11-08",
-  "baseCommit": "24dc262c7beaa1c405656ab32defbdcaf5652d13",
+  "baseCommit": "b3ea7233b6ae5b2b7864072b928ffdaa36c7fdba",
   "branch": "source-only-ci-2026-11-07",
   "snapshotIncludesGitHistory": false,
   "snapshotDefinition": "All present tracked files plus present unignored untracked files at generation time, excluding this manifest from its own hash list.",
   "worktreeStatusAtGeneration": {
-    "modifiedOrAddedTrackedEntries": 49,
-    "deletedTrackedEntries": 1,
-    "untrackedEntriesExcludingManifest": 3
+    "modifiedOrAddedTrackedEntries": 4,
+    "deletedTrackedEntries": 0,
+    "untrackedEntriesExcludingManifest": 0
   },
   "excludedPaths": [
     ".git/",
@@ -22,9 +22,7 @@
     "generated Xcode projects and user state",
     "other Git-ignored files"
   ],
-  "deletedFromBase": [
-    "Packages/VaultwardenSDK/Sources/BitwardenSdk/bitwarden_importers.swift"
-  ],
+  "deletedFromBase": [],
   "selfHashOmitted": true,
   "includedFileCountExcludingManifest": 500,
   "files": [
@@ -529,8 +527,8 @@
     {
       "path": "Docs/RemainingReleaseWork.md",
       "type": "file",
-      "bytes": 130911,
-      "sha256": "7d66881c03e60ca63b3a32486bd0f3d9ddad2f85cf3dbfed6b661c082a4982ea"
+      "bytes": 131570,
+      "sha256": "51cbf5dee52992a8db374e9b39c33e7e04fdf8a4daf19f48de30352a041c974d"
     },
     {
       "path": "Docs/SDKLocalArtifactInventory.json",
@@ -541,8 +539,8 @@
     {
       "path": "Docs/SDKRebuildVerification.md",
       "type": "file",
-      "bytes": 6600,
-      "sha256": "92274b4d0252cf23b4248aa5ce4b02c6e67781adeabe414a5cadd4f95862d128"
+      "bytes": 6690,
+      "sha256": "1bac4a71f9de9c300f11ad4f0e63d3b72dba75e1aef010aa3599c8bb47ecb642"
     },
     {
       "path": "Docs/ThirdParty/Bitwarden-LICENSE.txt",
@@ -2929,8 +2927,8 @@
     {
       "path": "Scripts/swiftformat.sh",
       "type": "file",
-      "bytes": 1146,
-      "sha256": "223e994fb89347678c867d7e016da05d74b3bf18e2a72920a856f8bf08620c37"
+      "bytes": 1551,
+      "sha256": "cabc27ef26de0e6b317b94936cf74726a1334c4e6cbd1d40c443f72eda7c030e"
     },
     {
       "path": "Scripts/test-architecture-rules.sh",
@@ -2995,8 +2993,8 @@
     {
       "path": "Scripts/xcodegen.sh",
       "type": "file",
-      "bytes": 1018,
-      "sha256": "db2f59367014f00cf97157ee68f6753ef6e84b99154c2fb14723cbf0f12c3b99"
+      "bytes": 1423,
+      "sha256": "7b4fdc9f542b4835f34ddd068d11239589232bbda3d0902a334c9e66c737ea69"
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
