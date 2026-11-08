@@ -19,6 +19,7 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      - run: bash Scripts/test-tool-downloads.sh
       - run: bash Scripts/swiftformat.sh --lint
       - run: swift Scripts/check-architecture.swift
       - run: bash Scripts/test-architecture-rules.sh

@@ -8,6 +8,78 @@
   ],
   "files": [
     {
+      "bytes": 5353,
+      "material": "Vaultwarden icon / rendered app icons / preserved upstream license",
+      "path": "App/Resources/Artwork/vaultwarden-icon.svg",
+      "sha256": "c58fe91554bda6e1be51bd0cf56ac84ab63f798d5173e41e71e1aa1de515c7ef"
+    },
+    {
+      "bytes": 85926,
+      "material": "Vaultwarden icon / rendered app icons / preserved upstream license",
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-1024.png",
+      "sha256": "fc7199486746072c103ce889291de268f5f89a5348d961aff5cd073181d62e56"
+    },
+    {
+      "bytes": 8161,
+      "material": "Vaultwarden icon / rendered app icons / preserved upstream license",
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-128.png",
+      "sha256": "ee56b3118cfa208c813827e24d7388c94c31684cbb69f3fd933335aabe8bbee1"
+    },
+    {
+      "bytes": 18248,
+      "material": "Vaultwarden icon / rendered app icons / preserved upstream license",
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-128@2x.png",
+      "sha256": "18bc26663cbe28f52767e14fac15a8dc7a2c123e10846334d4c8683a3dcf245f"
+    },
+    {
+      "bytes": 793,
+      "material": "Vaultwarden icon / rendered app icons / preserved upstream license",
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-16.png",
+      "sha256": "639032ce9687fa2a54c4a8b83aadb1fb2b109676d30d1c9608aca5b8302906d2"
+    },
+    {
+      "bytes": 1695,
+      "material": "Vaultwarden icon / rendered app icons / preserved upstream license",
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-16@2x.png",
+      "sha256": "502e8f50ee799791addf1614d23099139d0afee75fd909c49330624533106321"
+    },
+    {
+      "bytes": 18248,
+      "material": "Vaultwarden icon / rendered app icons / preserved upstream license",
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-256.png",
+      "sha256": "18bc26663cbe28f52767e14fac15a8dc7a2c123e10846334d4c8683a3dcf245f"
+    },
+    {
+      "bytes": 42051,
+      "material": "Vaultwarden icon / rendered app icons / preserved upstream license",
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-256@2x.png",
+      "sha256": "f26e6f6ea00aae295e2d80251c6d229473d9f3918508a86619236b8672fc6cc0"
+    },
+    {
+      "bytes": 1695,
+      "material": "Vaultwarden icon / rendered app icons / preserved upstream license",
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-32.png",
+      "sha256": "502e8f50ee799791addf1614d23099139d0afee75fd909c49330624533106321"
+    },
+    {
+      "bytes": 4224,
+      "material": "Vaultwarden icon / rendered app icons / preserved upstream license",
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-32@2x.png",
+      "sha256": "f5eff1ab82343cd5c112c8781a65a423e85a9d07616978c62acd7d334b2472a6"
+    },
+    {
+      "bytes": 42051,
+      "material": "Vaultwarden icon / rendered app icons / preserved upstream license",
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-512.png",
+      "sha256": "f26e6f6ea00aae295e2d80251c6d229473d9f3918508a86619236b8672fc6cc0"
+    },
+    {
+      "bytes": 101012,
+      "material": "Vaultwarden icon / rendered app icons / preserved upstream license",
+      "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-512@2x.png",
+      "sha256": "2a155adff6bc622b29772074c88a0a5eae44492dad6a90a25da24fddf37f92e8"
+    },
+    {
       "bytes": 995,
       "material": "Bitwarden SDK / support / preserved license texts",
       "path": "Docs/ThirdParty/Bitwarden-LICENSE.txt",
@@ -24,6 +96,12 @@
       "material": "Bitwarden SDK / support / preserved license texts",
       "path": "Docs/ThirdParty/Bitwarden-LICENSE_SDK.txt",
       "sha256": "db90f749155d7f8f354cff46a7395e5f4ae1012ba6a455aa2d3213ca9b00447d"
+    },
+    {
+      "bytes": 34523,
+      "material": "Vaultwarden icon / rendered app icons / preserved upstream license",
+      "path": "Docs/ThirdParty/Vaultwarden-LICENSE.txt",
+      "sha256": "8486a10c4393cee1c25392769ddd3b2d6c242d6ec7928e1414efff7dfb2f07ef"
     },
     {
       "bytes": 334697,
@@ -202,5 +280,6 @@
   ],
   "schemaVersion": 1,
   "scope": "Actual third-party source, support, dataset, notices and SDK build patch in source publication. Inventory is not a license election or distribution approval.",
-  "sdkRevision": "a13b4c4e1fa3685280241f417920fd19d7ef24a6"
+  "sdkRevision": "a13b4c4e1fa3685280241f417920fd19d7ef24a6",
+  "vaultwardenIconRevision": "17b159beff4b892f07f61f38ce2fe452e55251c1"
 }

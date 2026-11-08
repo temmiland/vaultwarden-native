@@ -277,3 +277,24 @@ Container-/Lock-Kontext wird an Token-Transaktionen weitergereicht. Tests prüfe
 Teilnehmer, einen separaten Prozess, das Ende des letzten Teilnehmers, persistierte Restdateien,
 Symlinks und die Migration alter Freigaben. Der echte Geräte-Neustart und die anschließende
 manuelle AutoFill-Abnahme bleiben ausdrücklich noch zu prüfen.
+
+
+## App-Icon und Tool-Download-Korrektur — Build 4
+
+Das offizielle Vaultwarden-SVG (Upstream `17b159beff4b892f07f61f38ce2fe452e55251c1`)
+ist als Quelle erhalten; alle elf App-Icon-Rastergrößen wurden daraus neu erzeugt. iOS/iPadOS
+verwenden ein opakes 1024px-Icon, macOS einen weißen abgerundeten Hintergrund. SVG-Masken werden
+beim Rendern geometriegleich in Vektor-Clipping umgesetzt, damit die fünf Aussparungen scharf bleiben.
+Quelle, Autorenangabe und AGPL-Lizenztext stehen in den Third-Party-Notices und im Materialinventar.
+Beide signierten Release-Builds einschließlich Extensions und strenger Signaturprüfung bestanden.
+Build 4 wurde auf iPhone, iPad und Mac installiert. Mac und iPad starteten; der automatische
+Start auf dem iPhone wurde wegen der Gerätesperre abgelehnt, nicht wegen eines Installationsfehlers.
+
+Der erste CI-Versuch für `bb11cbf` endete vor dem SDK-Build mit Curl-Transferfehler 56 beim
+XcodeGen-Download; die Quellenprüfung bestand. Der Owner startete denselben Commit erneut,
+und der Download gelang. Die Downloader haben nun jeweils zwei offizielle Endpunkte mit
+unverändert gepinnter SHA-256 und Versionsprüfung. Fehlerhafte/partielle Antworten werden
+nicht in den Tool-Cache übernommen. Zehn deterministische Offline-Fixtures prüfen beide
+Wrapper bei erfolgreichem Download, Transportfehler, Prüfsummenfehler und vollständigem
+Ausfall; dieser Test läuft künftig vor der echten Formatierung in CI. Zusätzlich bestanden
+frische echte Downloads beider Tools ohne vorhandenen Cache.

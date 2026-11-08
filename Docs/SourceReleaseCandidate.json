@@ -2,14 +2,14 @@
   "schemaVersion": 1,
   "purpose": "Public source-only CI candidate snapshot inventory; not the final release, tag, or app publication.",
   "generatedOn": "2026-11-08",
-  "baseCommit": "4897c207a037f2841bcc898eb49021b5eba4da34",
+  "baseCommit": "bb11cbf3caed327b2e4d810cb98019a20a3a76bc",
   "branch": "source-only-ci-2026-11-07",
   "snapshotIncludesGitHistory": false,
   "snapshotDefinition": "All present tracked files plus present unignored untracked files at generation time, excluding this manifest from its own hash list.",
   "worktreeStatusAtGeneration": {
-    "modifiedOrAddedTrackedEntries": 25,
-    "deletedTrackedEntries": 1,
-    "untrackedEntriesExcludingManifest": 2
+    "modifiedOrAddedTrackedEntries": 19,
+    "deletedTrackedEntries": 0,
+    "untrackedEntriesExcludingManifest": 4
   },
   "excludedPaths": [
     ".git/",
@@ -22,17 +22,15 @@
     "generated Xcode projects and user state",
     "other Git-ignored files"
   ],
-  "deletedFromBase": [
-    "Packages/AppModules/Sources/SecurityStorage/SystemBootSession.swift"
-  ],
+  "deletedFromBase": [],
   "selfHashOmitted": true,
-  "includedFileCountExcludingManifest": 501,
+  "includedFileCountExcludingManifest": 505,
   "files": [
     {
       "path": ".github/workflows/verify-source.yml",
       "type": "file",
-      "bytes": 2888,
-      "sha256": "235d752a4b3644b1459df8b801e47d44018fdd883d933f94588c038367b58488"
+      "bytes": 2937,
+      "sha256": "0ef3a494c946909e3e033d046d83bcf9d23ead6fc8668cd559e38d297c663f6e"
     },
     {
       "path": ".gitignore",
@@ -47,6 +45,12 @@
       "sha256": "03422acc760ca628f51148c38793c43118492312bf8bcf3e906178763e89bf4f"
     },
     {
+      "path": "App/Resources/Artwork/vaultwarden-icon.svg",
+      "type": "file",
+      "bytes": 5353,
+      "sha256": "c58fe91554bda6e1be51bd0cf56ac84ab63f798d5173e41e71e1aa1de515c7ef"
+    },
+    {
       "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/Contents.json",
       "type": "file",
       "bytes": 1396,
@@ -55,68 +59,68 @@
     {
       "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-1024.png",
       "type": "file",
-      "bytes": 13883,
-      "sha256": "21732f7fb04677779d5167292f05a21ca0343c320fe98ac86456f7bea9e224cc"
+      "bytes": 85926,
+      "sha256": "fc7199486746072c103ce889291de268f5f89a5348d961aff5cd073181d62e56"
     },
     {
       "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-128.png",
       "type": "file",
-      "bytes": 859,
-      "sha256": "bfde4e039ed759484aac3e6017b8d88da273482403c3d53d314233f9b1a94020"
+      "bytes": 8161,
+      "sha256": "ee56b3118cfa208c813827e24d7388c94c31684cbb69f3fd933335aabe8bbee1"
     },
     {
       "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-128@2x.png",
       "type": "file",
-      "bytes": 1506,
-      "sha256": "7b149311e850148916bda948cb01f88174db9d76c7c76fa89a70141e38607e3b"
+      "bytes": 18248,
+      "sha256": "18bc26663cbe28f52767e14fac15a8dc7a2c123e10846334d4c8683a3dcf245f"
     },
     {
       "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-16.png",
       "type": "file",
-      "bytes": 643,
-      "sha256": "1c7fa2453beb8a4d52ea15016dc17a8fd9839adf3073f3b16ced1810b090d39e"
+      "bytes": 793,
+      "sha256": "639032ce9687fa2a54c4a8b83aadb1fb2b109676d30d1c9608aca5b8302906d2"
     },
     {
       "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-16@2x.png",
       "type": "file",
-      "bytes": 661,
-      "sha256": "209ace20d4bf1d07f4afd3f577a26afe3526e0dcf07399b5ab1f2684be4bb616"
+      "bytes": 1695,
+      "sha256": "502e8f50ee799791addf1614d23099139d0afee75fd909c49330624533106321"
     },
     {
       "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-256.png",
       "type": "file",
-      "bytes": 1506,
-      "sha256": "7b149311e850148916bda948cb01f88174db9d76c7c76fa89a70141e38607e3b"
+      "bytes": 18248,
+      "sha256": "18bc26663cbe28f52767e14fac15a8dc7a2c123e10846334d4c8683a3dcf245f"
     },
     {
       "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-256@2x.png",
       "type": "file",
-      "bytes": 4079,
-      "sha256": "a746b9387c9420a39f1ff57bfbe66593bfa525a4b3cca3bfd87ae787428154fc"
+      "bytes": 42051,
+      "sha256": "f26e6f6ea00aae295e2d80251c6d229473d9f3918508a86619236b8672fc6cc0"
     },
     {
       "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-32.png",
       "type": "file",
-      "bytes": 661,
-      "sha256": "209ace20d4bf1d07f4afd3f577a26afe3526e0dcf07399b5ab1f2684be4bb616"
+      "bytes": 1695,
+      "sha256": "502e8f50ee799791addf1614d23099139d0afee75fd909c49330624533106321"
     },
     {
       "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-32@2x.png",
       "type": "file",
-      "bytes": 701,
-      "sha256": "25ed04f063dcf7a6ae0d200b8efce738dd401a3c76b642ae0d25d4378332e4b0"
+      "bytes": 4224,
+      "sha256": "f5eff1ab82343cd5c112c8781a65a423e85a9d07616978c62acd7d334b2472a6"
     },
     {
       "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-512.png",
       "type": "file",
-      "bytes": 4079,
-      "sha256": "a746b9387c9420a39f1ff57bfbe66593bfa525a4b3cca3bfd87ae787428154fc"
+      "bytes": 42051,
+      "sha256": "f26e6f6ea00aae295e2d80251c6d229473d9f3918508a86619236b8672fc6cc0"
     },
     {
       "path": "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-512@2x.png",
       "type": "file",
-      "bytes": 13883,
-      "sha256": "21732f7fb04677779d5167292f05a21ca0343c320fe98ac86456f7bea9e224cc"
+      "bytes": 101012,
+      "sha256": "2a155adff6bc622b29772074c88a0a5eae44492dad6a90a25da24fddf37f92e8"
     },
     {
       "path": "App/Resources/Assets.xcassets/Contents.json",
@@ -302,7 +306,7 @@
       "path": "Configuration/Base.xcconfig",
       "type": "file",
       "bytes": 1133,
-      "sha256": "8929ff1655cb5c8ddc94d43431b7a87b0b307c0bcef5813f4590ceae96759e13"
+      "sha256": "ff306c17b0a3d6332b57f44ec62c8b0c577de51c47aa5cff32658dc7b968a430"
     },
     {
       "path": "Configuration/Debug.xcconfig",
@@ -517,8 +521,8 @@
     {
       "path": "Docs/IntegratedAcceptance.md",
       "type": "file",
-      "bytes": 21497,
-      "sha256": "dec9cdbef09e5f162d27b700c9127aca9c80dd7a25b13709727f972ee7a8b24e"
+      "bytes": 23032,
+      "sha256": "a33c632b8870765e52b64eeebaa5216eed5d39131157ae35ecb3c9cf01a0e9e1"
     },
     {
       "path": "Docs/Planning/RESTRUCTURE_IMPLEMENTATION_PLAN.md",
@@ -583,8 +587,14 @@
     {
       "path": "Docs/ThirdParty/SourceMaterialInventory.json",
       "type": "file",
-      "bytes": 9116,
-      "sha256": "c80574382c3e8bc08f1c1075bde028a9bf4946786b3405f15ca1ce82b1d9eda7"
+      "bytes": 12859,
+      "sha256": "bc036aa5377eb5f17ebca9109b310f0f97990dcb99c28d41816797311b672738"
+    },
+    {
+      "path": "Docs/ThirdParty/Vaultwarden-LICENSE.txt",
+      "type": "file",
+      "bytes": 34523,
+      "sha256": "8486a10c4393cee1c25392769ddd3b2d6c242d6ec7928e1414efff7dfb2f07ef"
     },
     {
       "path": "Docs/ThreatModel.md",
@@ -2887,14 +2897,20 @@
     {
       "path": "Scripts/check-source-materials.swift",
       "type": "file",
-      "bytes": 3564,
-      "sha256": "5a02815f4efc2ea20e5df576898cbbf49e4624bbd4cad9993462452a2187496c"
+      "bytes": 3729,
+      "sha256": "97b0abe16c090e6905708c43a5d7e6c7c1bdcd90854dbde3905a21683f22f144"
     },
     {
       "path": "Scripts/check-source-secrets.swift",
       "type": "file",
       "bytes": 6416,
       "sha256": "90f7ab4bfb1a60577f97a2154aaf91a8e1764db4c13556f8861ba130410f2e54"
+    },
+    {
+      "path": "Scripts/generate-app-icon.swift",
+      "type": "file",
+      "bytes": 5587,
+      "sha256": "080299519992ee791a72aaf5897600edd61b65a3c0f7bad3f38ece43a9ee5a48"
     },
     {
       "path": "Scripts/generate-xcodeproj.sh",
@@ -2935,8 +2951,8 @@
     {
       "path": "Scripts/swiftformat.sh",
       "type": "file",
-      "bytes": 1695,
-      "sha256": "42095a3bc34bc145224408fd7a37643f2707ebbaf3c18f8e353ec175ad22d77a"
+      "bytes": 2364,
+      "sha256": "f31dc73601c881d4d38c6595ae3604553d0aa903785898facc0365d3575b052a"
     },
     {
       "path": "Scripts/test-architecture-rules.sh",
@@ -2987,6 +3003,12 @@
       "sha256": "09a6248d591b916f10f4116f3a71a72570ed0e5254e80c3af5e360b196dd3701"
     },
     {
+      "path": "Scripts/test-tool-downloads.sh",
+      "type": "file",
+      "bytes": 3509,
+      "sha256": "afcd92a7a1b56b37eaa4f628c2e9bb34481a14ff09db94ce5345ab56ad182bb9"
+    },
+    {
       "path": "Scripts/update-public-suffix-list.sh",
       "type": "file",
       "bytes": 871,
@@ -3001,14 +3023,14 @@
     {
       "path": "Scripts/xcodegen.sh",
       "type": "file",
-      "bytes": 1570,
-      "sha256": "d1d4076cfab28e2cfe1b4ad12b55efa6914a4deba4796e0c75f27dbff43d9e03"
+      "bytes": 2230,
+      "sha256": "61b8f99b3fb63faca146537786f1d15b57b578efc11a28be47187566195e5497"
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
       "type": "file",
-      "bytes": 6165,
-      "sha256": "0f6966078389e2ef005dd41c54c762b2e1fed109ed761e5fe0cde9365088f3f0"
+      "bytes": 7032,
+      "sha256": "5dd5c119d03ff5fe4ae9837812cfb7803a53541f8d51c23c07dcca8d498d2b3e"
     },
     {
       "path": "Tests/PlatformIntegration/CompositionIntegrationTests.swift",

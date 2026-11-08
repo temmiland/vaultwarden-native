@@ -56,6 +56,8 @@ for path in tracked {
 let files = try gitFiles(["--cached", "--others", "--exclude-standard"])
 let materialPaths = Set(files.filter {
     $0.hasPrefix("Packages/VaultwardenSDK/Sources/")
+        || $0 == "App/Resources/Artwork/vaultwarden-icon.svg"
+        || ($0.hasPrefix("App/Resources/Assets.xcassets/AppIcon.appiconset/") && $0.hasSuffix(".png"))
         || ($0.hasPrefix("Docs/ThirdParty/") && $0.hasSuffix(".txt"))
         || $0 == "Packages/AppModules/Sources/AutoFillData/Resources/public_suffix_list.dat"
         || ($0.hasPrefix("Scripts/patches/") && $0.hasSuffix(".patch"))

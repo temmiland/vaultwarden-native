@@ -84,3 +84,16 @@ See F-16/F-17 in the [single work checklist](Docs/RemainingReleaseWork.md).
 XcodeGen is now pinned to 2.46.0 with the official release archive SHA-256
 `4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806` in `Scripts/xcodegen.sh`;
 SwiftFormat remains pinned separately. These are build tools, not bundled application code.
+
+
+## Vaultwarden app icon
+
+The original icon is by Mathijs van Veluw (SVG metadata, derived from the Rust logo), sourced from
+[dani-garcia/vaultwarden](https://github.com/dani-garcia/vaultwarden/blob/17b159beff4b892f07f61f38ce2fe452e55251c1/resources/vaultwarden-icon.svg)
+at revision `17b159beff4b892f07f61f38ce2fe452e55251c1`.
+The unmodified SVG is preserved in `App/Resources/Artwork/vaultwarden-icon.svg`; the upstream
+AGPL-3.0 license text is preserved in `Docs/ThirdParty/Vaultwarden-LICENSE.txt`.
+`Scripts/generate-app-icon.swift` renders the same glyph on a white canvas for iOS/iPadOS and a
+rounded white tile for macOS. These third-party icon materials retain their upstream license;
+the project's GPL-3.0-only election for project-owned material does not relicense them.
+The source-material inventory includes the SVG, rendered PNGs and preserved license.
