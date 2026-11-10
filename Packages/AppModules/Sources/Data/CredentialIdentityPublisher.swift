@@ -120,9 +120,12 @@ public actor CredentialIdentityPublisher {
             try await identityMutations.withExclusiveMutation {
                 try await self.replace(revision: revision, identities: identities)
             }
+            AutoFillDiagnostics.record(.identities)
         } catch CredentialIdentityPublishingError.disabled {
+            AutoFillDiagnostics.record(.identities, error: CredentialIdentityPublishingError.disabled)
             health = .disabled
         } catch {
+            AutoFillDiagnostics.record(.identities, error: error)
             health = lastSuccessfulRevision.map(CredentialIdentityHealth.stale(lastSuccessfulRevision:)) ?? .unavailable
         }
         return health

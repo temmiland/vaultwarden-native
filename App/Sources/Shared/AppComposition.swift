@@ -65,6 +65,7 @@ struct AppComposition {
     init() throws {
         // Validate before constructing any credential store, repository or authenticating UI.
         let storage = try SharedAppGroup.validatedStorage()
+        AppStorageProbe.runIfRequested(containerURL: storage.containerURL)
         let credentials = AuthCredentialStore(
             keychain: DefaultKeychainStore(service: storage.configuration.privateKeychainService),
             sharedKeychain: SharedAppGroup.makeSharedKeychain(configuration: storage.configuration),

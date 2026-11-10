@@ -55,7 +55,9 @@ public final class PendingAuthSession: PendingAuthentication, CustomStringConver
                 publicationEpoch: epoch,
                 authenticationID: scope.authenticationID
             )
+            AutoFillDiagnostics.record(.unlockPublication)
         } catch {
+            AutoFillDiagnostics.record(.unlockPublication, error: error)
             // Existing best-effort policy: inability to publish does not undo a successful unlock.
         }
     }

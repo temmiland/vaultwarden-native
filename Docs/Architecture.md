@@ -123,3 +123,13 @@ intern ganze Dateien; der Umbau garantiert keinen konstanten Gesamt-Heap. Detail
 [ADR-Verzeichnis](ADR), [Freigabecheckliste](RemainingReleaseWork.md).
 Der kompakte aktuelle [Reststand](RemainingReleaseWork.md) grenzt diese Abnahmen vom bereits
 implementierten lokalen Pflichtcode ab; nicht alle ursprünglichen Planphasen sind abgeschlossen.
+
+
+### Scoped biometric Keychain authorization
+
+`BiometricClient.performAuthenticated` runs a protected operation only after successful biometric
+verification. The platform adapter supplies the same authenticated LocalAuthentication context to
+SecurityStorage through a task-local opaque handle; Domain and UI never receive Apple context types.
+Further interaction is disabled for that context, and it is invalidated when the operation ends,
+including errors. SecurityStorage still enforces the Keychain access-control policy. PlatformServices
+therefore depends on SecurityStorage as well as Domain; no presentation dependency is added.

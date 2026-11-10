@@ -18,7 +18,7 @@ SWIFT_TREAT_WARNINGS_AS_ERRORS = YES
 OTHER_SWIFT_FLAGS = $(inherited) -warnings-as-errors
 GCC_TREAT_WARNINGS_AS_ERRORS = YES
 MARKETING_VERSION = 0.1.0
-CURRENT_PROJECT_VERSION = 4
+CURRENT_PROJECT_VERSION = 5
 
 // Optional and gitignored; command-line build settings still take precedence.
 #include? "Local.xcconfig"

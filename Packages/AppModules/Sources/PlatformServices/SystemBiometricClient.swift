@@ -1,12 +1,16 @@
 import Domain
 import Foundation
 import LocalAuthentication
+import SecurityStorage
 
 /// Internal LAContext seam. Creating a new context for each availability check/evaluation avoids
 /// retaining invalidated authorization state and makes the OS error mapping deterministic in tests.
 @MainActor
 protocol LocalAuthenticationContext: AnyObject {
     var biometryType: LABiometryType { get }
+    var keychainAuthenticationContext: KeychainAuthenticationContext { get }
+    func invalidate()
+    func preventAdditionalInteraction()
     func canEvaluateBiometrics() -> Result<Void, NSError>
     func evaluateBiometrics(reason: String) async -> Result<Bool, NSError>
 }
@@ -21,6 +25,9 @@ private final class SystemLocalAuthenticationContext: LocalAuthenticationContext
     private let context = LAContext()
 
     var biometryType: LABiometryType { context.biometryType }
+    var keychainAuthenticationContext: KeychainAuthenticationContext { KeychainAuthenticationContext(context) }
+    func invalidate() { context.invalidate() }
+    func preventAdditionalInteraction() { context.interactionNotAllowed = true }
 
     func canEvaluateBiometrics() -> Result<Void, NSError> {
         var error: NSError?
@@ -77,6 +84,24 @@ public final class SystemBiometricClient: BiometricClient {
 
     public func evaluate(reason: String) async -> BiometricEvaluationResult {
         let context = contextFactory.makeContext()
+        defer { context.invalidate() }
+        return await evaluate(context: context, reason: reason)
+    }
+
+    public func performAuthenticated<Value: Sendable>(
+        reason: String, operation: @MainActor () throws -> Value
+    ) async throws -> (BiometricEvaluationResult, Value?) {
+        let context = contextFactory.makeContext()
+        defer { context.invalidate() }
+        let result = await evaluate(context: context, reason: reason)
+        guard result == .succeeded else { return (result, nil) }
+        context.preventAdditionalInteraction()
+        return try KeychainAuthenticationScope.$current.withValue(context.keychainAuthenticationContext) {
+            (result, try operation())
+        }
+    }
+
+    private func evaluate(context: any LocalAuthenticationContext, reason: String) async -> BiometricEvaluationResult {
         switch context.canEvaluateBiometrics() {
         case let .failure(error):
             return .unavailable(Self.unavailableReason(from: error))

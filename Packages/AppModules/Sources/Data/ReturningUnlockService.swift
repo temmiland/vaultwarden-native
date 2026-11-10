@@ -168,7 +168,17 @@ public final class ReturningUnlockService: ReturningUnlockCommands {
             guard stored.isBiometricUnlockEnabled else {
                 throw ReturningUnlockFailure.biometricNotSetup(kind, cleanupFailed: false)
             }
-            let outcome = await biometric.evaluate(reason: "Unlock your vault")
+            let outcome: BiometricEvaluationResult
+            do {
+                let evaluation = try await biometric.performAuthenticated(reason: "Unlock your vault") {
+                    try self.validate(epoch)
+                    return try self.store.readBiometricUserKey(requiringScope: self.scope)
+                }
+                outcome = evaluation.0
+                key = evaluation.1.flatMap { $0 }
+            } catch KeychainStoreError.interactionCancelled { throw CancellationError() }
+            catch is CancellationError { throw CancellationError() }
+            catch { throw ReturningUnlockFailure.biometricReadFailed }
             try validate(epoch) // including noncooperative unavailable/failure responses
             switch outcome {
             case .succeeded: break
@@ -178,15 +188,9 @@ public final class ReturningUnlockService: ReturningUnlockCommands {
                 throw ReturningUnlockFailure.biometricUnavailable(cleanupFailed: failed)
             case .failed: throw ReturningUnlockFailure.biometricNotConfirmed(kind)
             }
-            do {
-                key = try store.readBiometricUserKey(requiringScope: scope)
-                guard key != nil else {
-                    throw ReturningUnlockFailure.biometricNotSetup(kind, cleanupFailed: try !disableBiometric(epoch))
-                }
-            } catch KeychainStoreError.interactionCancelled { throw CancellationError() }
-            catch let failure as ReturningUnlockFailure { throw failure }
-            catch is CancellationError { throw CancellationError() }
-            catch { throw ReturningUnlockFailure.biometricReadFailed }
+            guard key != nil else {
+                throw ReturningUnlockFailure.biometricNotSetup(kind, cleanupFailed: try !disableBiometric(epoch))
+            }
         }
         try validate(epoch)
         let provider: AppAuthTokenProvider

@@ -90,7 +90,9 @@ public actor AutoFillProjectionWriter {
             try fileStore.replaceProjectionAtomically(with: encoding.encode(envelope))
             lastSuccessfulRevision = revision
             health = .current(revision: revision)
+            AutoFillDiagnostics.record(.cache)
         } catch {
+            AutoFillDiagnostics.record(.cache, error: error)
             health = lastSuccessfulRevision.map(AutoFillProjectionHealth.stale(lastSuccessfulRevision:)) ?? .unavailable
         }
         return health

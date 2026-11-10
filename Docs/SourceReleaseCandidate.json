@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "purpose": "Public source-only CI candidate snapshot inventory; not the final release, tag, or app publication.",
-  "generatedOn": "2026-11-08",
-  "baseCommit": "bb11cbf3caed327b2e4d810cb98019a20a3a76bc",
+  "generatedOn": "2026-11-10",
+  "baseCommit": "b67abad67c1dfa6f730852c97f9e81fef8bba603",
   "branch": "source-only-ci-2026-11-07",
   "snapshotIncludesGitHistory": false,
   "snapshotDefinition": "All present tracked files plus present unignored untracked files at generation time, excluding this manifest from its own hash list.",
   "worktreeStatusAtGeneration": {
-    "modifiedOrAddedTrackedEntries": 19,
+    "modifiedOrAddedTrackedEntries": 14,
     "deletedTrackedEntries": 0,
     "untrackedEntriesExcludingManifest": 4
   },
@@ -24,7 +24,7 @@
   ],
   "deletedFromBase": [],
   "selfHashOmitted": true,
-  "includedFileCountExcludingManifest": 505,
+  "includedFileCountExcludingManifest": 509,
   "files": [
     {
       "path": ".github/workflows/verify-source.yml",
@@ -131,14 +131,20 @@
     {
       "path": "App/Sources/Shared/AppComposition.swift",
       "type": "file",
-      "bytes": 7439,
-      "sha256": "88ac91d2b120efef849f8db561c23a6f7d155ea77f8cf08f83866f99ef7d7a79"
+      "bytes": 7514,
+      "sha256": "209cab225f972fe9d949d7319ffee95e78b178b64647dad8ebb0306c6a7e1f6c"
     },
     {
       "path": "App/Sources/Shared/AppStartup.swift",
       "type": "file",
       "bytes": 2456,
       "sha256": "322c5f69aece92567b7f6c46f6a4801f20693fb00514ef1f0ff711856326a0de"
+    },
+    {
+      "path": "App/Sources/Shared/AppStorageProbe.swift",
+      "type": "file",
+      "bytes": 1409,
+      "sha256": "bf4296a61a1f0f08993ed391d1de00d55c54d7a57ceed11119620b6f4496df9c"
     },
     {
       "path": "App/Sources/Shared/RootView.swift",
@@ -306,7 +312,7 @@
       "path": "Configuration/Base.xcconfig",
       "type": "file",
       "bytes": 1133,
-      "sha256": "ff306c17b0a3d6332b57f44ec62c8b0c577de51c47aa5cff32658dc7b968a430"
+      "sha256": "d92f6ae526e1512a51f8072dd669e6f81b9be4fb6b99e4c84409a3af7543c15f"
     },
     {
       "path": "Configuration/Debug.xcconfig",
@@ -497,8 +503,8 @@
     {
       "path": "Docs/Architecture.md",
       "type": "file",
-      "bytes": 9689,
-      "sha256": "553d443a0d5610b493f6855317f4584eb67cf7bd426714ac36bcdc95534c2b39"
+      "bytes": 10325,
+      "sha256": "dd375b5724ff15d0027d1c8caf8e54fbdeda120bad5743927e9da0d093c94070"
     },
     {
       "path": "Docs/AutoFillLifecycleChecks.md",
@@ -521,8 +527,8 @@
     {
       "path": "Docs/IntegratedAcceptance.md",
       "type": "file",
-      "bytes": 23032,
-      "sha256": "a33c632b8870765e52b64eeebaa5216eed5d39131157ae35ecb3c9cf01a0e9e1"
+      "bytes": 24845,
+      "sha256": "9522162629c30c4178535d5bd0e0d5b8768eadf11b3dfca8dd7dc333ef7ca219"
     },
     {
       "path": "Docs/Planning/RESTRUCTURE_IMPLEMENTATION_PLAN.md",
@@ -617,8 +623,8 @@
     {
       "path": "Packages/AppModules/Package.swift",
       "type": "file",
-      "bytes": 4256,
-      "sha256": "70e2c718153e6b7e4a679cca9c0aa088f6de0d8fc224cc9db431bdf76938d845"
+      "bytes": 4275,
+      "sha256": "2255d7389e9054dcf6455e810ecd20a7cd4f8a1ac651aa98ba051facdea3be89"
     },
     {
       "path": "Packages/AppModules/Sources/AppFeature/AppFeatureModule.swift",
@@ -1251,16 +1257,22 @@
       "sha256": "cfd7c93629e1d7e29048b255ea7f268c94c1ca71b34ea34d1eec0097159cb8a9"
     },
     {
+      "path": "Packages/AppModules/Sources/Data/AutoFillDiagnostics.swift",
+      "type": "file",
+      "bytes": 2561,
+      "sha256": "6f1b9e2559c9be4896a5bbbe97e6b609cbdf38e4892615a9e11970b39111d42a"
+    },
+    {
       "path": "Packages/AppModules/Sources/Data/AutoFillProjectionWriter.swift",
       "type": "file",
-      "bytes": 8508,
-      "sha256": "34ad145b71b116ba14f904ee8e44a56f21ee9ee8ae16f2f99fc5557281561127"
+      "bytes": 8616,
+      "sha256": "79f08c6b3f6246aebb1a0376a9d16be6c5c84325b58589efb60310c55e78a899"
     },
     {
       "path": "Packages/AppModules/Sources/Data/CredentialIdentityPublisher.swift",
       "type": "file",
-      "bytes": 8638,
-      "sha256": "4e1abec2f51f12c7a6c02e564678df63553dd9b3c1b3a4473ec0fdd7a1c1cb89"
+      "bytes": 8859,
+      "sha256": "1481262e3972b863ba4f05d8667cbde05b76933f16b13bc9756cf775fd664ee4"
     },
     {
       "path": "Packages/AppModules/Sources/Data/DataModule.swift",
@@ -1361,8 +1373,8 @@
     {
       "path": "Packages/AppModules/Sources/Data/PendingAuthSession.swift",
       "type": "file",
-      "bytes": 5053,
-      "sha256": "7b4b116f6cddc5afc1dc012d50d53d7d871faeed7da05320a0c598920e20ca06"
+      "bytes": 5185,
+      "sha256": "c188a2e5018ecb0c7337932a41605096e73976e3387d32331a2b0a057688e7a1"
     },
     {
       "path": "Packages/AppModules/Sources/Data/PreloginModels.swift",
@@ -1385,8 +1397,8 @@
     {
       "path": "Packages/AppModules/Sources/Data/ReturningUnlockService.swift",
       "type": "file",
-      "bytes": 15156,
-      "sha256": "4e132211e35af0b6e85fda6081974e979bb923c35e95a1b56add84e6e9a95586"
+      "bytes": 15313,
+      "sha256": "4deca8f3d0bc199953db0b29cc9fd6d29460fce7f0c2655732c21d9acc7f14d0"
     },
     {
       "path": "Packages/AppModules/Sources/Data/SDKVaultSourceAdapter.swift",
@@ -1481,8 +1493,8 @@
     {
       "path": "Packages/AppModules/Sources/Domain/Domain.swift",
       "type": "file",
-      "bytes": 18595,
-      "sha256": "e58aa141125c241e71c1c877344464f07d284de3ad1f57e829385d4ed2a7123b"
+      "bytes": 19141,
+      "sha256": "de16c084f4895175ebb063ab003f6c73aec7ead299f506b08ceca6089c489b43"
     },
     {
       "path": "Packages/AppModules/Sources/Domain/PasskeyRegistrationRecoveryReview.swift",
@@ -1625,8 +1637,8 @@
     {
       "path": "Packages/AppModules/Sources/PlatformServices/SystemBiometricClient.swift",
       "type": "file",
-      "bytes": 4928,
-      "sha256": "7d305faef9ed9d595e841c89f1592947bdc5ea5b87af1740fea8ebf7f53df8f4"
+      "bytes": 6174,
+      "sha256": "2949ee471946f310e7c5e91e401e7b92e32e2280d33b142531e983651d6a7898"
     },
     {
       "path": "Packages/AppModules/Sources/PlatformServices/SystemCredentialIdentityStore.swift",
@@ -1677,10 +1689,16 @@
       "sha256": "03c328590adb220c4aaa0fcca2f60dc5b16e091bbde9feb621da05e9ab592f17"
     },
     {
+      "path": "Packages/AppModules/Sources/SecurityStorage/KeychainAuthenticationScope.swift",
+      "type": "file",
+      "bytes": 568,
+      "sha256": "d3c87817c6ab810a8b6d6c0b6a7b4fd7fcd3553d5adaf64052bc4fdc47c85fb0"
+    },
+    {
       "path": "Packages/AppModules/Sources/SecurityStorage/KeychainStore.swift",
       "type": "file",
-      "bytes": 8493,
-      "sha256": "748a32e50107eacd884aa56508ee45b61313bacfe174d0c484fed6f53a50347b"
+      "bytes": 8804,
+      "sha256": "b313df31a19f5f9bcdcb74e592ae6b8f3e105fb64e8abcb3e70c2ba916dbd615"
     },
     {
       "path": "Packages/AppModules/Sources/SecurityStorage/SecurityStorageModule.swift",
@@ -1977,6 +1995,12 @@
       "sha256": "2af9e94734131ff41442aa513d595e3cd6f615c35eb6214892934a1e79dfd050"
     },
     {
+      "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AutoFillDiagnosticsTests.swift",
+      "type": "file",
+      "bytes": 1227,
+      "sha256": "61eafe044fd5f45183b5e0dd98832a9a4550be3b9a628ffc9db330595cc9d0c4"
+    },
+    {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/AutoFillIdentityMutationPolicyTests.swift",
       "type": "file",
       "bytes": 2550,
@@ -2177,8 +2201,8 @@
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/KeychainStoreTests.swift",
       "type": "file",
-      "bytes": 4824,
-      "sha256": "21c4734eb5a42113fac224d3fab9e484d1ececd86318ec5e86574b5aac6e84bb"
+      "bytes": 4881,
+      "sha256": "d74de823bd23f20e8b426d2ec7f33e149a788d68fb6dfb7e9b11cebc61d388e2"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/LegacyAutoFillCacheCodecTests.swift",
@@ -2495,8 +2519,8 @@
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SystemBiometricClientTests.swift",
       "type": "file",
-      "bytes": 4058,
-      "sha256": "24b26e49da29f18de299ce252ddb9cd145447fc3021687715d7d22ae6686177c"
+      "bytes": 8667,
+      "sha256": "fb25ef37f4ba80f0eae1ea56f731eebc1be56a61a4e94a3965d7eaeb4a8605e0"
     },
     {
       "path": "Packages/AppModules/Tests/AppModulesArchitectureTests/SystemCredentialIdentityStoreTests.swift",

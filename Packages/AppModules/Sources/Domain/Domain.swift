@@ -444,6 +444,19 @@ public enum BiometricEvaluationResult: Sendable, Equatable {
 public protocol BiometricClient: AnyObject, Sendable {
     func availability() -> BiometricAvailability
     func evaluate(reason: String) async -> BiometricEvaluationResult
+    func performAuthenticated<Value: Sendable>(
+        reason: String, operation: @MainActor () throws -> Value
+    ) async throws -> (BiometricEvaluationResult, Value?)
+}
+
+public extension BiometricClient {
+    func performAuthenticated<Value: Sendable>(
+        reason: String, operation: @MainActor () throws -> Value
+    ) async throws -> (BiometricEvaluationResult, Value?) {
+        let result = await evaluate(reason: reason)
+        guard result == .succeeded else { return (result, nil) }
+        return (result, try operation())
+    }
 }
 
 /// Supplies the user-visible name for the current device without exposing Apple frameworks to the

@@ -50,7 +50,7 @@ struct KeychainReadResponse: Sendable {
 protocol KeychainSystemAccess: Sendable {
     func update(_ item: KeychainItem, value: Data, protection: KeychainProtection) -> OSStatus
     func add(_ item: KeychainItem, value: Data, protection: KeychainProtection) -> OSStatus
-    func read(_ item: KeychainItem) -> KeychainReadResponse
+    func read(_ item: KeychainItem, authenticationContext: KeychainAuthenticationContext?) -> KeychainReadResponse
     func remove(_ item: KeychainItem) -> OSStatus
 }
 
@@ -69,8 +69,11 @@ private struct SystemKeychainAccess: KeychainSystemAccess {
         return SecItemAdd(addQuery as CFDictionary, nil)
     }
 
-    func read(_ item: KeychainItem) -> KeychainReadResponse {
+    func read(_ item: KeychainItem, authenticationContext: KeychainAuthenticationContext?) -> KeychainReadResponse {
         var readQuery = query(for: item)
+        if let authenticationContext {
+            readQuery[kSecUseAuthenticationContext as String] = authenticationContext.value
+        }
         readQuery[kSecReturnData as String] = true
         readQuery[kSecMatchLimit as String] = kSecMatchLimitOne
 
@@ -151,7 +154,7 @@ public struct DefaultKeychainStore: KeychainStoring {
     }
 
     public func read(_ account: String) throws -> Data {
-        let response = systemAccess.read(item(for: account))
+        let response = systemAccess.read(item(for: account), authenticationContext: KeychainAuthenticationScope.current)
         guard response.status == errSecSuccess else { throw error(for: response.status) }
         guard let data = response.data else { throw KeychainStoreError.decodeFailed }
         return data

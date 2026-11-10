@@ -114,7 +114,7 @@ private final class RecordingKeychainAccess: KeychainSystemAccess, @unchecked Se
         return errSecSuccess
     }
 
-    func read(_: KeychainItem) -> KeychainReadResponse {
+    func read(_: KeychainItem, authenticationContext _: KeychainAuthenticationContext?) -> KeychainReadResponse {
         lock.lock()
         defer { lock.unlock() }
         return KeychainReadResponse(

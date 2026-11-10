@@ -49,7 +49,7 @@ let package = Package(
                 "AutoFillData",
             ]
         ),
-        .target(name: "PlatformServices", dependencies: ["Domain"]),
+        .target(name: "PlatformServices", dependencies: ["Domain", "SecurityStorage"]),
         .target(name: "SharedUI", dependencies: ["Domain"]),
         .target(name: "AuthPresentation", dependencies: ["Domain", "SharedUI"]),
         .target(name: "VaultPresentation", dependencies: ["Domain", "SharedUI"]),

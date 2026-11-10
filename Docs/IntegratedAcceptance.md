@@ -298,3 +298,28 @@ nicht in den Tool-Cache übernommen. Zehn deterministische Offline-Fixtures prü
 Wrapper bei erfolgreichem Download, Transportfehler, Prüfsummenfehler und vollständigem
 Ausfall; dieser Test läuft künftig vor der echten Formatierung in CI. Zusätzlich bestanden
 frische echte Downloads beider Tools ohne vorhandenen Cache.
+
+
+## Ein gemeinsamer Biometrie-/Keychain-Kontext — Build 5, 2026-11-10
+
+Returning Unlock hat bisher erst die Biometrie ausgewertet und danach den geschützten
+Schlüssel ohne diesen Authentifizierungskontext aus dem Keychain gelesen. Der Plattformadapter
+reicht jetzt denselben erfolgreich ausgewerteten LAContext nur für die synchrone geschützte
+Operation über einen Task-Local an SecurityStorage weiter. Weitere Interaktion ist für diesen
+Kontext gesperrt; anschließend wird er auch bei Fehlern ungültig. Die Keychain-ACL bleibt erhalten.
+Tests prüfen Kontextidentität, genau eine Auswertung, Abbruch ohne Schlüsselzugriff sowie
+Bereinigung bei Fehlern. Ein echter macOS-Keychain-Test prüft zusätzlich die Übergabe eines
+LAContext an einen isolierten Testeintrag; er ersetzt keinen Fingerabdruck-/Gesichtstest.
+
+872 AppModules-Tests und 69 SDK-Tests sowie 18 native macOS- und 19 native iOS-Tests bestanden.
+Signierte Release-Builds einschließlich Extensions bestanden die strenge Signaturprüfung.
+Build 5 ist auf Mac, iPhone und iPad installiert. Die tatsächliche Anzahl der Biometrie-Dialoge
+muss der Owner noch mit seinem Fingerabdruck/Gesicht bestätigen.
+
+Der verbleibende iOS-/iPadOS-AutoFill-Banner ist noch nicht als behoben nachgewiesen.
+Die App schreibt für Veröffentlichung, Cache und Systemidentitäten nur den jeweils letzten
+Erfolg bzw. Fehlerkategorie und Zahlencode in ihren privaten Cache. Keine Fehlertexte, Pfade,
+Konten, Tokens, Schlüssel oder Vault-Inhalte werden gespeichert. Ein expliziter Entwicklerstart
+mit VW_STORAGE_PROBE=1 prüft vor dem Login Clock-Session und eine eigene synthetische Datei.
+Die Geräte verweigerten diesen Start bislang wegen der Gerätesperre. Ohne Gerätefehlernachweis
+wurde weder die Autorisierung gelockert noch der Banner unterdrückt.
